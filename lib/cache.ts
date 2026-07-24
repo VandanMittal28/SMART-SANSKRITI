@@ -82,16 +82,3 @@ export function clearOldCaches(): void {
     })
   } catch (e) {}
 }
-
-// Pre-warm backend (call on app start)
-export async function prewarmBackend(): Promise<void> {
-  try {
-    await fetch('https://heritageai-backend.onrender.com/', {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000)
-    })
-    console.log('✅ Backend warmed up')
-  } catch (e) {
-    console.log('Backend warmup failed (ok)')
-  }
-}

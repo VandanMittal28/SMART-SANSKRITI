@@ -3,6 +3,15 @@ export interface LocalUser {
   email: string
 }
 
+export interface ProfileActivity {
+  id: string
+  type: 'scan' | 'quiz' | 'hunt' | 'explore' | 'chat'
+  title: string
+  detail?: string
+  xp?: number
+  timestamp: string
+}
+
 export interface LocalProfile {
   full_name: string
   email: string
@@ -12,6 +21,7 @@ export interface LocalProfile {
   quiz_scores: number[]
   badges: string[]
   chat_history: Array<Record<string, unknown>>
+  activity_log: ProfileActivity[]
   user_type: 'student' | 'tourist'
   language: 'en' | 'hi'
   admin_mode: boolean
@@ -30,11 +40,12 @@ const DEFAULT_PROFILE: LocalProfile = {
   full_name: 'Explorer',
   email: DEFAULT_USER.email,
   phone: '',
-  total_xp: 120,
+  total_xp: 0,
   monuments_visited: [],
   quiz_scores: [],
   badges: [],
   chat_history: [],
+  activity_log: [],
   user_type: 'tourist',
   language: 'en',
   admin_mode: false,
@@ -50,13 +61,22 @@ function safeParse<T>(value: string | null): T | null {
 }
 
 function normalizeProfile(raw: Partial<LocalProfile> | null): LocalProfile {
+  const isUntouchedLegacyProfile =
+    raw?.total_xp === 120 &&
+    (!raw.monuments_visited || raw.monuments_visited.length === 0) &&
+    (!raw.quiz_scores || raw.quiz_scores.length === 0) &&
+    (!raw.badges || raw.badges.length === 0) &&
+    (!raw.chat_history || raw.chat_history.length === 0)
+
   return {
     ...DEFAULT_PROFILE,
     ...raw,
+    total_xp: isUntouchedLegacyProfile ? 0 : (raw?.total_xp ?? DEFAULT_PROFILE.total_xp),
     monuments_visited: Array.isArray(raw?.monuments_visited) ? raw!.monuments_visited : [],
     quiz_scores: Array.isArray(raw?.quiz_scores) ? raw!.quiz_scores : [],
     badges: Array.isArray(raw?.badges) ? raw!.badges : [],
     chat_history: Array.isArray(raw?.chat_history) ? raw!.chat_history : [],
+    activity_log: Array.isArray(raw?.activity_log) ? raw!.activity_log : [],
   }
 }
 

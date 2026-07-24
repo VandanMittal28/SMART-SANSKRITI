@@ -15,9 +15,10 @@ import { addXP, addMonumentVisited, computeAndSaveBadges } from "@/lib/authClien
 import { saveMonument, monumentNameToId } from "@/lib/monumentStore"
 import { useLang } from "@/lib/languageContext"
 import { useAudioGuide } from "@/hooks/useAudioGuide"
+import { resolveQuizMonumentId } from "@/lib/quizQuestions"
 import { 
   getCache, setCache, 
-  CACHE_DURATION, prewarmBackend 
+  CACHE_DURATION
 } from '@/lib/cache'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,6 +74,37 @@ function getConfidenceValue(resultData: RecognitionResult): number {
   return 0.5
 }
 
+function persistRecognizedMonument(resultData: RecognitionResult) {
+  const name =
+    typeof resultData.monument_name === 'string'
+      ? resultData.monument_name.trim()
+      : ''
+  if (!name || name === 'Unknown') return resultData
+
+  const monumentId = resolveQuizMonumentId(monumentNameToId(name))
+  resultData.monument_id = monumentId
+  saveMonument(monumentId, name, {
+    summary:
+      typeof resultData.brief_description === 'string'
+        ? resultData.brief_description
+        : undefined,
+    location:
+      typeof resultData.location === 'string' ? resultData.location : undefined,
+    era_or_dynasty:
+      typeof resultData.era_or_dynasty === 'string'
+        ? resultData.era_or_dynasty
+        : undefined,
+    architecture_style:
+      typeof resultData.architecture_style === 'string'
+        ? resultData.architecture_style
+        : undefined,
+    category:
+      typeof resultData.category === 'string' ? resultData.category : undefined,
+  })
+
+  return resultData
+}
+
 function LoadingSpinner() {
   return (
     <div className="flex justify-center items-center p-10">
@@ -102,8 +134,23 @@ export default function RecognitionPage() {
     isListening, startListening, stopListening,
     isThinking, lastAnswer,
     lang: audioLang, setLang: setAudioLang,
-    isMuted, toggleMute
+    isMuted, toggleMute, setCurrentZone
   } = useAudioGuide()
+
+  useEffect(() => {
+    const monumentName =
+      typeof result?.monument_name === 'string' ? result.monument_name : ''
+    if (!monumentName || monumentName === 'Unknown') {
+      setCurrentZone(null)
+      return
+    }
+
+    setCurrentZone(
+      typeof result?.monument_id === 'string'
+        ? result.monument_id
+        : resolveQuizMonumentId(monumentNameToId(monumentName)),
+    )
+  }, [result, setCurrentZone])
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -111,11 +158,6 @@ export default function RecognitionPage() {
       cameraStream?.getTracks().forEach(t => t.stop())
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Prewarm backend on page load
-  useEffect(() => {
-    prewarmBackend()
   }, [])
 
   const handleFileUpload = async (file: File) => {
@@ -139,7 +181,7 @@ export default function RecognitionPage() {
         img.onload = () => {
           clearTimeout(timeout)
           try {
-            const maxW = 900
+            const maxW = 640
             const scale = Math.min(1, maxW / img.width)
             canvas.width = img.width * scale
             canvas.height = img.height * scale
@@ -187,7 +229,7 @@ export default function RecognitionPage() {
             }
 
             ctx.putImageData(imageData, 0, 0)
-            resolve(canvas.toDataURL('image/jpeg', 0.72).split(',')[1])
+            resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1])
           } catch (e) { reject(e) }
         }
         img.onerror = () => {
@@ -202,7 +244,8 @@ export default function RecognitionPage() {
     const cacheKey = `recognition_hash_${imageHash}`
     const cached = getCache(cacheKey, CACHE_DURATION.recognition)
     if (cached) {
-      setResult(cached)
+      const cachedResult = persistRecognizedMonument({ ...cached })
+      setResult(cachedResult)
       setLoading(false)
       showToast('⚡ Instant result!')
       return
@@ -210,7 +253,7 @@ export default function RecognitionPage() {
 
     // Set a timeout to notify user if backend is spinning up
     const slowWarningTimer = setTimeout(() => {
-      showToast('⏳ Waking up servers... this can take up to a minute.')
+      showToast('⏳ Analyzing the monument image...')
     }, 6000)
 
     try {
@@ -239,8 +282,9 @@ export default function RecognitionPage() {
         resultData.brief_description = resultData.brief_description || 'Could not identify the monument clearly. Review suggested matches below.'
       }
 
-      setCache(cacheKey, resultData)
-      setResult(resultData)
+      const connectedResult = persistRecognizedMonument(resultData)
+      setCache(cacheKey, connectedResult)
+      setResult(connectedResult)
 
       if (
         res.data.monument_name &&
@@ -257,11 +301,6 @@ export default function RecognitionPage() {
             window.dispatchEvent(new Event('xp-updated'))
           }
         } catch (err) { console.warn('XP award failed:', err) }
-
-        saveMonument(
-          monumentNameToId(res.data.monument_name),
-          res.data.monument_name
-        )
 
         showToast('⚡ +25 XP for identifying ' + res.data.monument_name + '!')
       } else {
@@ -315,7 +354,8 @@ export default function RecognitionPage() {
 
   const getMonumentDescription = () => {
     if (!result) return ''
-    return result.brief_description || result.history || result.significance || ''
+    return result.brief_description || result.history || result.significance ||
+      `${result.monument_name} is an important Indian heritage site.`
   }
 
   const hasIdentifiedMonument = Boolean(

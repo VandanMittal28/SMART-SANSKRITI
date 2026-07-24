@@ -8,8 +8,8 @@ import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
 import { saveChatMessage } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
-import { useVapi } from "@/hooks/useVapi"
 import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache'
+import { recordingToWavBase64 } from '@/lib/audio'
 
 interface Message { id: number; role: "assistant" | "user"; content: string }
 interface Monument { id: string; name: string }
@@ -36,33 +36,10 @@ export default function ChatPage() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastWasVoiceRef = useRef(false)
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null)
+  const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { toast, showToast, hideToast } = useToast()
   const { user } = useAuth()
-
-  const prepareVoiceCallForIOS = async () => {
-    const audioContextCtor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (audioContextCtor) {
-      const audioContext = new audioContextCtor()
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume()
-      }
-    }
-
-    if (navigator.mediaDevices?.getUserMedia) {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach(track => track.stop())
-    }
-  }
-
-  const handleVoiceCall = async () => {
-    try {
-      await prepareVoiceCallForIOS()
-      await startCall(undefined, monumentId)
-    } catch (error) {
-      console.warn('[Vapi] iOS voice preflight failed:', error)
-      showToast(lang === 'hi' ? 'माइक्रोफोन अनुमति आवश्यक है।' : 'Microphone access is required to start the voice call.')
-    }
-  }
 
   // ── Robust Browser TTS ─────────────────────────────────
   const speakText = useCallback((text: string) => {
@@ -106,13 +83,6 @@ export default function ChatPage() {
     }
   }, [lang])
 
-  // ── Vapi voice call hook ───────────────────────────────
-  const {
-    isCallActive, isListening: vapiListening, isSpeaking: vapiSpeaking, isLoading: vapiLoading,
-    transcript, messages: vapiMessages,
-    startCall, endCall, error: vapiError
-  } = useVapi()
-
   useEffect(() => {
     api.getNearby().then(res => {
       const list: Monument[] = (res.data.monuments || []).map((m: { id: string; name: string }) => ({ id: m.id, name: MONUMENT_NAMES[m.id] || m.name }))
@@ -127,22 +97,6 @@ export default function ChatPage() {
     setMessages([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
-
-  // Merge Vapi voice messages into the main chat thread
-  useEffect(() => {
-    if (vapiMessages.length > 0) {
-      const last = vapiMessages[vapiMessages.length - 1]
-      setMessages(prev => {
-        const alreadyExists = prev.some(m => m.content === last.text)
-        if (alreadyExists) return prev
-        return [...prev, {
-          id: prev.length + 1,
-          role: last.role === 'user' ? 'user' : 'assistant',
-          content: last.text
-        }]
-      })
-    }
-  }, [vapiMessages])
 
   // ── Send Message ───────────────────────────────────────
   const sendMessage = async (text: string) => {
@@ -197,31 +151,74 @@ export default function ChatPage() {
 
   const handleSend = () => sendMessage(input.trim())
 
-  // ── Voice Input (browser SpeechRecognition) ────────────
-  const startVoice = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
-    const SR = w.SpeechRecognition || w.webkitSpeechRecognition
-    if (!SR) { alert('Use Chrome for voice feature'); return }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognition = new SR() as any
-    recognition.lang = lang === 'hi' ? 'hi-IN' : 'en-IN'
-    recognition.onstart = () => { setListening(true); showToast(t('listening')) }
-    recognition.onend = () => setListening(false)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (e: any) => {
-      const spokenText = e.results[0][0].transcript as string
-      setInput(spokenText)
-      lastWasVoiceRef.current = true
-      // setTimeout allows React state to settle before the API call fires
-      setTimeout(() => sendMessage(spokenText), 100)
+  // ── Voice Input (NVIDIA speech model) ─────────────────
+  const startVoice = async () => {
+    if (voiceRecorderRef.current?.state === 'recording') {
+      voiceRecorderRef.current.stop()
+      return
     }
-    try { recognition.start() } catch { setListening(false) }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      const chunks: BlobPart[] = []
+      voiceRecorderRef.current = recorder
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data)
+      }
+      recorder.onstart = () => {
+        setListening(true)
+        showToast(t('listening'))
+        voiceTimerRef.current = setTimeout(() => {
+          if (recorder.state === 'recording') recorder.stop()
+        }, 5_000)
+      }
+      recorder.onstop = async () => {
+        if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current)
+        voiceTimerRef.current = null
+        voiceRecorderRef.current = null
+        setListening(false)
+        stream.getTracks().forEach((track) => track.stop())
+        if (chunks.length === 0) return
+
+        try {
+          const audio = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+          const audioBase64 = await recordingToWavBase64(audio)
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
+          })
+          const data = await response.json()
+          if (!response.ok || !data.text) {
+            throw new Error(data.error || 'Transcription failed')
+          }
+
+          const spokenText = String(data.text).trim()
+          setInput(spokenText)
+          lastWasVoiceRef.current = true
+          await sendMessage(spokenText)
+        } catch (error) {
+          console.error('Voice transcription failed:', error)
+          showToast(lang === 'hi' ? 'आवाज़ समझ नहीं आई।' : 'Could not understand the recording.')
+        }
+      }
+
+      recorder.start(100)
+    } catch {
+      setListening(false)
+      showToast(lang === 'hi' ? 'माइक्रोफोन अनुमति आवश्यक है।' : 'Microphone access is required.')
+    }
   }
 
   // Cleanup TTS on unmount
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel() }
+    return () => {
+      window.speechSynthesis?.cancel()
+      if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current)
+      if (voiceRecorderRef.current?.state === 'recording') voiceRecorderRef.current.stop()
+    }
   }, [])
 
   return (
@@ -241,43 +238,7 @@ export default function ChatPage() {
               </select>
               <ChevronDown className="w-3 h-3 text-[#C9A84C] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-            {/* Voice Call Button */}
-            {!isCallActive ? (
-              <button
-                onClick={handleVoiceCall}
-                disabled={vapiLoading}
-                style={{
-                  background: 'linear-gradient(135deg, #C9A84C, #D4893F)',
-                  borderRadius: '12px', padding: '10px 16px',
-                  color: '#0F0B1E', fontWeight: '700', fontSize: '14px',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  border: 'none', cursor: vapiLoading ? 'wait' : 'pointer',
-                  opacity: vapiLoading ? 0.7 : 1
-                }}
-              >
-                📞 {vapiLoading ? (lang === 'hi' ? 'कनेक्ट हो रहा है...' : 'Connecting...') : (lang === 'hi' ? 'वॉयस कॉल' : 'Voice Call')}
-              </button>
-            ) : (
-              <button
-                onClick={endCall}
-                style={{
-                  background: '#DC2626', borderRadius: '12px',
-                  padding: '10px 16px', color: 'white',
-                  fontWeight: '700', fontSize: '14px',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  border: 'none', cursor: 'pointer',
-                  animation: 'pulse 2s infinite'
-                }}
-              >
-                📵 {lang === 'hi' ? 'कॉल समाप्त करें' : 'End Call'}
-              </button>
-            )}
           </div>
-          {vapiError && (
-            <p style={{ color: '#DC2626', fontSize: '12px', marginTop: '4px', width: '100%', textAlign: 'right' }}>
-              {vapiError}
-            </p>
-          )}
         </div>
 
         {/* Messages */}
@@ -315,30 +276,6 @@ export default function ChatPage() {
 
         {/* Input bar */}
         <div className="p-4 border-t border-[#C9A84C]/20">
-          {/* Active voice call status bar */}
-          {isCallActive && (
-            <div style={{
-              background: 'rgba(201,168,76,0.1)', border: '1px solid #C9A84C',
-              borderRadius: '12px', padding: '10px 16px',
-              display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'
-            }}>
-              <div style={{
-                width: '10px', height: '10px', borderRadius: '50%',
-                background: vapiSpeaking ? '#4B9B8E' : vapiListening ? '#C9A84C' : '#666',
-                animation: (vapiSpeaking || vapiListening) ? 'pulse 1s infinite' : 'none'
-              }}/>
-              <span style={{ color: '#C9A84C', fontSize: '13px' }}>
-                {vapiSpeaking ? (lang === 'hi' ? '🔊 AI बोल रहा है...' : '🔊 AI is speaking...')
-                 : vapiListening ? (lang === 'hi' ? '🎤 सुन रहा है...' : '🎤 Listening...')
-                 : (lang === 'hi' ? '💬 वॉयस कॉल सक्रिय - अपना प्रश्न बोलें' : '💬 Voice call active — speak your question')}
-              </span>
-              {transcript && (
-                <span style={{ color: '#C4A882', fontSize: '12px', fontStyle: 'italic' }}>
-                  &quot;{transcript}&quot;
-                </span>
-              )}
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder={t('ask_placeholder')} className="flex-1 bg-[#1C1638] border border-[#C9A84C]/30 rounded-xl px-4 py-3 text-[#F5E6D3] placeholder:text-[#C4A882] focus:outline-none focus:border-[#C9A84C] transition-colors" />
             <button onClick={startVoice} className={`px-3 py-3 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-1.5 text-sm font-medium ${listening ? 'bg-[#4B9B8E] text-white animate-pulse' : 'purple-gradient text-white'}`}>

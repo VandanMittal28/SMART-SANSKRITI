@@ -2,14 +2,22 @@ export interface StoredMonument {
   id: string
   name: string
   timestamp: number
+  summary?: string
+  location?: string
+  era_or_dynasty?: string
+  architecture_style?: string
+  category?: string
 }
 
-export { monuments } from "../src/lib/monumentStore"
-export { monumentById } from "../src/lib/monumentStore"
+export { monuments, monumentById } from "./monuments"
 
-export function saveMonument(id: string, name: string) {
+export function saveMonument(
+  id: string,
+  name: string,
+  details: Partial<Omit<StoredMonument, 'id' | 'name' | 'timestamp'>> = {},
+) {
   try {
-    const data: StoredMonument = { id, name, timestamp: Date.now() }
+    const data: StoredMonument = { id, name, timestamp: Date.now(), ...details }
     localStorage.setItem('sanskriti_last_monument', JSON.stringify(data))
   } catch { /* silent */ }
 }
@@ -43,6 +51,10 @@ export function monumentNameToId(name: string): string {
     'Gateway of India Mumbai': 'gateway-india',
     'Gateway of India': 'gateway-india',
     'Hampi': 'hampi',
+    'Hampi Chariot': 'hampi',
+    'Stone Chariot': 'hampi',
+    'Stone Chariot Hampi': 'hampi',
+    'Vittala Temple Hampi': 'hampi',
     'Golden Temple Amritsar': 'golden-temple',
     'Kedarnath Temple': 'kedarnath',
     'Meenakshi Amman Temple Madurai': 'meenakshi',

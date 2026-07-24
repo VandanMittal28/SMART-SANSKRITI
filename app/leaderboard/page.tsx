@@ -16,6 +16,7 @@ export default function LeaderboardPage() {
     quiz_scores: [],
     badges: [],
     chat_history: [],
+    activity_log: [],
     user_type: 'tourist',
     language: 'en',
     admin_mode: false,

@@ -81,6 +81,7 @@ export function ResultCard({ result, imagePreview, fileName }: ResultCardProps) 
   const infoDynasty = str(result.era_or_dynasty || result.dynasty_or_period)
   const infoStyle = str(result.architecture_style)
   const infoReligion = str(result.religion)
+  const summary = str(result.brief_description || result.history || result.significance)
   const reasoning = str(result.reasoning)
 
   return (
@@ -126,12 +127,24 @@ export function ResultCard({ result, imagePreview, fileName }: ResultCardProps) 
         {isUnknown ? (
           <p className="text-sm leading-relaxed text-[#C4A882]">{str(result.brief_description, 'Could not identify. Try a clearer image.')}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <InfoItem label="Category" value={infoCategory} />
-            <InfoItem label="Dynasty" value={infoDynasty} />
-            <InfoItem label="Style" value={infoStyle} />
-            <InfoItem label="Religion" value={infoReligion} />
-          </div>
+          <>
+            {!!summary && (
+              <div className="rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/8 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-[#C9A84C]">
+                  About this monument
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-[#F5E6D3]">
+                  {summary}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <InfoItem label="Category" value={infoCategory} />
+              <InfoItem label="Dynasty" value={infoDynasty} />
+              <InfoItem label="Style" value={infoStyle} />
+              <InfoItem label="Religion" value={infoReligion} />
+            </div>
+          </>
         )}
 
         <p className="text-xs text-[#8C7B63]">Uploaded: {fileName || 'image.jpg'}</p>

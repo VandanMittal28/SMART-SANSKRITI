@@ -270,12 +270,7 @@ export default function MonumentPage() {
     setLoading(true)
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (!apiUrl) {
-        throw new Error('API URL not configured')
-      }
-
-      const response = await fetch(`${apiUrl}/chat/ask`, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,7 +2,8 @@ const axios = require('axios');
 
 async function test() {
   try {
-    const res = await axios.post('https://heritageai-backend.onrender.com/monument/recognize', {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+    const res = await axios.post(`${baseUrl}/api/recognize`, {
       image_b64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
       filename: "test.jpg"
     }, { timeout: 60000 });

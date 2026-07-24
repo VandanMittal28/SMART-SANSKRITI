@@ -9,7 +9,8 @@ import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
 import { addXP, addQuizScore, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
-import { getMonument, saveMonument, clearMonument } from "@/lib/monumentStore"
+import { getMonument, saveMonument, clearMonument, type StoredMonument } from "@/lib/monumentStore"
+import { resolveQuizMonumentId } from "@/lib/quizQuestions"
 
 interface Question {
   id: string
@@ -41,7 +42,9 @@ function LoadingSpinner() {
 }
 
 export default function QuizPage() {
-  const lastMonument = getMonument()
+  // Keep the first client render identical to the server render. Browser storage
+  // is loaded after hydration because it is unavailable during SSR.
+  const [lastMonument, setLastMonument] = useState<StoredMonument | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -51,12 +54,29 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [answering, setAnswering] = useState(false)
-  const [monumentId, setMonumentId] = useState(lastMonument?.id || 'taj-mahal')
+  const [monumentId, setMonumentId] = useState('taj-mahal')
   const [monuments, setMonuments] = useState<Monument[]>([])
-  const [monumentSelected, setMonumentSelected] = useState(!!lastMonument)
+  const [monumentSelected, setMonumentSelected] = useState(false)
   const { toast, showToast, hideToast } = useToast()
   const { user, profile, setProfile } = useAuth()
   const { t } = useLang()
+
+  useEffect(() => {
+    const storedMonument = getMonument()
+    if (storedMonument) {
+      const resolvedId = resolveQuizMonumentId(storedMonument.id)
+      const resolvedName = MONUMENT_NAMES[resolvedId] || storedMonument.name
+      const resolvedMonument = { ...storedMonument, id: resolvedId, name: resolvedName }
+
+      setLastMonument(resolvedMonument)
+      setMonumentId(resolvedId)
+      setMonumentSelected(true)
+
+      if (resolvedId !== storedMonument.id) {
+        saveMonument(resolvedId, resolvedName)
+      }
+    }
+  }, [])
 
   // Load monument list for selector
   useEffect(() => {
@@ -79,7 +99,12 @@ export default function QuizPage() {
     setXpEarned(0)
     setFinished(false)
     setAnswering(false)
-    api.getQuestions(mid)
+    const recognizedContext =
+      lastMonument?.id === mid
+        ? lastMonument
+        : { name: MONUMENT_NAMES[mid] || mid.replace(/-/g, ' ') }
+
+    api.getQuestions(mid, recognizedContext)
       .then(res => {
         setQuestions(res.data.questions)
         setLoading(false)
@@ -111,7 +136,11 @@ export default function QuizPage() {
         if (user) {
           const newXP = await addXP(user.id, 10, 'QUIZ_CORRECT')
           setProfile((prev) => prev ? { ...prev, total_xp: newXP } : prev)
-          const newQuizScores = await addQuizScore(user.id, 10)
+          const newQuizScores = await addQuizScore(
+            user.id,
+            10,
+            lastMonument?.name || MONUMENT_NAMES[monumentId] || monumentId.replace(/-/g, ' '),
+          )
           await computeAndSaveBadges(user.id, { total_xp: newXP, quiz_scores: newQuizScores })
           window.dispatchEvent(new Event('xp-updated'))
         }
@@ -169,6 +198,7 @@ export default function QuizPage() {
                   setMonumentId(selectedId)
                   setMonumentSelected(true)
                   saveMonument(selectedId, selectedName)
+                  setLastMonument({ id: selectedId, name: selectedName, timestamp: Date.now() })
                 }}
                 defaultValue=""
                 style={{
@@ -231,6 +261,13 @@ export default function QuizPage() {
   }
 
   const question = questions[currentIndex]
+  const baseMonumentOptions = monuments.length > 0
+    ? monuments
+    : Object.entries(MONUMENT_NAMES).map(([id, name]) => ({ id, name }))
+  const monumentOptions =
+    lastMonument && !baseMonumentOptions.some((item) => item.id === lastMonument.id)
+      ? [{ id: lastMonument.id, name: lastMonument.name }, ...baseMonumentOptions]
+      : baseMonumentOptions
 
   return (
     <AppShell>
@@ -255,6 +292,7 @@ export default function QuizPage() {
                     setMonumentSelected(false)
                     setMonumentId('')
                     clearMonument()
+                    setLastMonument(null)
                   }}
                   style={{
                     background: 'none', border: 'none',
@@ -278,17 +316,15 @@ export default function QuizPage() {
                   value={monumentId}
                   onChange={e => {
                     const selectedId = e.target.value
-                    const selectedName = monuments.find(m => m.id === selectedId)?.name || selectedId
+                    const selectedName = monumentOptions.find(m => m.id === selectedId)?.name || selectedId
                     setMonumentId(selectedId)
                     setMonumentSelected(true)
                     saveMonument(selectedId, selectedName)
+                    setLastMonument({ id: selectedId, name: selectedName, timestamp: Date.now() })
                   }}
                   className="appearance-none pl-3 pr-8 py-2 bg-[#1C1638] border border-[#C9A84C]/40 text-[#C9A84C] text-sm rounded-lg focus:outline-none focus:border-[#C9A84C] cursor-pointer"
                 >
-                  {monuments.length > 0
-                    ? monuments.map(m => <option key={m.id} value={m.id}>{m.name}</option>)
-                    : Object.entries(MONUMENT_NAMES).map(([id, name]) => <option key={id} value={id}>{name}</option>)
-                  }
+                  {monumentOptions.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
                 <ChevronDown className="w-3 h-3 text-[#C9A84C] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>

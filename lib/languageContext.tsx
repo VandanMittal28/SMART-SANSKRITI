@@ -48,7 +48,7 @@ export const TRANSLATIONS: Record<string, { en: string; hi: string }> = {
   quote_1: { en: '"The World is One Family"', hi: '"विश्व एक परिवार है"' },
   quote_2: { en: '"Lead me from darkness to light"', hi: '"अंधकार से प्रकाश की ओर ले जाओ"' },
   monuments_label: { en: 'Monuments', hi: 'स्मारक' },
-  groq_vision: { en: 'Groq Vision AI', hi: 'Groq विज़न AI' },
+  nvidia_vision: { en: 'NVIDIA Vision AI', hi: 'NVIDIA विज़न AI' },
   sdg_label: { en: 'SDG 11 & 17', hi: 'SDG 11 & 17' },
   under_2_sec: { en: 'Under 2 sec', hi: '2 सेकंड से कम' },
   // Recognition page

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { recordingToWavBase64 } from '@/lib/audio'
 
 export interface Message {
   role: 'user' | 'assistant' | 'zone'
@@ -60,6 +61,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
   const [isMuted, setIsMuted] = useState(false)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const audioChunksRef = useRef<BlobPart[]>([])
   const currentZoneRef = useRef<string | null>(null)
   const askQuestionRef = useRef<((q: string, id: string) => Promise<void>) | null>(null)
@@ -169,11 +171,20 @@ export function useAudioGuide(): UseAudioGuideReturn {
         setIsListening(true)
         setTranscript('')
         stopSpeaking()
+        recordingTimeoutRef.current = setTimeout(() => {
+          if (mediaRecorder.state === 'recording') mediaRecorder.stop()
+        }, 5_000)
       }
 
       mediaRecorder.onstop = async () => {
+        if (recordingTimeoutRef.current) {
+          clearTimeout(recordingTimeoutRef.current)
+          recordingTimeoutRef.current = null
+        }
         setIsListening(false)
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mediaRecorder.mimeType || 'audio/webm',
+        })
         
         stream.getTracks().forEach(track => track.stop())
         
@@ -182,29 +193,18 @@ export function useAudioGuide(): UseAudioGuideReturn {
         setIsThinking(true)
         
         try {
-          const formData = new FormData()
-          formData.append('file', audioBlob, 'recording.webm')
-          formData.append('model', 'whisper-large-v3')
-          formData.append('language', lang === 'hi' ? 'hi' : 'en')
-          formData.append('temperature', '0')
-
-          const groqKey = process.env.NEXT_PUBLIC_GROQ_API_KEY
-          if (!groqKey) {
-            console.error('Groq API key not found in environment variables')
-            alert('Groq API configuration missing. Check .env.local')
-            setIsThinking(false)
-            return
-          }
-
-          const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          const audioBase64 = await recordingToWavBase64(audioBlob)
+          const response = await fetch('/api/transcribe', {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${groqKey}`
-            },
-            body: formData
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              audio_b64: audioBase64,
+              language: lang,
+            }),
           })
 
           const data = await response.json()
+          if (!response.ok) throw new Error(data.error || 'Transcription failed')
           
           if (data.text && data.text.trim()) {
             setTranscript(data.text)
@@ -232,6 +232,10 @@ export function useAudioGuide(): UseAudioGuideReturn {
   }, [lang, stopSpeaking])
 
   const stopListening = useCallback(() => {
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current)
+      recordingTimeoutRef.current = null
+    }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop()
     } else {
@@ -258,10 +262,8 @@ export function useAudioGuide(): UseAudioGuideReturn {
     setConversationHistory(prev => [...prev, userMessage])
 
     try {
-      // Use the same API base as the rest of the app
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://heritageai-backend.onrender.com'
       const response = await fetch(
-        apiBase + '/chat/ask',
+        '/api/chat',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -337,6 +339,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel()
+      if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current)
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop()
       }

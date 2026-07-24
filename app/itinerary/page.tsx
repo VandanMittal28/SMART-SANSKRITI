@@ -1,9 +1,11 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { useLang } from '@/lib/languageContext'
-import { useAuth } from '@/lib/authContext'
-import { supabase } from '@/lib/supabase'
+import {
+  generateLocalItinerary,
+  type HeritageItinerary as Itinerary,
+} from '@/lib/itinerary'
 
 const INDIA_CITIES = [
   { city: 'Agra', state: 'Uttar Pradesh', emoji: '🕌', highlights: 'Taj Mahal, Agra Fort, Fatehpur Sikri', monuments: ['taj-mahal', 'agra-fort', 'fatehpur-sikri'] },
@@ -64,9 +66,6 @@ const CITY_TO_HOTEL_KEY: Record<string, string> = {
   'Mumbai': 'mumbai', 'Hampi': 'hampi', 'Varanasi': 'varanasi',
 }
 
-interface Activity { time: string; activity: string; tip: string }
-interface Day { day: number; title: string; activities: Activity[] }
-interface Itinerary { city?: string; monument?: string; days: Day[] }
 interface Hotel { name: string; address: string; phone: string; stars: number; price: number }
 interface SyntheticReview {
   score: number
@@ -80,7 +79,6 @@ const ACCENT_COLORS = ['#C9A84C', '#D4893F', '#4B9B8E', '#534AB7', '#C45B3A']
 
 export default function ItineraryPage() {
   const { t, lang } = useLang()
-  const { user, profile } = useAuth()
   const [selectedCity, setSelectedCity] = useState('')
   const [days, setDays] = useState(3)
   const [itinerary, setItinerary] = useState<Itinerary | null>(null)
@@ -88,7 +86,6 @@ export default function ItineraryPage() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null)
-  const leadSentRef = useRef(false)
 
   const filteredCities = INDIA_CITIES.filter(c =>
     c.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,30 +95,6 @@ export default function ItineraryPage() {
 
   const selectedCityData = INDIA_CITIES.find(c => c.city === selectedCity)
 
-  const generateLocalItinerary = (
-    city: string, highlights: string, numDays: number
-  ): Itinerary => {
-    const highlightList = highlights.split(',').map(h => h.trim())
-    const daysList: Day[] = []
-    for (let i = 1; i <= numDays; i++) {
-      const dayHighlights = highlightList.slice((i - 1) * 2, i * 2)
-      daysList.push({
-        day: i,
-        title: i === 1 ? `Arrival & First Impressions of ${city}`
-          : i === numDays ? `Final Day — Hidden Gems of ${city}`
-          : `Exploring ${dayHighlights[0] || city}`,
-        activities: [
-          { time: '8:00 AM', activity: `Morning visit to ${dayHighlights[0] || highlightList[0] || city + ' Heritage Site'}`, tip: 'Arrive early to avoid crowds and enjoy the best light for photos' },
-          { time: '12:00 PM', activity: `Lunch at a local ${city} restaurant`, tip: `Try the local speciality — ${city} is famous for its unique cuisine` },
-          { time: '2:30 PM', activity: `Afternoon exploration of ${dayHighlights[1] || highlightList[1] || 'local markets and bazaars'}`, tip: 'Perfect time for shopping — local handicrafts make great souvenirs' },
-          { time: '5:30 PM', activity: 'Sunset viewing at a scenic viewpoint', tip: `${city} sunsets are spectacular — bring your camera` },
-          { time: '7:30 PM', activity: 'Evening cultural experience', tip: 'Check for local cultural shows, music performances, or light shows' },
-        ]
-      })
-    }
-    return { city, days: daysList }
-  }
-
   // Pick a hotel for the city
   const pickHotel = (city: string): Hotel => {
     const key = CITY_TO_HOTEL_KEY[city] || 'default'
@@ -129,73 +102,33 @@ export default function ItineraryPage() {
     return hotelList[Math.floor(Math.random() * hotelList.length)]
   }
 
-  // ─── Silent lead capture ───
-  const captureLead = (hotel: Hotel, city: string, monumentId: string, numDays: number) => {
-    const leadData = {
-      user_name: profile?.full_name || '',
-      user_phone: profile?.phone || '',
-      user_email: user?.email || '',
-      hotel_name: hotel.name,
-      hotel_phone: hotel.phone,
-      city,
-      monument: monumentId,
-      days: numDays,
-      timestamp: new Date().toISOString(),
-    }
-
-    // Step A — backend (fire-and-forget)
-    fetch("https://heritageai-backend.onrender.com/leads/capture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(leadData),
-    }).catch(() => {})
-
-    // Step B — Supabase (silent fail)
-    try {
-      supabase.from('leads').insert(leadData).then(() => {}, () => {})
-    } catch { /* silent */ }
-
-    // Step C — console only
-    console.log("Lead captured:", leadData.user_name, "→", hotel.name, hotel.phone)
-  }
-
   const generateItinerary = async () => {
     if (!selectedCity) { setError('Please select a city first'); return }
     setLoading(true); setError(''); setItinerary(null)
     setSelectedHotel(null)
-    leadSentRef.current = false
 
     // Pick hotel once
     const hotel = pickHotel(selectedCity)
     setSelectedHotel(hotel)
 
     try {
-      const res = await fetch('https://heritageai-backend.onrender.com/tourism/itinerary', {
+      const res = await fetch('/api/itinerary', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monument_id: selectedCityData?.monuments[0] || 'taj-mahal',
           days, city: selectedCity,
-          city_highlights: selectedCityData?.highlights || ''
+          city_highlights: selectedCityData?.highlights || '',
+          lang,
         })
       })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setItinerary({ ...data, city: selectedCity })
-
-      // Silent lead gen after render
-      if (!leadSentRef.current) {
-        leadSentRef.current = true
-        captureLead(hotel, selectedCity, selectedCityData?.monuments[0] || 'taj-mahal', days)
+      const data = await res.json() as Itinerary & { error?: string }
+      if (!res.ok || data.error || !Array.isArray(data.days)) {
+        throw new Error(data.error || 'The itinerary response was invalid.')
       }
+      setItinerary({ ...data, city: selectedCity })
     } catch {
       const cityItinerary = generateLocalItinerary(selectedCity, selectedCityData?.highlights || '', days)
       setItinerary(cityItinerary)
-
-      // Silent lead gen even on fallback
-      if (!leadSentRef.current) {
-        leadSentRef.current = true
-        captureLead(hotel, selectedCity, selectedCityData?.monuments[0] || 'taj-mahal', days)
-      }
     } finally { setLoading(false) }
   }
 

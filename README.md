@@ -1,5 +1,23 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## NVIDIA NIM setup
+
+The AI chat uses NVIDIA NIM through a server-side Next.js route, so the API key
+is never exposed to the browser.
+
+1. Copy `.env.example` to `.env.local`.
+2. Add your NVIDIA API key as `NVIDIA_API_KEY`.
+3. Keep `NVIDIA_MODEL=nvidia/nemotron-3-nano-30b-a3b` for the fast free
+   endpoint.
+
+The app uses `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` for monument
+image recognition and speech transcription. Kimi K2.6 can be selected by
+setting `NVIDIA_VISION_MODEL=moonshotai/kimi-k2.6` after enabling that model
+for the NVIDIA account.
+
+`.env.local` is ignored by Git. Add the same variables to your hosting provider
+when deploying.
+
 ## Getting Started
 
 First, run the development server:

@@ -26,21 +26,39 @@ export const api = {
 
   // Chat
   askChat: (question: string, monumentId = '') =>
-    apiClient.post('/chat/ask', {
+    axios.post('/api/chat', {
       question, monument_id: monumentId
     }),
 
   // Recognition
   recognize: (imageB64: string, filename = 'image.jpg', options?: Record<string, unknown>) =>
-    apiClient.post('/monument/recognize', {
+    axios.post('/api/recognize', {
       image_b64: imageB64,
       filename,
       ...(options || {}),
     }),
 
   // Quiz
-  getQuestions: (monumentId = 'taj-mahal') =>
-    apiClient.get(`/game/quiz/questions?monument_id=${monumentId}`),
+  getQuestions: (
+    monumentId = 'taj-mahal',
+    context?: {
+      name?: string
+      summary?: string
+      location?: string
+      era_or_dynasty?: string
+      architecture_style?: string
+      category?: string
+    },
+  ) =>
+    axios.post('/api/quiz', {
+      monument_id: monumentId,
+      monument_name: context?.name,
+      summary: context?.summary,
+      location: context?.location,
+      era_or_dynasty: context?.era_or_dynasty,
+      architecture_style: context?.architecture_style,
+      category: context?.category,
+    }),
 
   // Hunt
   getHuntClue: (userId = DEFAULT_USER) =>
@@ -71,13 +89,13 @@ export const api = {
 
   // Itinerary
   getItinerary: (monumentId: string, days = 3) =>
-    apiClient.post('/tourism/itinerary', {
+    axios.post('/api/itinerary', {
       monument_id: monumentId, days
     }),
 
   // Legacy aliases
   itinerary: (monumentId: string, days = 3) =>
-    apiClient.post('/tourism/itinerary', {
+    axios.post('/api/itinerary', {
       monument_id: monumentId, days
     }),
 

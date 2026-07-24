@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
-import { useVapi } from "@/hooks/useVapi"
 import { useLang } from "@/lib/languageContext"
 
 import { ChevronDown } from "lucide-react"
@@ -409,11 +408,11 @@ const EXPLORE_USER_START: Record<string, { lat: number; lng: number }> = {
 
 // ── LEAFLET MAP (dynamic, no SSR) ────────────────────────
 const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
-  zones, currentZoneIndex, completedZones, userPos, isCallActive, isSpeaking, monumentId
+  zones, currentZoneIndex, completedZones, userPos, monumentId
 }: {
   zones: typeof TAJ_ZONES; currentZoneIndex: number;
   completedZones: number[]; userPos: { lat: number; lng: number };
-  isCallActive: boolean; isSpeaking: boolean; monumentId: string;
+  monumentId: string;
 }) {
   const mapRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -515,21 +514,11 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     newMarkers.push(youLabel)
 
     markersRef.current = newMarkers
-  }, [zones, currentZoneIndex, completedZones, userPos, isCallActive, isSpeaking, monumentId])
+  }, [zones, currentZoneIndex, completedZones, userPos, monumentId])
 
   return (
     <div style={{ position: 'relative' }}>
       <div ref={containerRef} style={{ height: '350px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.3)' }} />
-      {/* Vapi status overlay */}
-      <div style={{
-        position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)',
-        background: 'rgba(15,11,30,0.9)', borderRadius: '20px', padding: '6px 16px',
-        color: isCallActive ? (isSpeaking ? '#4B9B8E' : '#C9A84C') : '#C4A882',
-        fontSize: '12px', fontWeight: 600, border: '1px solid rgba(201,168,76,0.3)',
-        backdropFilter: 'blur(8px)', zIndex: 1000
-      }}>
-        {isCallActive ? (isSpeaking ? '🔊 Guide speaking' : '🎤 Listening') : '📞 Voice Guide Off'}
-      </div>
       <style>{`.pulse-marker { animation: markerPulse 1.5s ease infinite; } @keyframes markerPulse { 0%,100% { opacity: 0.9; } 50% { opacity: 0.5; } }`}</style>
     </div>
   )
@@ -538,8 +527,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
 // ── MAIN EXPLORER PAGE ───────────────────────────────────
 export default function ExplorePage() {
   const router = useRouter()
-  const { user, profile, setProfile } = useAuth()
-  const { isCallActive, isSpeaking, endCall, restartVapiForZone } = useVapi()
+  const { user, setProfile } = useAuth()
   const { lang } = useLang()
   const [hasMounted, setHasMounted] = useState(false)
 
@@ -649,24 +637,13 @@ export default function ExplorePage() {
     setXpEarned(z.xp)
     setCompletedZones(prev => [...prev, z.id])
 
-    // Rebuild + restart VAPI with a fresh zone-level prompt on every arrival.
-    const localBelief = (z as { local_belief?: string }).local_belief
-    await restartVapiForZone({
-      name: z.name,
-      arrival_fact: z.arrival_fact,
-      direction_hint: z.direction_hint,
-      mini_fact: z.mini_fact,
-      local_belief: localBelief,
-      monumentId: exploreMonumentId
-    })
     speakFact(z.arrival_fact)
-  }, [arrivedAtZone, currentZoneIndex, user, profile, restartVapiForZone, setProfile, speakFact, exploreMonumentId])
+  }, [arrivedAtZone, currentZoneIndex, user, setProfile, speakFact, exploreMonumentId])
 
   const stopNarration = useCallback(() => {
     window.speechSynthesis?.cancel()
     setIsTTSSpeaking(false)
-    if (isCallActive) endCall()
-  }, [isCallActive, endCall])
+  }, [])
 
   // ── COMPLETION SCREEN ───────────────────────────────────
   if (explorerComplete) {
@@ -751,7 +728,6 @@ export default function ExplorePage() {
                     // Cancel any ongoing narration first
                     window.speechSynthesis?.cancel()
                     setIsTTSSpeaking(false)
-                    if (isCallActive) endCall()
                     // Reset all zone state
                     setExploreMonumentId(id); saveMonument(id, name)
                     setCurrentZoneIndex(0); setCompletedZones([]); setXpEarned(0)
@@ -801,7 +777,6 @@ export default function ExplorePage() {
             <ExploreMap
               zones={activeZones} currentZoneIndex={currentZoneIndex}
               completedZones={completedZones} userPos={userPos}
-              isCallActive={isCallActive} isSpeaking={isSpeaking}
               monumentId={exploreMonumentId}
             />
           </div>
@@ -905,7 +880,7 @@ export default function ExplorePage() {
               </div>
 
               {/* Speaking indicator + stop button */}
-              {(isSpeaking || isTTSSpeaking) && (
+              {isTTSSpeaking && (
                 <div style={{
                   background: 'rgba(201,168,76,0.1)',
                   border: '1px solid #C9A84C44',

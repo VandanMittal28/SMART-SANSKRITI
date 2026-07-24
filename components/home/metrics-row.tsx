@@ -5,7 +5,7 @@ export function MetricsRow() {
   const { t } = useLang()
   const metrics = [
     { icon: "🏛️", label: t('monuments_label'), value: "15+" },
-    { icon: "🔮", label: t('groq_vision'), value: "" },
+    { icon: "🔮", label: t('nvidia_vision'), value: "" },
     { icon: "🌍", label: t('sdg_label'), value: "" },
     { icon: "⚡", label: t('under_2_sec'), value: "" },
   ]

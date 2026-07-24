@@ -40,7 +40,6 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.101.1",
-    "@vapi-ai/web": "^2.5.2",
     "@vercel/analytics": "^2.0.1",
     "axios": "^1.14.0",
     "class-variance-authority": "^0.7.1",
