@@ -193,6 +193,118 @@ const RED_FORT_ZONES = [
     arrival_fact: "Welcome to the Diwan-i-Khas, the Hall of Private Audience. Here the Emperor met with VIPs. It once housed the legendary solid gold Peacock Throne, studded with precious gems including the Koh-i-Noor diamond.",
     direction_hint: "Head further east towards the intricately carved white marble pavilion.",
     mini_fact: "The Persian inscription here reads: 'If there is a paradise on earth, it is this'."
+  },
+  {
+    id: 15, name: "Naubat Khana", emoji: "🥁",
+    lat: 28.6561, lng: 77.2407, radius: 42, xp: 150,
+    arrival_fact: "You are at the Naubat Khana, or Drum House, where imperial musicians announced the emperor's arrival and marked the hours of the day. Visitors of rank dismounted here before approaching the public audience court.",
+    direction_hint: "Continue east from Chatta Chowk toward the tall red gateway before the Diwan-i-Am.",
+    mini_fact: "The building turned music into ceremony, separating the public market from the imperial court."
+  },
+  {
+    id: 16, name: "Mumtaz Mahal", emoji: "🏺",
+    lat: 28.6555, lng: 77.2425, radius: 40, xp: 175,
+    arrival_fact: "This southernmost palace pavilion is the Mumtaz Mahal. Once part of the imperial women's apartments, its rooms now help preserve and display objects that reveal courtly life inside Shah Jahan's palace-fort.",
+    direction_hint: "From the Diwan-i-Am, follow the path southeast toward the first surviving palace pavilion.",
+    mini_fact: "Mumtaz Mahal formed part of the private zenana, away from the fort's public audience halls."
+  },
+  {
+    id: 17, name: "Rang Mahal", emoji: "🎨",
+    lat: 28.6559, lng: 77.2428, radius: 40, xp: 200,
+    arrival_fact: "You have reached the Rang Mahal, the Palace of Colours. Painted interiors, mirrored decoration, water channels, and a central marble basin once made this one of the most luxurious apartments in the imperial residence.",
+    direction_hint: "Walk north from Mumtaz Mahal to the next long pavilion facing the former riverfront.",
+    mini_fact: "Water from the Nahr-i-Bihisht cooled the central marble basin beneath the pavilion."
+  },
+  {
+    id: 18, name: "Khas Mahal", emoji: "🛏️",
+    lat: 28.6563, lng: 77.2430, radius: 40, xp: 225,
+    arrival_fact: "This is the Khas Mahal, Shah Jahan's private palace. It combined sleeping chambers, prayer spaces, and a projecting tower where the emperor could appear before subjects gathered below.",
+    direction_hint: "Continue north along the river-facing line of marble pavilions.",
+    mini_fact: "Its rooms joined private life, royal ritual, and public visibility in one compact palace."
+  },
+  {
+    id: 19, name: "Nahr-i-Bihisht", emoji: "💧",
+    lat: 28.6564, lng: 77.2431, radius: 38, xp: 250,
+    arrival_fact: "You are following the Nahr-i-Bihisht, the Stream of Paradise. This continuous water channel linked the private pavilions, bringing movement, reflection, and cooling air into the heart of the palace.",
+    direction_hint: "Look along the marble floor channels connecting the riverfront pavilions.",
+    mini_fact: "UNESCO identifies the linked pavilions and their water channel as a defining feature of the Red Fort's plan."
+  },
+  {
+    id: 20, name: "Hammam", emoji: "♨️",
+    lat: 28.6568, lng: 77.2429, radius: 40, xp: 275,
+    arrival_fact: "These are the imperial Hammam baths, a sequence of marble chambers once supplied with hot and cold water. Inlaid floral patterns and filtered light transformed bathing into an elaborate royal ritual.",
+    direction_hint: "Move north of the Diwan-i-Khas toward the enclosed marble bath chambers.",
+    mini_fact: "Different rooms supported hot, warm, and cool bathing within the palace."
+  },
+  {
+    id: 21, name: "Moti Masjid", emoji: "🤍",
+    lat: 28.6570, lng: 77.2426, radius: 42, xp: 300,
+    arrival_fact: "You are at the Moti Masjid, or Pearl Mosque, built by Aurangzeb as a private place of worship. Its compact white-marble prayer hall contrasts sharply with the massive red sandstone walls around it.",
+    direction_hint: "Continue north from the Hammam and look for the small white-marble mosque behind a high enclosure.",
+    mini_fact: "The mosque's name comes from the pearl-like glow of its polished marble."
+  },
+  {
+    id: 22, name: "Hayat Bakhsh Bagh", emoji: "🌿",
+    lat: 28.6575, lng: 77.2425, radius: 46, xp: 325,
+    arrival_fact: "You have entered Hayat Bakhsh Bagh, the Life-Bestowing Garden. Water channels, walkways, pavilions, and planted squares created a formal garden landscape based on Mughal visions of paradise.",
+    direction_hint: "Walk north into the large garden court beyond the private palace zone.",
+    mini_fact: "Its name means 'life-bestowing garden', reflecting the Mughal union of water, shade, and ordered nature."
+  },
+  {
+    id: 23, name: "Zafar Mahal", emoji: "⛲",
+    lat: 28.6576, lng: 77.2429, radius: 40, xp: 350,
+    arrival_fact: "This red sandstone pavilion is Zafar Mahal, added by Bahadur Shah Zafar in the central water tank of Hayat Bakhsh Bagh. It is a late Mughal layer inserted into Shah Jahan's earlier garden plan.",
+    direction_hint: "Follow the garden channels toward the pavilion standing in the central tank.",
+    mini_fact: "Zafar Mahal shows that the Red Fort continued to evolve long after Shah Jahan."
+  },
+  {
+    id: 24, name: "Sawan Pavilion", emoji: "🌧️",
+    lat: 28.6577, lng: 77.2424, radius: 38, xp: 375,
+    arrival_fact: "You are at the Sawan Pavilion, one of two monsoon pavilions facing the garden's water channels. Cascading water once created the sound and cool atmosphere of seasonal rain.",
+    direction_hint: "Move to the western end of the garden's north-south water channel.",
+    mini_fact: "Sawan is a monsoon month, and the pavilion used flowing water to evoke rainy-season relief."
+  },
+  {
+    id: 25, name: "Bhadon Pavilion", emoji: "🌦️",
+    lat: 28.6577, lng: 77.2432, radius: 38, xp: 400,
+    arrival_fact: "This is the Bhadon Pavilion, paired with Sawan across the garden axis. Water once fell over niches fitted with small lamps, making the illuminated cascade shimmer after dark.",
+    direction_hint: "Cross the garden channel to the matching pavilion on the eastern side.",
+    mini_fact: "The twin pavilions are named after successive months of the Indian monsoon."
+  },
+  {
+    id: 26, name: "Shah Burj", emoji: "🗼",
+    lat: 28.6580, lng: 77.2434, radius: 44, xp: 425,
+    arrival_fact: "You are near Shah Burj, the northeastern tower associated with the hydraulic system that fed the palace channels. From here, water entered the elevated network serving gardens and royal apartments.",
+    direction_hint: "Continue northeast to the tower at the end of the river-facing palace line.",
+    mini_fact: "The Red Fort's celebrated water architecture depended on lifting and distributing river water from this side."
+  },
+  {
+    id: 27, name: "Hira Mahal", emoji: "💠",
+    lat: 28.6579, lng: 77.2431, radius: 38, xp: 450,
+    arrival_fact: "You have reached Hira Mahal, a small marble pavilion associated with Bahadur Shah Zafar. Its delicate scale preserves a final glimpse of Mughal courtly architecture before the upheaval of 1857.",
+    direction_hint: "Look along the northern garden edge for the compact white-marble pavilion near Shah Burj.",
+    mini_fact: "Its name means 'Diamond Palace', although the pavilion is built primarily of marble."
+  },
+  {
+    id: 28, name: "Red Fort Baoli", emoji: "🪜",
+    lat: 28.6573, lng: 77.2404, radius: 44, xp: 475,
+    arrival_fact: "This is the Red Fort's baoli, an older stepwell absorbed into the palace-fort when Shah Jahan's complex was built around it. Descending steps once gave access to a dependable underground water source.",
+    direction_hint: "Head west from Hayat Bakhsh Bagh toward the recessed stepwell enclosure.",
+    mini_fact: "The stepwell predates much of Shah Jahan's palace and survived later British alterations."
+  },
+  {
+    id: 29, name: "Delhi Gate", emoji: "🛡️",
+    lat: 28.6539, lng: 77.2416, radius: 50, xp: 500,
+    arrival_fact: "You are at Delhi Gate, the fort's southern entrance. Unlike the ceremonial Lahori Gate, this route primarily served soldiers and people working within the fortified complex.",
+    direction_hint: "Follow the southern perimeter toward the monumental gateway flanked by red sandstone towers.",
+    mini_fact: "The two principal gates reveal how ceremonial and service movement were deliberately separated."
+  },
+  {
+    id: 30, name: "British Barracks", emoji: "🏚️",
+    lat: 28.6570, lng: 77.2412, radius: 48, xp: 525,
+    arrival_fact: "These barracks represent the fort's British military occupation after 1857. Large areas of the Mughal palace were cleared or repurposed, leaving a visible architectural layer of conquest, resistance, and colonial rule.",
+    direction_hint: "Return toward the broad northern interior where the long colonial-era blocks stand.",
+    mini_fact: "UNESCO recognizes the British military buildings as part of the Red Fort's layered history."
   }
 ]
 
@@ -225,6 +337,118 @@ const QUTUB_MINAR_ZONES = [
     arrival_fact: "This massive pile of rubble is the Alai Minar. Alauddin Khalji intended to build a tower exactly twice the height of the Qutub Minar, but work stopped after his death when it was only 24.5 meters high.",
     direction_hint: "Walk to the northern side of the complex to find the wide, unfinished rubble base.",
     mini_fact: "The core is 24.5 meters high and was never given its outer facing of carved stone."
+  },
+  {
+    id: 25, name: "Quwwat-ul-Islam Courtyard", emoji: "🕌",
+    lat: 28.5248, lng: 77.1850, radius: 42, xp: 150,
+    arrival_fact: "You are inside the courtyard of the Quwwat-ul-Islam Mosque, begun in the late 12th century and enlarged by later Delhi sultans. Its open court became the architectural heart around which the early complex grew.",
+    direction_hint: "Walk west from the minar into the broad rectangular mosque courtyard.",
+    mini_fact: "UNESCO describes it as the oldest mosque in northern India."
+  },
+  {
+    id: 26, name: "Carved Pillar Cloisters", emoji: "🪷",
+    lat: 28.5248, lng: 77.1847, radius: 38, xp: 175,
+    arrival_fact: "These cloisters are lined with richly carved stone pillars reused from earlier temples. Floral bands, bells, chains, and figural traces reveal how local craftsmanship was adapted into a new congregational setting.",
+    direction_hint: "Follow the pillared arcade along the edge of the mosque courtyard.",
+    mini_fact: "The pillars preserve several distinct carving styles because they came from multiple earlier structures."
+  },
+  {
+    id: 27, name: "Great Arched Screen", emoji: "🌙",
+    lat: 28.5247, lng: 77.1846, radius: 40, xp: 200,
+    arrival_fact: "You are facing the mosque's monumental western screen of pointed arches. Built as an imposing prayer façade, it combines Quranic inscriptions with geometric and vegetal carving executed by local stoneworkers.",
+    direction_hint: "Cross the courtyard toward the tall carved screen on its western side.",
+    mini_fact: "Five principal arches organize the historic western prayer screen."
+  },
+  {
+    id: 28, name: "Tomb of Iltutmish", emoji: "⚰️",
+    lat: 28.5250, lng: 77.1845, radius: 40, xp: 225,
+    arrival_fact: "You have reached the tomb of Sultan Iltutmish, built in 1235. The square chamber is covered in dense inscriptions, geometric bands, and arabesque carving, marking an early royal tomb tradition in the Delhi Sultanate.",
+    direction_hint: "Walk northwest from the mosque courtyard to the square sandstone tomb.",
+    mini_fact: "The tomb stands northwest of the mosque and is among the complex's most intricately carved interiors."
+  },
+  {
+    id: 29, name: "Iltutmish Tomb Mihrab", emoji: "✨",
+    lat: 28.5250, lng: 77.1844, radius: 34, xp: 250,
+    arrival_fact: "Inside the tomb, the western mihrab forms a dazzling focus of marble and sandstone calligraphy. Its layered niches demonstrate how early Sultanate builders experimented with structure and surface ornament.",
+    direction_hint: "Enter the tomb chamber and face the richly carved western prayer niche.",
+    mini_fact: "The chamber's decoration combines Quranic text, geometry, and scrolling plant forms."
+  },
+  {
+    id: 30, name: "Alauddin Khalji's Madrasa", emoji: "📚",
+    lat: 28.5253, lng: 77.1841, radius: 42, xp: 275,
+    arrival_fact: "These ruins belonged to Alauddin Khalji's madrasa, a center for religious learning added during his ambitious expansion of the complex. Rooms once gathered students and scholars around an enclosed court.",
+    direction_hint: "Continue northwest beyond Iltutmish's tomb toward the arcaded ruins.",
+    mini_fact: "The madrasa and nearby tomb formed part of Alauddin's plan to reshape the entire precinct."
+  },
+  {
+    id: 31, name: "Tomb of Alauddin Khalji", emoji: "👑",
+    lat: 28.5254, lng: 77.1840, radius: 40, xp: 300,
+    arrival_fact: "You are at the tomb attributed to Alauddin Khalji, set within his madrasa complex. Its ruined state contrasts with the ruler's enormous architectural ambitions, including the Alai Darwaza and unfinished Alai Minar.",
+    direction_hint: "Look within the madrasa ruins for the central roofless burial chamber.",
+    mini_fact: "Alauddin was among the first Delhi sultans to combine his tomb with a madrasa."
+  },
+  {
+    id: 32, name: "Tomb of Imam Zamin", emoji: "🕊️",
+    lat: 28.5241, lng: 77.1851, radius: 38, xp: 325,
+    arrival_fact: "This small domed tomb belongs to Imam Zamin, a 16th-century religious figure. Its later Lodi-period design sits beside the much older Alai Darwaza, showing that the complex remained sacred across centuries.",
+    direction_hint: "Return south to the compact domed tomb beside Alai Darwaza.",
+    mini_fact: "The tomb was added more than two centuries after the gateway beside it."
+  },
+  {
+    id: 33, name: "Sanderson's Sundial", emoji: "☀️",
+    lat: 28.5246, lng: 77.1858, radius: 36, xp: 350,
+    arrival_fact: "You are at Sanderson's Sundial, a small modern-era memorial within the archaeological landscape. It commemorates Gordon Sanderson, an archaeologist closely associated with early conservation work at the Qutb complex.",
+    direction_hint: "Walk east of the main mosque area and look for the low circular sundial memorial.",
+    mini_fact: "The marker adds a conservation-history layer to the much older Sultanate monuments."
+  },
+  {
+    id: 34, name: "Smith's Cupola", emoji: "🏛️",
+    lat: 28.5242, lng: 77.1858, radius: 38, xp: 375,
+    arrival_fact: "This freestanding cupola once crowned the Qutub Minar after a 19th-century repair by Major Robert Smith. Its style looked so different from the medieval tower that it was removed and placed here at ground level.",
+    direction_hint: "Continue toward the garden display east-southeast of the minar.",
+    mini_fact: "The displaced cupola is a visible lesson in how conservation ideas change over time."
+  },
+  {
+    id: 35, name: "Minar's Angular Fluting", emoji: "🔺",
+    lat: 28.5244, lng: 77.1854, radius: 34, xp: 400,
+    arrival_fact: "Look closely at the Qutub Minar's lowest storey: alternating rounded and angular flutes make light and shadow ripple around the shaft. This texture helps the vast tower feel both powerful and finely carved.",
+    direction_hint: "Return to the minar base and study the alternating grooves on the lowest red sandstone level.",
+    mini_fact: "The lower storeys use different fluting patterns, making each stage visually distinct."
+  },
+  {
+    id: 36, name: "Minar Inscription Bands", emoji: "✒️",
+    lat: 28.5245, lng: 77.1854, radius: 34, xp: 425,
+    arrival_fact: "Bands of carved Arabic inscriptions wrap around the minar like stone ribbons. They record patrons, repairs, and religious texts, turning the tower itself into a vertical historical document.",
+    direction_hint: "Stand back from the tower and follow the dark carved bands spiralling between storeys.",
+    mini_fact: "Inscription bands help historians distinguish construction and restoration phases."
+  },
+  {
+    id: 37, name: "Minar Balconies", emoji: "⭕",
+    lat: 28.5244, lng: 77.1856, radius: 36, xp: 450,
+    arrival_fact: "Each storey ends in a projecting balcony supported by carved stone brackets. These rings interrupt the tower's taper, create dramatic shadow lines, and provide its unmistakable five-part silhouette.",
+    direction_hint: "Tilt your view upward and count the projecting balconies dividing the tower.",
+    mini_fact: "The minar rises 72.5 metres and narrows from about 14.3 metres at the base to 2.75 metres at the top."
+  },
+  {
+    id: 38, name: "Restored Upper Storeys", emoji: "⚡",
+    lat: 28.5243, lng: 77.1856, radius: 36, xp: 475,
+    arrival_fact: "The upper levels tell a story of damage and repair. Lightning and earthquakes affected the minar, and rulers including Firoz Shah Tughlaq and Sikandar Lodi restored portions of the tower.",
+    direction_hint: "Look from the red lower shaft toward the lighter upper levels and compare their materials.",
+    mini_fact: "The visible changes in stone and style preserve several centuries of repair."
+  },
+  {
+    id: 39, name: "Iltutmish Mosque Extension", emoji: "🧱",
+    lat: 28.5249, lng: 77.1848, radius: 40, xp: 500,
+    arrival_fact: "This section marks Iltutmish's early 13th-century enlargement of the Quwwat-ul-Islam Mosque. Expanding the court and screen transformed the first mosque into a much larger imperial complex.",
+    direction_hint: "Trace the northern and western edges beyond the mosque's earliest courtyard.",
+    mini_fact: "The mosque grew in stages as successive rulers used architecture to declare authority."
+  },
+  {
+    id: 40, name: "Alauddin's Great Expansion", emoji: "🧭",
+    lat: 28.5252, lng: 77.1846, radius: 46, xp: 525,
+    arrival_fact: "Your final zone reveals Alauddin Khalji's plan to enlarge the mosque precinct on a monumental scale. The Alai Darwaza, madrasa, tomb, and unfinished Alai Minar are surviving fragments of that bold, incomplete vision.",
+    direction_hint: "Stand where the mosque extension, madrasa ruins, and Alai Minar can be read as one connected plan.",
+    mini_fact: "The unfinished works make the complex a record of ambition interrupted, not a single frozen monument."
   }
 ]
 
