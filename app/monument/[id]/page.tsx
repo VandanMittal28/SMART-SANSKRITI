@@ -1,6 +1,7 @@
 'use client'
 import { useRouter, useParams } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
+import { useLang } from '@/lib/languageContext'
 
 interface Message {
   id: string
@@ -199,7 +200,7 @@ export default function MonumentPage() {
   type EraKey = 'construction' | 'peak_glory' | 'colonial' | 'modern'
 
   const [activeEra, setActiveEra] = useState<EraKey>('construction')
-  const [lang, setLang] = useState<'en' | 'hi'>('en')
+  const { lang } = useLang()
   const [messages, setMessages] = useState<Message[]>([])
   const [userInput, setUserInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -344,21 +345,6 @@ export default function MonumentPage() {
           </button>
           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>{monument.name}</h1>
         </div>
-        <button
-          onClick={() => setLang((prev) => (prev === 'en' ? 'hi' : 'en'))}
-          style={{
-            backgroundColor: 'white',
-            color: '#1A1035',
-            borderRadius: 999,
-            border: 'none',
-            padding: '6px 14px',
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
-        </button>
       </div>
 
       {/* Content */}

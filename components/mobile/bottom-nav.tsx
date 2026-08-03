@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Route, Sparkles, Compass, UserRound } from 'lucide-react'
+import { Home, Route, Ticket, Sparkles, UserRound } from 'lucide-react'
 import { ScanButton } from './scan-button'
 import { cn } from '@/lib/utils'
 
 const tabs = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/itinerary', label: 'Itinerary', icon: Route },
+  { href: '/tickets', label: 'Tickets', icon: Ticket },
   { href: '/recognition', label: 'Scan', icon: Sparkles, special: true },
-  { href: '/hunt', label: 'Hunt', icon: Compass },
+  { href: '/itinerary', label: 'Itinerary', icon: Route },
   { href: '/profile', label: 'Profile', icon: UserRound },
 ]
 

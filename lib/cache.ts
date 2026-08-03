@@ -15,7 +15,7 @@ export function getImageCacheKey(file: File): string {
 
 // Generate cache key for chat
 export function getChatCacheKey(question: string, monumentId: string): string {
-  return `chat_${monumentId}_${question.toLowerCase().trim().replace(/\s+/g, '_').slice(0, 50)}`
+  return `chat_v2_${monumentId}_${question.toLowerCase().trim().replace(/\s+/g, '_').slice(0, 50)}`
 }
 
 // Get from cache (memory first, then localStorage)

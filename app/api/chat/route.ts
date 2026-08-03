@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { askNvidia } from '@/lib/nvidia'
+import { askHeritageChat } from '@/lib/nvidia'
 
 interface ChatRequest {
   question?: unknown
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const rawMonumentId = body.monument_id ?? body.monumentId
     const monumentId = typeof rawMonumentId === 'string' ? rawMonumentId : ''
     const language = typeof body.lang === 'string' ? body.lang : undefined
-    const answer = await askNvidia(question, monumentId, language)
+    const answer = await askHeritageChat(question, monumentId, language)
 
     return NextResponse.json({ answer, response: answer })
   } catch (error) {

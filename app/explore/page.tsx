@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
+import { SupportedLanguage } from "@/lib/languages"
 
 import { ChevronDown } from "lucide-react"
 import { getMonument, saveMonument } from "@/lib/monumentStore"
@@ -20,6 +21,14 @@ const MONUMENT_NAMES: Record<string, string> = {
   'hawa-mahal': 'Hawa Mahal Jaipur', 'charminar': 'Charminar Hyderabad', 'victoria-memorial': 'Victoria Memorial Kolkata',
   'ajanta': 'Ajanta Caves', 'konark': 'Konark Sun Temple', 'india-gate': 'India Gate Delhi',
 }
+
+interface GuideTranslation {
+  directionHint: string
+  arrivalFact: string
+  miniFact: string
+}
+
+const GUIDE_TRANSLATION_STORAGE_KEY = 'sanskriti-explore-translations-v5'
 
 // ── TAJ MAHAL ZONES ──────────────────────────────────────
 const TAJ_ZONES = [
@@ -765,6 +774,12 @@ export default function ExplorePage() {
   const [demoMode] = useState(true)
   const [userPos, setUserPos] = useState(EXPLORE_USER_START['taj-mahal'])
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
+  const [currentTranslation, setCurrentTranslation] = useState<GuideTranslation | null>(null)
+  const [translationLoading, setTranslationLoading] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUrlRef = useRef<string | null>(null)
+  const narrationRequestRef = useRef<AbortController | null>(null)
+  const translationCacheRef = useRef<Record<string, GuideTranslation>>({})
 
   const [exploreMonumentId, setExploreMonumentId] = useState('taj-mahal')
   const monumentSelected = true // always start directly into explore
@@ -779,6 +794,12 @@ export default function ExplorePage() {
 
   useEffect(() => {
     setHasMounted(true)
+    try {
+      const cached = localStorage.getItem(GUIDE_TRANSLATION_STORAGE_KEY)
+      if (cached) translationCacheRef.current = JSON.parse(cached)
+    } catch {
+      translationCacheRef.current = {}
+    }
   }, [])
 
   useEffect(() => {
@@ -789,27 +810,115 @@ export default function ExplorePage() {
     setUserPos(EXPLORE_USER_START[stored] || EXPLORE_USER_START['taj-mahal'])
   }, [])
 
-  // ── SPEAK FACT (browser TTS with voice selection) ────────
-  const speakFact = useCallback((text: string) => {
-    if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'en-US'
-    utterance.rate = 0.88
-    utterance.pitch = 1.0
-    const voices = window.speechSynthesis.getVoices()
-    const preferred = voices.find(v =>
-      v.name.includes('Google') ||
-      v.name.includes('Samantha') ||
-      v.name.includes('Daniel') ||
-      v.lang.includes('en-US')
-    )
-    if (preferred) utterance.voice = preferred
-    utterance.onstart = () => setIsTTSSpeaking(true)
-    utterance.onend = () => setIsTTSSpeaking(false)
-    utterance.onerror = () => setIsTTSSpeaking(false)
-    window.speechSynthesis.speak(utterance)
+  const stopNarration = useCallback(() => {
+    narrationRequestRef.current?.abort()
+    narrationRequestRef.current = null
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current)
+      audioUrlRef.current = null
+    }
+    setIsTTSSpeaking(false)
   }, [])
+
+  const fetchNarration = useCallback((
+    text: string,
+    language: SupportedLanguage,
+    signal?: AbortSignal,
+  ) => fetch('/api/narrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, monumentId: exploreMonumentId, language }),
+    signal,
+  }), [exploreMonumentId])
+
+  const getGuideTranslation = useCallback(async (
+    monumentId: string,
+    guideZone: { id: number; direction_hint: string; arrival_fact: string; mini_fact: string },
+  ): Promise<GuideTranslation | null> => {
+    const cacheKey = `${lang}:${monumentId}:${guideZone.id}`
+    const cached = translationCacheRef.current[cacheKey]
+    if (cached) return cached
+
+    try {
+      const response = await fetch('/api/explore-translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language: lang,
+          monumentId,
+          directionHint: guideZone.direction_hint,
+          arrivalFact: guideZone.arrival_fact,
+          miniFact: guideZone.mini_fact,
+        }),
+      })
+      if (!response.ok) throw new Error('Guide translation unavailable')
+
+      const translation = await response.json() as GuideTranslation
+      translationCacheRef.current[cacheKey] = translation
+      try {
+        localStorage.setItem(
+          GUIDE_TRANSLATION_STORAGE_KEY,
+          JSON.stringify(translationCacheRef.current),
+        )
+      } catch {
+        // In-memory translation still works when storage is unavailable.
+      }
+      return translation
+    } catch {
+      return null
+    }
+  }, [lang])
+
+  // Narration stays behind the app API; the browser never talks to the
+  // upstream provider or receives provider credentials.
+  const speakFact = useCallback(async (
+    text: string,
+    language: SupportedLanguage = lang,
+  ) => {
+    stopNarration()
+
+    const controller = new AbortController()
+    narrationRequestRef.current = controller
+    setIsTTSSpeaking(true)
+
+    try {
+      const response = await fetchNarration(text, language, controller.signal)
+      if (!response.ok) throw new Error('Narration API unavailable')
+
+      const blob = await response.blob()
+      if (controller.signal.aborted) return
+
+      const audioUrl = URL.createObjectURL(blob)
+      const audio = new Audio(audioUrl)
+      audioRef.current = audio
+      audioUrlRef.current = audioUrl
+
+      const finish = () => {
+        if (audioRef.current === audio) audioRef.current = null
+        if (audioUrlRef.current === audioUrl) {
+          URL.revokeObjectURL(audioUrl)
+          audioUrlRef.current = null
+        }
+        setIsTTSSpeaking(false)
+      }
+
+      audio.onended = finish
+      audio.onerror = finish
+      await audio.play()
+    } catch {
+      if (controller.signal.aborted) return
+      setIsTTSSpeaking(false)
+    } finally {
+      if (narrationRequestRef.current === controller) {
+        narrationRequestRef.current = null
+      }
+    }
+  }, [fetchNarration, lang, stopNarration])
 
   // ── DEMO: simulate walking toward zone ──────────────────
   useEffect(() => {
@@ -830,15 +939,47 @@ export default function ExplorePage() {
 
   // Reset distance when zone changes + auto-speak direction hint
   useEffect(() => {
+    let cancelled = false
     setDemoDistance(Math.floor(Math.random() * 150) + 150)
     setArrivedAtZone(false)
     setShowFact(false)
-    // Auto-narrate direction hint after short delay
-    const timer = setTimeout(() => {
-      speakFact(activeZones[currentZoneIndex].direction_hint)
-    }, 1000)
-    return () => { clearTimeout(timer); window.speechSynthesis?.cancel() }
-  }, [currentZoneIndex, speakFact, exploreMonumentId])
+    setCurrentTranslation(null)
+
+    const guideZone = activeZones[currentZoneIndex]
+    const prepareGuide = async () => {
+      let direction = guideZone.direction_hint
+
+      if (lang !== 'en') {
+        setTranslationLoading(true)
+        const translated = await getGuideTranslation(exploreMonumentId, guideZone)
+        if (cancelled) return
+        setCurrentTranslation(translated)
+        setTranslationLoading(false)
+        if (translated) {
+          direction = translated.directionHint
+        }
+      } else {
+        setTranslationLoading(false)
+      }
+
+      window.setTimeout(() => {
+        if (!cancelled) void speakFact(direction, lang)
+      }, 900)
+    }
+
+    void prepareGuide()
+    return () => {
+      cancelled = true
+      stopNarration()
+    }
+  }, [
+    currentZoneIndex,
+    exploreMonumentId,
+    getGuideTranslation,
+    lang,
+    speakFact,
+    stopNarration,
+  ])
 
   // ── HANDLE ARRIVAL ──────────────────────────────────────
   const handleArrival = useCallback(async () => {
@@ -861,13 +1002,27 @@ export default function ExplorePage() {
     setXpEarned(z.xp)
     setCompletedZones(prev => [...prev, z.id])
 
-    speakFact(z.arrival_fact)
-  }, [arrivedAtZone, currentZoneIndex, user, setProfile, speakFact, exploreMonumentId])
-
-  const stopNarration = useCallback(() => {
-    window.speechSynthesis?.cancel()
-    setIsTTSSpeaking(false)
-  }, [])
+    let story = z.arrival_fact
+    if (lang !== 'en') {
+      const translated =
+        currentTranslation || await getGuideTranslation(exploreMonumentId, z)
+      if (translated) {
+        setCurrentTranslation(translated)
+        story = translated.arrivalFact
+      }
+    }
+    void speakFact(story, lang)
+  }, [
+    arrivedAtZone,
+    currentTranslation,
+    currentZoneIndex,
+    exploreMonumentId,
+    getGuideTranslation,
+    lang,
+    setProfile,
+    speakFact,
+    user,
+  ])
 
   // ── COMPLETION SCREEN ───────────────────────────────────
   if (explorerComplete) {
@@ -920,6 +1075,25 @@ export default function ExplorePage() {
     )
   }
 
+  const directionText =
+    lang !== 'en' && currentTranslation
+      ? currentTranslation.directionHint
+      : zone.direction_hint
+  const arrivalText =
+    lang !== 'en' && currentTranslation
+      ? currentTranslation.arrivalFact
+      : zone.arrival_fact
+  const miniFactText =
+    lang !== 'en' && currentTranslation
+      ? currentTranslation.miniFact
+      : zone.mini_fact
+  const guidePersona =
+    exploreMonumentId === 'konark'
+      ? 'Calm temple scholar'
+      : ['taj-mahal', 'red-fort', 'qutub-minar'].includes(exploreMonumentId)
+        ? 'Royal court historian'
+        : 'Heritage storyteller'
+
   return (
     <AppShell>
       <style>{`
@@ -950,8 +1124,7 @@ export default function ExplorePage() {
                     const id = e.target.value
                     const name = monumentsList.find(m => m.id === id)?.name || id
                     // Cancel any ongoing narration first
-                    window.speechSynthesis?.cancel()
-                    setIsTTSSpeaking(false)
+                    stopNarration()
                     // Reset all zone state
                     setExploreMonumentId(id); saveMonument(id, name)
                     setCurrentZoneIndex(0); setCompletedZones([]); setXpEarned(0)
@@ -976,6 +1149,17 @@ export default function ExplorePage() {
               </p>
             </div>
 
+          </div>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            color: '#C4A882', fontSize: '12px', margin: '-10px 0 18px',
+          }}>
+            <span aria-hidden="true">🎙️</span>
+            <span>{guidePersona}</span>
+            {translationLoading && lang !== 'en' && (
+              <span style={{ color: '#C9A84C' }}>• Preparing translated guide…</span>
+            )}
           </div>
 
           {/* Breadcrumb */}
@@ -1024,7 +1208,7 @@ export default function ExplorePage() {
                 borderRadius: '8px', padding: '12px 14px', marginBottom: '20px'
               }}>
                 <p style={{ color: '#F5E6D3', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
-                  🧭 {zone.direction_hint}
+                  🧭 {directionText}
                 </p>
               </div>
 
@@ -1091,7 +1275,7 @@ export default function ExplorePage() {
               </h3>
 
               <p style={{ color: '#F5E6D3', lineHeight: '1.7', fontSize: '15px', marginBottom: '16px' }}>
-                {zone.arrival_fact}
+                {arrivalText}
               </p>
 
               {/* Mini fact chip */}
@@ -1100,7 +1284,7 @@ export default function ExplorePage() {
                 borderRadius: '10px', padding: '10px 14px', color: '#4B9B8E', fontSize: '13px',
                 marginBottom: '16px'
               }}>
-                💡 {zone.mini_fact}
+                💡 {miniFactText}
               </div>
 
               {/* Speaking indicator + stop button */}
@@ -1122,7 +1306,7 @@ export default function ExplorePage() {
                     animation: 'pulse 1s infinite'
                   }}/>
                   <span style={{ color: '#C9A84C', fontSize: '13px' }}>
-                    🔊 Audio guide narrating...
+                    🔊 Audio guide preparing or speaking…
                   </span>
                   <button
                     onClick={stopNarration}
@@ -1144,7 +1328,7 @@ export default function ExplorePage() {
               {currentZoneIndex < activeZones.length - 1 ? (
                 <button
                   onClick={() => {
-                    window.speechSynthesis?.cancel()
+                    stopNarration()
                     setCurrentZoneIndex(prev => prev + 1)
                   }}
                   style={{

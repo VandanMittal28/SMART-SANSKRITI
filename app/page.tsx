@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/authContext'
 import { useUser } from '@/lib/userContext'
 import { useLang } from '@/lib/languageContext'
-import { Sparkles, Camera, Route, Trophy, ArrowRight } from 'lucide-react'
+import { Sparkles, Camera, Route, Trophy, ArrowRight, Ticket } from 'lucide-react'
 
 
 const nearbyMonuments = [
@@ -61,10 +61,11 @@ export default function HomePage() {
           </div>
         </AppCard>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {[
             { label: t('nav_scan'), href: '/recognition', icon: Camera },
             { label: t('nav_explore'), href: '/explore', icon: Route },
+            { label: t('nav_tickets'), href: '/tickets', icon: Ticket },
             { label: t('nav_hunt'), href: '/hunt', icon: Trophy },
           ].map((item) => (
             <Link key={item.label} href={item.href} className="app-card flex flex-col items-start gap-3 rounded-[20px] p-3 transition-transform active:scale-95">
@@ -108,6 +109,17 @@ export default function HomePage() {
               <div>
                 <p className="font-semibold text-[#F5E6D3]">{t('start_hunt')}</p>
                 <p className="text-sm text-[#C4A882]">{t('start_hunt_desc')}</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-[#C9A84C]" />
+          </Link>
+
+          <Link href="/tickets" className="app-card flex items-center justify-between rounded-[22px] p-4 transition-transform active:scale-[0.99]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4893F]/15 text-[#F7B978]"><Ticket className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-[#F5E6D3]">{t('book_monument_tickets')}</p>
+                <p className="text-sm text-[#C4A882]">{t('book_monument_tickets_desc')}</p>
               </div>
             </div>
             <ArrowRight className="h-4 w-4 text-[#C9A84C]" />

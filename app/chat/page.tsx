@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { AppShell } from "@/components/app-shell"
-import { Send, GraduationCap, Building, ChevronDown } from "lucide-react"
+import { Send, GraduationCap, Building } from "lucide-react"
 import api from "@/lib/apiClient"
 import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
@@ -12,16 +12,6 @@ import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache
 import { recordingToWavBase64 } from '@/lib/audio'
 
 interface Message { id: number; role: "assistant" | "user"; content: string }
-interface Monument { id: string; name: string }
-
-const MONUMENT_NAMES: Record<string, string> = {
-  'taj-mahal': 'Taj Mahal', 'red-fort': 'Red Fort', 'qutub-minar': 'Qutub Minar',
-  'gateway-india': 'Gateway of India', 'hampi': 'Hampi', 'golden-temple': 'Golden Temple Amritsar',
-  'kedarnath': 'Kedarnath Temple', 'meenakshi': 'Meenakshi Amman Temple', 'mysore-palace': 'Mysore Palace',
-  'hawa-mahal': 'Hawa Mahal Jaipur', 'charminar': 'Charminar Hyderabad',
-  'victoria-memorial': 'Victoria Memorial Kolkata', 'ajanta': 'Ajanta Caves',
-  'konark': 'Konark Sun Temple', 'india-gate': 'India Gate Delhi',
-}
 
 export default function ChatPage() {
   const { t, lang } = useLang()
@@ -30,8 +20,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [monumentId, setMonumentId] = useState("taj-mahal")
-  const [monuments, setMonuments] = useState<Monument[]>([])
+  const monumentId = "taj-mahal"
   const [listening, setListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -83,13 +72,6 @@ export default function ChatPage() {
     }
   }, [lang])
 
-  useEffect(() => {
-    api.getNearby().then(res => {
-      const list: Monument[] = (res.data.monuments || []).map((m: { id: string; name: string }) => ({ id: m.id, name: MONUMENT_NAMES[m.id] || m.name }))
-      if (list.length > 0) setMonuments(list)
-    }).catch(() => { setMonuments(Object.entries(MONUMENT_NAMES).map(([id, name]) => ({ id, name }))) })
-  }, [])
-
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, loading])
 
   // Reset greeting when language changes
@@ -125,7 +107,7 @@ export default function ChatPage() {
     }
 
     try {
-      const res = await api.askChat(trimmed, monumentId)
+      const res = await api.askChat(trimmed, monumentId, lang)
       const aiAnswer = res.data.answer
 
       // Cache the response
@@ -232,12 +214,6 @@ export default function ChatPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-2 px-3 py-1 bg-[#534AB7]/20 text-[#534AB7] text-sm rounded-full"><GraduationCap className="w-4 h-4" />{t('student_mode')}</span>
-            <div className="relative">
-              <select value={monumentId} onChange={e => setMonumentId(e.target.value)} className="appearance-none pl-3 pr-8 py-1.5 bg-[#1C1638] border border-[#C9A84C]/40 text-[#C9A84C] text-sm rounded-lg focus:outline-none focus:border-[#C9A84C] cursor-pointer">
-                {monuments.length > 0 ? monuments.map(m => <option key={m.id} value={m.id}>{m.name}</option>) : Object.entries(MONUMENT_NAMES).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-              </select>
-              <ChevronDown className="w-3 h-3 text-[#C9A84C] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
           </div>
         </div>
 

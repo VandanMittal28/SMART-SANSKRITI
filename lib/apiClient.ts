@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { SupportedLanguage } from '@/lib/languages'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://heritageai-backend.onrender.com'
 
@@ -25,9 +26,9 @@ export const api = {
     apiClient.post('/geo/checkin', { lat, lng, user_id: userId }),
 
   // Chat
-  askChat: (question: string, monumentId = '') =>
+  askChat: (question: string, monumentId = '', lang?: SupportedLanguage) =>
     axios.post('/api/chat', {
-      question, monument_id: monumentId
+      question, monument_id: monumentId, lang
     }),
 
   // Recognition

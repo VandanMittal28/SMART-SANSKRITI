@@ -7,10 +7,11 @@ import { useMemo } from 'react'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
 import { cn } from '@/lib/utils'
+import { SUPPORTED_LANGUAGES } from '@/lib/languages'
 
 export function TopBar() {
   const { profile } = useAuth()
-  const { lang, toggleLang } = useLang()
+  const { lang, setLang } = useLang()
 
   const initials = useMemo(() => {
     const source = profile?.full_name || profile?.email || 'SA'
@@ -36,18 +37,29 @@ export function TopBar() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleLang}
+          <label
+            data-no-translate
             className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-bold tracking-tight transition-colors',
+              'relative inline-flex items-center gap-1 rounded-full border py-2 pl-2 pr-1 text-[11px] font-bold tracking-tight transition-colors',
               'border-[#f2ca50]/20 bg-[#f2ca50]/10 text-[#f7d88c] hover:bg-[#f2ca50]/15'
             )}
-            aria-label="Toggle language"
           >
             <Globe className="h-4 w-4" />
-            <span>{lang === 'en' ? 'EN' : 'HI'}</span>
-          </button>
+            <span className="sr-only">Select language</span>
+            <select
+              aria-label="Select site and narration language"
+              value={lang}
+              onChange={(event) => setLang(event.target.value as typeof lang)}
+              className="w-[72px] cursor-pointer appearance-none bg-transparent pr-4 text-[#f7d88c] outline-none"
+            >
+              {SUPPORTED_LANGUAGES.map((language) => (
+                <option key={language.id} value={language.id} className="bg-[#13131a] text-[#F5E6D3]">
+                  {language.id.toUpperCase()} · {language.nativeName}
+                </option>
+              ))}
+            </select>
+            <span aria-hidden="true" className="pointer-events-none absolute right-2 text-[8px]">▼</span>
+          </label>
 
           <Link
             href="/profile"

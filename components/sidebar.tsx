@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { 
   Home, Map, Camera, MessageCircle, Leaf, HelpCircle,
-  Trophy, Calendar, Search, MapPin
+  Trophy, Calendar, Search, MapPin, Ticket
 } from "lucide-react"
 import { useUser } from '@/lib/userContext'
 import { useAuth } from '@/lib/authContext'
@@ -14,11 +14,12 @@ import { useLang } from '@/lib/languageContext'
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/recognition", icon: Camera, label: "Recognition" },
-  { href: "/chat", icon: MessageCircle, label: "Chatbot" },
+  { href: "/chat", icon: MessageCircle, label: "SANSKRITI BOT" },
   { href: "/sustainability", icon: Leaf, label: "Sustainability" },
   { href: "/quiz", icon: HelpCircle, label: "Quiz" },
   { href: "/hunt", icon: Search, label: "Treasure Hunt" },
   { href: "/itinerary", icon: MapPin, label: "Itinerary" },
+  { href: "/tickets", icon: Ticket, label: "Monument Tickets" },
   { href: "/achievements", icon: Trophy, label: "Achievements" },
   { href: "/festivals", icon: Calendar, label: "Festival Calendar" },
 ]

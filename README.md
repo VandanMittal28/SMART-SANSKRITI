@@ -18,6 +18,19 @@ for the NVIDIA account.
 `.env.local` is ignored by Git. Add the same variables to your hosting provider
 when deploying.
 
+### Explore narration API
+
+Explore sends narration requests to the server-side `/api/narrate` route. Set
+`CHATTERBOX_BASE_URL` to the narration proxy URL and optionally set
+`CHATTERBOX_DEMO_TOKEN`. The lightweight proxy calls NVIDIA's hosted service;
+it does not install or load Chatterbox model weights locally.
+
+```bash
+cd local-ai/chatterbox
+uv sync
+uv run uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
 ## Getting Started
 
 First, run the development server:

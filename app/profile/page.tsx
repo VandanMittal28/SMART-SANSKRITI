@@ -22,6 +22,7 @@ import { AppCard } from '@/components/mobile/app-card'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
+import { getLanguageConfig } from '@/lib/languages'
 import { useUser } from '@/lib/userContext'
 import {
   type LocalProfile,
@@ -192,7 +193,7 @@ function fallbackActivity(profile: LocalProfile): ProfileActivity[] {
 
 export default function ProfilePage() {
   const { profile, setProfile } = useAuth()
-  const { lang, toggleLang, t } = useLang()
+  const { lang, t } = useLang()
   const { userType, setUserType, userConfig } = useUser()
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
@@ -610,10 +611,8 @@ export default function ProfilePage() {
         </section>
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
+          <div
             className="app-card flex items-center justify-between rounded-[20px] px-4 py-3 text-left"
-            onClick={toggleLang}
           >
             <div className="flex items-center gap-3">
               <Globe className="h-5 w-5 text-[#F7D88C]" />
@@ -621,12 +620,12 @@ export default function ProfilePage() {
                 <p className="text-sm font-semibold text-[#F5E6D3]">
                   {t('language_label')}
                 </p>
-                <p className="text-xs text-[#C4A882]">
-                  {lang === 'en' ? 'English' : 'हिंदी'}
+                <p data-no-translate className="text-xs text-[#C4A882]">
+                  {getLanguageConfig(lang).nativeName}
                 </p>
               </div>
             </div>
-          </button>
+          </div>
 
           <button
             type="button"
