@@ -29,6 +29,7 @@ import {
   type ProfileActivity,
 } from '@/lib/localProfile'
 import { buildSyntheticLeaderboard } from '@/lib/syntheticLeaderboard'
+import { updateUserProfile } from '@/lib/authClient'
 
 const LEVELS = [
   { min: 0, max: 499, title: 'Heritage Explorer', next: 500 },
@@ -39,6 +40,7 @@ const LEVELS = [
 ]
 
 const EMPTY_PROFILE: LocalProfile = {
+  username: '',
   full_name: 'Explorer',
   email: 'local@sanskriti.ai',
   total_xp: 0,
@@ -192,7 +194,7 @@ function fallbackActivity(profile: LocalProfile): ProfileActivity[] {
 }
 
 export default function ProfilePage() {
-  const { profile, setProfile } = useAuth()
+  const { user, profile, setProfile, refreshProfile } = useAuth()
   const { lang, t } = useLang()
   const { userType, setUserType, userConfig } = useUser()
   const [editingName, setEditingName] = useState(false)
@@ -266,12 +268,18 @@ export default function ProfilePage() {
     setEditingName(true)
   }
 
-  const saveName = () => {
+  const saveName = async () => {
     const name = nameDraft.trim()
-    if (name) {
+    if (name && user) {
       setProfile((current) =>
         current ? { ...current, full_name: name } : current,
       )
+      try {
+        await updateUserProfile(user.id, { full_name: name })
+        await refreshProfile()
+      } catch {
+        await refreshProfile()
+      }
     }
     setEditingName(false)
   }

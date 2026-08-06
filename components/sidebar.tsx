@@ -53,10 +53,10 @@ export function Sidebar() {
             borderRadius: '12px',
           }}>
             <div style={{ color: '#E8C97A', fontSize: '13px', fontWeight: 700 }}>
-              👤 {profile?.full_name || user.email?.split('@')[0]}
+              👤 @{profile?.username || user.username}
             </div>
             <div style={{ color: '#7A6E5C', fontSize: '11px', marginTop: '2px' }}>
-              {user.email}
+              Realtime profile
             </div>
             {profile?.phone && (
               <div style={{ color: '#7A6E5C', fontSize: '11px' }}>📱 {profile.phone}</div>
@@ -65,7 +65,7 @@ export function Sidebar() {
               onClick={async () => {
                 const { signOut } = await import('@/lib/authClient')
                 await signOut()
-                window.location.href = '/auth'
+                window.location.href = '/login'
               }}
               style={{
                 marginTop: '8px', width: '100%', padding: '6px', borderRadius: '8px',

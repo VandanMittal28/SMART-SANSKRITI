@@ -1,15 +1,13 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import {
-  getLocalProfile,
-  getLocalUser,
-  LocalProfile,
-  LocalUser,
-  resetLocalProfile,
-  setLocalProfile,
-  setLocalUser,
-} from './localProfile'
+  getUserProfile,
+  signIn as signInWithUsername,
+  signOut as signOutFromSupabase,
+} from '@/lib/authClient'
+import type { LocalProfile, LocalUser } from '@/lib/localProfile'
 
 interface AuthContextType {
   user: LocalUser | null
@@ -17,9 +15,9 @@ interface AuthContextType {
   loading: boolean
   setProfile: (updater: LocalProfile | ((prev: LocalProfile | null) => LocalProfile | null)) => void
   refreshProfile: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ user: LocalUser }>
+  signIn: (username: string) => Promise<{ user: LocalUser }>
   signOut: () => Promise<void>
-  signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ user: LocalUser }>
+  signUp: (_email: string, _password: string, fullName: string, _phone?: string) => Promise<{ user: LocalUser }>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,9 +26,9 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   setProfile: () => {},
   refreshProfile: async () => {},
-  signIn: async () => ({ user: getLocalUser() }),
+  signIn: async () => { throw new Error('AuthProvider is unavailable.') },
   signOut: async () => {},
-  signUp: async () => ({ user: getLocalUser() }),
+  signUp: async () => { throw new Error('AuthProvider is unavailable.') },
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -38,73 +36,127 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<LocalProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const syncFromStorage = useCallback(() => {
-    const localUser = getLocalUser()
-    const localProfile = getLocalProfile()
-    setUser(localUser)
-    setProfileState(localProfile)
+  const loadAuthenticatedUser = useCallback(async (
+    userId: string,
+    email = '',
+    isAnonymous = false,
+  ) => {
+    const nextProfile = await getUserProfile(userId)
+    const nextUser: LocalUser = {
+      id: userId,
+      username: nextProfile.username,
+      email,
+      isAnonymous,
+    }
+    setUser(nextUser)
+    setProfileState(nextProfile)
+    return nextUser
   }, [])
 
   useEffect(() => {
-    syncFromStorage()
-    setLoading(false)
+    let active = true
 
-    const refresh = () => syncFromStorage()
-    window.addEventListener('profile-updated', refresh)
-    window.addEventListener('xp-updated', refresh)
+    void supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return
+      const authUser = data.session?.user
+      if (!authUser) {
+        setUser(null)
+        setProfileState(null)
+        setLoading(false)
+        return
+      }
+
+      try {
+        await loadAuthenticatedUser(
+          authUser.id,
+          authUser.email || '',
+          authUser.is_anonymous === true,
+        )
+      } catch {
+        setUser(null)
+        setProfileState(null)
+      } finally {
+        if (active) setLoading(false)
+      }
+    })
+
+    const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      window.setTimeout(() => {
+        if (!active) return
+        const authUser = nextSession?.user
+        if (!authUser) {
+          setUser(null)
+          setProfileState(null)
+          setLoading(false)
+          return
+        }
+
+        void loadAuthenticatedUser(
+          authUser.id,
+          authUser.email || '',
+          authUser.is_anonymous === true,
+        ).finally(() => {
+          if (active) setLoading(false)
+        })
+      }, 0)
+    })
 
     return () => {
-      window.removeEventListener('profile-updated', refresh)
-      window.removeEventListener('xp-updated', refresh)
+      active = false
+      authSubscription.subscription.unsubscribe()
     }
-  }, [syncFromStorage])
-
-  const setProfile = useCallback((updater: LocalProfile | ((prev: LocalProfile | null) => LocalProfile | null)) => {
-    setProfileState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
-      if (next) {
-        setLocalProfile(next)
-        window.dispatchEvent(new Event('profile-updated'))
-      }
-      return next
-    })
-  }, [])
+  }, [loadAuthenticatedUser])
 
   const refreshProfile = useCallback(async () => {
-    syncFromStorage()
-  }, [syncFromStorage])
+    if (!user) return
+    const nextProfile = await getUserProfile(user.id)
+    setProfileState(nextProfile)
+    setUser((current) => current && current.username !== nextProfile.username
+      ? { ...current, username: nextProfile.username }
+      : current)
+  }, [user])
 
-  const signIn = useCallback(async (email: string) => {
-    const currentUser = getLocalUser()
-    const nextUser: LocalUser = {
-      ...currentUser,
-      email: email || currentUser.email,
+  useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel(`sanskriti-profile-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        () => { void refreshProfile() },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
     }
-    setLocalUser(nextUser)
-    syncFromStorage()
+  }, [refreshProfile, user])
+
+  const setProfile = useCallback((updater: LocalProfile | ((prev: LocalProfile | null) => LocalProfile | null)) => {
+    setProfileState((current) => typeof updater === 'function' ? updater(current) : updater)
+  }, [])
+
+  const signIn = useCallback(async (username: string) => {
+    const result = await signInWithUsername(username)
+    const nextUser = await loadAuthenticatedUser(
+      result.user.id,
+      result.user.email,
+      result.user.isAnonymous,
+    )
+    setLoading(false)
     return { user: nextUser }
-  }, [syncFromStorage])
+  }, [loadAuthenticatedUser])
 
   const signOut = useCallback(async () => {
-    resetLocalProfile()
-    syncFromStorage()
-  }, [syncFromStorage])
+    await signOutFromSupabase()
+    setUser(null)
+    setProfileState(null)
+  }, [])
 
-  const signUp = useCallback(async (email: string, _password: string, fullName: string) => {
-    const nextUser: LocalUser = {
-      id: getLocalUser().id,
-      email: email || 'local@sanskriti.ai',
-    }
-    const nextProfile: LocalProfile = {
-      ...getLocalProfile(),
-      full_name: fullName || 'Explorer',
-      email: nextUser.email,
-    }
-    setLocalUser(nextUser)
-    setLocalProfile(nextProfile)
-    syncFromStorage()
-    return { user: nextUser }
-  }, [syncFromStorage])
+  const signUp = useCallback(async (_email: string, _password: string, fullName: string) => {
+    return signIn(fullName)
+  }, [signIn])
 
   const value = useMemo(() => ({
     user,

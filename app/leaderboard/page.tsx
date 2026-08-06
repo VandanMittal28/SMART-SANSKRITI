@@ -9,6 +9,7 @@ export default function LeaderboardPage() {
   const { profile } = useAuth()
 
   const leaderboard = useMemo(() => buildSyntheticLeaderboard(profile || {
+    username: '',
     full_name: 'Explorer',
     email: 'local@sanskriti.ai',
     total_xp: 0,

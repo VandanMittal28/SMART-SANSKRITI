@@ -5,6 +5,8 @@ import {
   isSupportedLanguage,
   SupportedLanguage,
 } from '@/lib/languages'
+import { useAuth } from '@/lib/authContext'
+import { updateUserProfile } from '@/lib/authClient'
 
 export type Lang = SupportedLanguage
 
@@ -256,27 +258,27 @@ const LangContext = createContext<LangContextType>({
 })
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { user, profile } = useAuth()
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANGUAGE)
 
   useEffect(() => {
-    const saved = localStorage.getItem('sanskriti_lang') as Lang
-    if (isSupportedLanguage(saved)) {
-      setLangState(saved)
-      document.documentElement.lang = saved
-      document.documentElement.setAttribute('data-lang', saved)
-      return
-    }
-    document.documentElement.lang = DEFAULT_LANGUAGE
-    document.documentElement.setAttribute('data-lang', DEFAULT_LANGUAGE)
-  }, [])
+    const saved = isSupportedLanguage(profile?.language)
+      ? profile.language
+      : DEFAULT_LANGUAGE
+    setLangState(saved)
+    document.documentElement.lang = saved
+    document.documentElement.setAttribute('data-lang', saved)
+  }, [profile?.language])
 
   const setLang = (next: LangUpdater) => {
     const resolved = typeof next === 'function' ? next(lang) : next
     const safeLang: Lang = isSupportedLanguage(resolved) ? resolved : DEFAULT_LANGUAGE
     setLangState(safeLang)
-    localStorage.setItem('sanskriti_lang', safeLang)
     document.documentElement.lang = safeLang
     document.documentElement.setAttribute('data-lang', safeLang)
+    if (user && safeLang !== profile?.language) {
+      void updateUserProfile(user.id, { language: safeLang })
+    }
   }
 
   const toggleLang = () => {

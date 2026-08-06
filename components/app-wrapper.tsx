@@ -6,7 +6,7 @@ import { MessageCircle } from 'lucide-react'
 
 export function AppWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const showChatButton = pathname !== '/chat'
+  const showChatButton = !['/chat', '/login', '/auth'].includes(pathname)
 
   return (
     <>

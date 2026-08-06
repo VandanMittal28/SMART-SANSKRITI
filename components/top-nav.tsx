@@ -238,7 +238,7 @@ export function TopNav() {
                       {profile?.full_name || 'Explorer'}
                     </div>
                     <div style={{ color: '#7A6E5C', fontSize: '11px' }}>
-                      {user.email}
+                      @{user.username}
                     </div>
                     {profile?.phone && (
                       <div style={{ color: '#7A6E5C', fontSize: '11px' }}>
@@ -258,7 +258,7 @@ export function TopNav() {
                     setUserMenuOpen(false)
                     const { signOut } = await import('@/lib/authClient')
                     await signOut()
-                    window.location.href = '/auth'
+                    window.location.href = '/login'
                   }} style={{
                     display: 'block', width: '100%', padding: '7px 10px', textAlign: 'left',
                     background: 'rgba(196,91,58,0.12)', border: 'none', borderRadius: '8px',
@@ -316,7 +316,7 @@ export function TopNav() {
               borderRadius: '10px'
             }}>
               <div style={{ color: '#E8C97A', fontSize: '14px', fontWeight: 700 }}>
-                {profile?.full_name || user.email?.split('@')[0]}
+                @{profile?.username || user.username}
               </div>
               <div style={{ color: '#7A6E5C', fontSize: '11px' }}>
                 ⚡ {(profile?.total_xp ?? 0).toLocaleString()} XP
@@ -362,7 +362,7 @@ export function TopNav() {
               <button onClick={async () => {
                 const { signOut } = await import('@/lib/authClient')
                 await signOut()
-                window.location.href = '/auth'
+                window.location.href = '/login'
               }} style={{
                 padding: '8px 12px', borderRadius: '8px',
                 background: 'rgba(196,91,58,0.12)',

@@ -41,7 +41,7 @@ export default function HomePage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-[#C9A84C]">{t('good_evening')}</p>
-                <h2 className="mt-1 text-2xl font-semibold text-[#F5E6D3]">{profile?.full_name || t('explorer')}</h2>
+                <h2 className="mt-1 text-2xl font-semibold text-[#F5E6D3]">{profile?.username ? `@${profile.username}` : profile?.full_name || t('explorer')}</h2>
                 <p className="mt-1 text-sm text-[#D9C7AA]">{userConfig?.subtitle || t('hero_caption_default')}</p>
               </div>
               <div className="rounded-[20px] border border-[#C9A84C]/18 bg-black/20 px-3 py-2 text-right backdrop-blur-md">

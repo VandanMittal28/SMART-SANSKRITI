@@ -1,6 +1,10 @@
+import type { SupportedLanguage } from '@/lib/languages'
+
 export interface LocalUser {
   id: string
+  username: string
   email: string
+  isAnonymous: boolean
 }
 
 export interface ProfileActivity {
@@ -13,6 +17,7 @@ export interface ProfileActivity {
 }
 
 export interface LocalProfile {
+  username: string
   full_name: string
   email: string
   phone?: string
@@ -23,22 +28,14 @@ export interface LocalProfile {
   chat_history: Array<Record<string, unknown>>
   activity_log: ProfileActivity[]
   user_type: 'student' | 'tourist'
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   admin_mode: boolean
 }
 
-const PROFILE_KEY = 'sanskriti_profile_v2'
-const USER_KEY = 'sanskriti_user_v2'
-export const LOCAL_USER_ID = 'local-explorer'
-
-const DEFAULT_USER: LocalUser = {
-  id: LOCAL_USER_ID,
-  email: 'local@sanskriti.ai',
-}
-
-const DEFAULT_PROFILE: LocalProfile = {
+export const EMPTY_PROFILE: LocalProfile = {
+  username: '',
   full_name: 'Explorer',
-  email: DEFAULT_USER.email,
+  email: '',
   phone: '',
   total_xp: 0,
   monuments_visited: [],
@@ -49,75 +46,6 @@ const DEFAULT_PROFILE: LocalProfile = {
   user_type: 'tourist',
   language: 'en',
   admin_mode: false,
-}
-
-function safeParse<T>(value: string | null): T | null {
-  if (!value) return null
-  try {
-    return JSON.parse(value) as T
-  } catch {
-    return null
-  }
-}
-
-function normalizeProfile(raw: Partial<LocalProfile> | null): LocalProfile {
-  const isUntouchedLegacyProfile =
-    raw?.total_xp === 120 &&
-    (!raw.monuments_visited || raw.monuments_visited.length === 0) &&
-    (!raw.quiz_scores || raw.quiz_scores.length === 0) &&
-    (!raw.badges || raw.badges.length === 0) &&
-    (!raw.chat_history || raw.chat_history.length === 0)
-
-  return {
-    ...DEFAULT_PROFILE,
-    ...raw,
-    total_xp: isUntouchedLegacyProfile ? 0 : (raw?.total_xp ?? DEFAULT_PROFILE.total_xp),
-    monuments_visited: Array.isArray(raw?.monuments_visited) ? raw!.monuments_visited : [],
-    quiz_scores: Array.isArray(raw?.quiz_scores) ? raw!.quiz_scores : [],
-    badges: Array.isArray(raw?.badges) ? raw!.badges : [],
-    chat_history: Array.isArray(raw?.chat_history) ? raw!.chat_history : [],
-    activity_log: Array.isArray(raw?.activity_log) ? raw!.activity_log : [],
-  }
-}
-
-export function getLocalUser(): LocalUser {
-  if (typeof window === 'undefined') return DEFAULT_USER
-  const stored = safeParse<LocalUser>(window.localStorage.getItem(USER_KEY))
-  if (stored?.id && stored.email) return stored
-  window.localStorage.setItem(USER_KEY, JSON.stringify(DEFAULT_USER))
-  return DEFAULT_USER
-}
-
-export function setLocalUser(user: LocalUser): void {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(USER_KEY, JSON.stringify(user))
-}
-
-export function getLocalProfile(): LocalProfile {
-  if (typeof window === 'undefined') return DEFAULT_PROFILE
-  const stored = safeParse<Partial<LocalProfile>>(window.localStorage.getItem(PROFILE_KEY))
-  const profile = normalizeProfile(stored)
-  if (!stored) window.localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
-  return profile
-}
-
-export function setLocalProfile(profile: LocalProfile): void {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
-}
-
-export function updateLocalProfile(updater: (current: LocalProfile) => LocalProfile): LocalProfile {
-  const next = updater(getLocalProfile())
-  setLocalProfile(next)
-  window.dispatchEvent(new Event('profile-updated'))
-  return next
-}
-
-export function resetLocalProfile(): LocalProfile {
-  setLocalUser(DEFAULT_USER)
-  setLocalProfile(DEFAULT_PROFILE)
-  window.dispatchEvent(new Event('profile-updated'))
-  return DEFAULT_PROFILE
 }
 
 export function getBadgeSetFromProfile(profile: LocalProfile): string[] {

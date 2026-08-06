@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Globe, UserRound } from 'lucide-react'
 import { useMemo } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
 import { cn } from '@/lib/utils'
@@ -12,9 +13,10 @@ import { SUPPORTED_LANGUAGES } from '@/lib/languages'
 export function TopBar() {
   const { profile } = useAuth()
   const { lang, setLang } = useLang()
+  const pathname = usePathname()
 
   const initials = useMemo(() => {
-    const source = profile?.full_name || profile?.email || 'SA'
+    const source = profile?.full_name || profile?.username || 'SA'
     return source
       .split(' ')
       .map((part) => part[0])
@@ -22,6 +24,8 @@ export function TopBar() {
       .slice(0, 2)
       .toUpperCase()
   }, [profile])
+
+  if (pathname === '/login' || pathname === '/auth') return null
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#13131a]/80 backdrop-blur-xl">

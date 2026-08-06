@@ -1,5 +1,8 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { useAuth } from '@/lib/authContext'
+import { addXP, updateUserProfile } from '@/lib/authClient'
+import type { LocalProfile } from '@/lib/localProfile'
 
 type UserType = 'student' | 'tourist' | null
 
@@ -45,15 +48,7 @@ interface UserContextType {
   userConfig: UserConfig | null
   setUserType: (type: UserType) => void
   isSelected: boolean
-  profile: {
-    id?: string
-    total_xp?: number
-    monuments_visited?: unknown[]
-    quiz_scores?: Record<string, unknown>
-    full_name?: string
-    email?: string
-    [key: string]: unknown
-  } | null
+  profile: LocalProfile | null
   level: string
   badges: Array<{ unlocked?: boolean; [key: string]: unknown }>
   refreshProfile: () => Promise<void>
@@ -73,34 +68,40 @@ const UserContext = createContext<UserContextType>({
 })
 
 export function UserProvider({ children }: { children: ReactNode }) {
+  const { user, profile, refreshProfile } = useAuth()
   const [userType, setUserTypeState] = useState<UserType>(null)
-  const [isSelected, setIsSelected] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('sanskriti_user_type')
-    const savedSelected = localStorage.getItem('sanskriti_user_selected')
-    if (saved && savedSelected === 'true') {
-      setUserTypeState(saved as UserType)
-      setIsSelected(true)
-    }
-  }, [])
+    setUserTypeState(profile?.user_type ?? null)
+  }, [profile?.user_type])
 
   const setUserType = (type: UserType) => {
     setUserTypeState(type)
-    setIsSelected(true)
-    if (type) {
-      localStorage.setItem('sanskriti_user_type', type)
-      localStorage.setItem('sanskriti_user_selected', 'true')
+    if (type && user) {
+      void updateUserProfile(user.id, { user_type: type }).then(() => refreshProfile())
     }
   }
 
   const userConfig = userType ? USER_TYPES[userType] : null
 
-  const refreshProfile = async () => {}
-  const addXpLocal = async (_xp: number, _monumentId?: string) => {}
+  const addXpLocal = async (xp: number, monumentId?: string) => {
+    if (!user) return
+    await addXP(user.id, xp, monumentId ? `EXPLORE_${monumentId}` : 'EXPLORE')
+    await refreshProfile()
+  }
 
   return (
-    <UserContext.Provider value={{ userType, userConfig, setUserType, isSelected, profile: null, level: 'Starter', badges: [], refreshProfile, addXpLocal }}>
+    <UserContext.Provider value={{
+      userType,
+      userConfig,
+      setUserType,
+      isSelected: Boolean(userType),
+      profile,
+      level: profile ? `Level ${Math.floor(profile.total_xp / 100) + 1}` : 'Starter',
+      badges: (profile?.badges ?? []).map((code) => ({ code, unlocked: true })),
+      refreshProfile,
+      addXpLocal,
+    }}>
       {children}
     </UserContext.Provider>
   )
