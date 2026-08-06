@@ -774,6 +774,7 @@ export default function ExplorePage() {
   const [demoMode] = useState(true)
   const [userPos, setUserPos] = useState(EXPLORE_USER_START['taj-mahal'])
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
+  const [narrationReady, setNarrationReady] = useState(false)
   const [currentTranslation, setCurrentTranslation] = useState<GuideTranslation | null>(null)
   const [translationLoading, setTranslationLoading] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -823,6 +824,37 @@ export default function ExplorePage() {
       audioUrlRef.current = null
     }
     setIsTTSSpeaking(false)
+    setNarrationReady(false)
+  }, [])
+
+  const pauseNarration = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) {
+      narrationRequestRef.current?.abort()
+      narrationRequestRef.current = null
+      setIsTTSSpeaking(false)
+      setNarrationReady(false)
+      return
+    }
+    audio.pause()
+    setIsTTSSpeaking(false)
+    setNarrationReady(true)
+  }, [])
+
+  const playPreparedNarration = useCallback(async () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    try {
+      if (audio.ended) audio.currentTime = 0
+      setNarrationReady(false)
+      setIsTTSSpeaking(true)
+      await audio.play()
+    } catch (error) {
+      console.warn('Narration playback needs a user gesture:', error)
+      setIsTTSSpeaking(false)
+      setNarrationReady(true)
+    }
   }, [])
 
   const fetchNarration = useCallback((
@@ -885,6 +917,7 @@ export default function ExplorePage() {
     const controller = new AbortController()
     narrationRequestRef.current = controller
     setIsTTSSpeaking(true)
+    setNarrationReady(false)
 
     try {
       const response = await fetchNarration(text, language, controller.signal)
@@ -899,20 +932,38 @@ export default function ExplorePage() {
       audioUrlRef.current = audioUrl
 
       const finish = () => {
+        if (audioRef.current !== audio) return
+        audio.currentTime = 0
+        setIsTTSSpeaking(false)
+        setNarrationReady(true)
+      }
+
+      const fail = () => {
         if (audioRef.current === audio) audioRef.current = null
         if (audioUrlRef.current === audioUrl) {
           URL.revokeObjectURL(audioUrl)
           audioUrlRef.current = null
         }
         setIsTTSSpeaking(false)
+        setNarrationReady(false)
       }
 
       audio.onended = finish
-      audio.onerror = finish
-      await audio.play()
-    } catch {
+      audio.onerror = fail
+      try {
+        await audio.play()
+      } catch (error) {
+        // Slow synthesis can outlive the browser's transient autoplay grant.
+        // Keep the generated audio ready for the explicit Play button.
+        console.warn('Automatic narration playback was blocked:', error)
+        setIsTTSSpeaking(false)
+        setNarrationReady(audioRef.current === audio)
+      }
+    } catch (error) {
       if (controller.signal.aborted) return
+      console.error('Narration request failed:', error)
       setIsTTSSpeaking(false)
+      setNarrationReady(false)
     } finally {
       if (narrationRequestRef.current === controller) {
         narrationRequestRef.current = null
@@ -1160,6 +1211,33 @@ export default function ExplorePage() {
             {translationLoading && lang !== 'en' && (
               <span style={{ color: '#C9A84C' }}>• Preparing translated guide…</span>
             )}
+            {isTTSSpeaking ? (
+              <button
+                type="button"
+                onClick={pauseNarration}
+                style={{
+                  marginLeft: 'auto', background: 'rgba(201,168,76,0.1)',
+                  border: '1px solid #C9A84C44', borderRadius: '999px',
+                  color: '#C9A84C', cursor: 'pointer', padding: '5px 10px',
+                  fontSize: '12px'
+                }}
+              >
+                ⏸ Pause narration
+              </button>
+            ) : narrationReady ? (
+              <button
+                type="button"
+                onClick={playPreparedNarration}
+                style={{
+                  marginLeft: 'auto', background: 'rgba(75,155,142,0.18)',
+                  border: '1px solid rgba(75,155,142,0.45)', borderRadius: '999px',
+                  color: '#83D2C4', cursor: 'pointer', padding: '5px 10px',
+                  fontSize: '12px', fontWeight: 700
+                }}
+              >
+                ▶ Play narration
+              </button>
+            ) : null}
           </div>
 
           {/* Breadcrumb */}
@@ -1308,19 +1386,6 @@ export default function ExplorePage() {
                   <span style={{ color: '#C9A84C', fontSize: '13px' }}>
                     🔊 Audio guide preparing or speaking…
                   </span>
-                  <button
-                    onClick={stopNarration}
-                    style={{
-                      marginLeft: 'auto',
-                      background: 'none',
-                      border: 'none',
-                      color: '#C4A882',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    ⏹ Stop
-                  </button>
                 </div>
               )}
 
