@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
 import {
   getUserProfile,
   signIn as signInWithUsername,
@@ -13,6 +13,7 @@ interface AuthContextType {
   user: LocalUser | null
   profile: LocalProfile | null
   loading: boolean
+  error: string | null
   setProfile: (updater: LocalProfile | ((prev: LocalProfile | null) => LocalProfile | null)) => void
   refreshProfile: () => Promise<void>
   signIn: (username: string) => Promise<{ user: LocalUser }>
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  error: null,
   setProfile: () => {},
   refreshProfile: async () => {},
   signIn: async () => { throw new Error('AuthProvider is unavailable.') },
@@ -35,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null)
   const [profile, setProfileState] = useState<LocalProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const loadAuthenticatedUser = useCallback(async (
     userId: string,
@@ -55,55 +58,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true
+    let unsubscribeAuth: (() => void) | undefined
 
-    void supabase.auth.getSession().then(async ({ data }) => {
+    const clearAuthenticatedUser = (message: string | null = null) => {
       if (!active) return
-      const authUser = data.session?.user
-      if (!authUser) {
-        setUser(null)
-        setProfileState(null)
-        setLoading(false)
-        return
-      }
+      setUser(null)
+      setProfileState(null)
+      setError(message)
+      setLoading(false)
+    }
 
+    const initializeAuth = async () => {
       try {
-        await loadAuthenticatedUser(
-          authUser.id,
-          authUser.email || '',
-          authUser.is_anonymous === true,
-        )
-      } catch {
-        setUser(null)
-        setProfileState(null)
-      } finally {
-        if (active) setLoading(false)
-      }
-    })
-
-    const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      window.setTimeout(() => {
+        const reachable = await isSupabaseAuthReachable()
         if (!active) return
-        const authUser = nextSession?.user
-        if (!authUser) {
-          setUser(null)
-          setProfileState(null)
-          setLoading(false)
+        if (!reachable) {
+          clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
           return
         }
 
-        void loadAuthenticatedUser(
-          authUser.id,
-          authUser.email || '',
-          authUser.is_anonymous === true,
-        ).finally(() => {
-          if (active) setLoading(false)
+        const { error: initializeError } = await supabase.auth.initialize()
+        if (initializeError) throw initializeError
+
+        const { data, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) throw sessionError
+        if (!active) return
+
+        const authUser = data.session?.user
+        if (authUser) {
+          await loadAuthenticatedUser(
+            authUser.id,
+            authUser.email || '',
+            authUser.is_anonymous === true,
+          )
+        } else {
+          setUser(null)
+          setProfileState(null)
+        }
+        if (!active) return
+        setError(null)
+        setLoading(false)
+
+        const { data: authSubscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+          // The current session was handled above. Subsequent events are
+          // deferred so the callback never calls Supabase while its lock is held.
+          if (event === 'INITIAL_SESSION') return
+          window.setTimeout(() => {
+            if (!active) return
+            const nextAuthUser = nextSession?.user
+            if (!nextAuthUser) {
+              clearAuthenticatedUser()
+              return
+            }
+
+            void loadAuthenticatedUser(
+              nextAuthUser.id,
+              nextAuthUser.email || '',
+              nextAuthUser.is_anonymous === true,
+            ).then(() => {
+              if (active) setError(null)
+            }).catch(() => {
+              clearAuthenticatedUser('Your profile could not be loaded. Please try again.')
+            }).finally(() => {
+              if (active) setLoading(false)
+            })
+          }, 0)
         })
-      }, 0)
-    })
+        unsubscribeAuth = () => authSubscription.subscription.unsubscribe()
+      } catch {
+        clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
+      }
+    }
+
+    void initializeAuth()
 
     return () => {
       active = false
-      authSubscription.subscription.unsubscribe()
+      unsubscribeAuth?.()
     }
   }, [loadAuthenticatedUser])
 
@@ -138,6 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = useCallback(async (username: string) => {
+    if (!(await isSupabaseAuthReachable())) {
+      const message = 'Cloud profiles are temporarily unavailable. Please try again shortly.'
+      setError(message)
+      throw new Error(message)
+    }
+    setError(null)
     const result = await signInWithUsername(username)
     const nextUser = await loadAuthenticatedUser(
       result.user.id,
@@ -162,12 +199,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     profile,
     loading,
+    error,
     setProfile,
     refreshProfile,
     signIn,
     signOut,
     signUp,
-  }), [loading, profile, refreshProfile, setProfile, signIn, signOut, signUp, user])
+  }), [error, loading, profile, refreshProfile, setProfile, signIn, signOut, signUp, user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

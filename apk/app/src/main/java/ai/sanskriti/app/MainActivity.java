@@ -13,6 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -43,6 +45,9 @@ public final class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int WEB_PERMISSION_REQUEST = 1002;
     private static final int GEOLOCATION_REQUEST = 1003;
+    private static final long PAGE_LOAD_TIMEOUT_MS = 15_000L;
+    private static final long PAGE_HEALTH_CHECK_DELAY_MS = 6_000L;
+    private static final String ERROR_PAGE_URL = "https://sanskriti.local/error";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -51,6 +56,31 @@ public final class MainActivity extends Activity {
     private PermissionRequest pendingWebPermission;
     private GeolocationPermissions.Callback pendingGeoCallback;
     private String pendingGeoOrigin;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private boolean mainPageFinished;
+    private boolean showingConnectionError;
+
+    private final Runnable pageLoadTimeout = () -> {
+        if (!mainPageFinished && !showingConnectionError) {
+            showConnectionError("The Sanskriti service did not respond in time.");
+        }
+    };
+
+    private final Runnable pageHealthCheck = () -> {
+        if (!mainPageFinished || showingConnectionError || webView == null) return;
+        webView.evaluateJavascript(
+                "(function(){"
+                        + "var profileLoader=document.querySelector('img[aria-label=\"Loading your profile\"]');"
+                        + "var issueOverlay=Array.from(document.querySelectorAll('button')).some(function(button){return /issues?/i.test(button.textContent||'');});"
+                        + "return Boolean(profileLoader||issueOverlay);"
+                        + "})()",
+                value -> {
+                    if ("true".equals(value) && !showingConnectionError) {
+                        showConnectionError("Your profile service is temporarily unavailable.");
+                    }
+                }
+        );
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,8 +166,32 @@ public final class MainActivity extends Activity {
         }
 
         @Override
+        public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            if (url.startsWith(ERROR_PAGE_URL)) {
+                mainPageFinished = true;
+                mainHandler.removeCallbacks(pageLoadTimeout);
+                mainHandler.removeCallbacks(pageHealthCheck);
+                return;
+            }
+            showingConnectionError = false;
+            mainPageFinished = false;
+            mainHandler.removeCallbacks(pageLoadTimeout);
+            mainHandler.removeCallbacks(pageHealthCheck);
+            mainHandler.postDelayed(pageLoadTimeout, PAGE_LOAD_TIMEOUT_MS);
+        }
+
+        @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
+            if (url.startsWith(ERROR_PAGE_URL)) {
+                CookieManager.getInstance().flush();
+                return;
+            }
+            mainPageFinished = true;
+            mainHandler.removeCallbacks(pageLoadTimeout);
+            mainHandler.removeCallbacks(pageHealthCheck);
+            mainHandler.postDelayed(pageHealthCheck, PAGE_HEALTH_CHECK_DELAY_MS);
             CookieManager.getInstance().flush();
         }
 
@@ -145,6 +199,14 @@ public final class MainActivity extends Activity {
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             if (request.isForMainFrame()) {
                 showConnectionError(error.getDescription().toString());
+            }
+        }
+
+        @Override
+        public void onReceivedHttpError(WebView view, WebResourceRequest request, android.webkit.WebResourceResponse errorResponse) {
+            super.onReceivedHttpError(view, request, errorResponse);
+            if (request.isForMainFrame() && errorResponse.getStatusCode() >= 400) {
+                showConnectionError("The Sanskriti service returned HTTP " + errorResponse.getStatusCode() + ".");
             }
         }
     }
@@ -360,6 +422,11 @@ public final class MainActivity extends Activity {
     }
 
     private void showConnectionError(String detail) {
+        if (showingConnectionError || webView == null) return;
+        showingConnectionError = true;
+        mainPageFinished = true;
+        mainHandler.removeCallbacks(pageLoadTimeout);
+        mainHandler.removeCallbacks(pageHealthCheck);
         String safeDetail = detail.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
         String html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>"
                 + "<style>body{margin:0;background:#070a16;color:#f5e6d3;font-family:sans-serif;display:grid;place-items:center;min-height:100vh}"
@@ -367,7 +434,7 @@ public final class MainActivity extends Activity {
                 + "h1{color:#f7d88c;font-size:24px}p{color:#c4a882;line-height:1.5}button{border:0;border-radius:999px;padding:12px 22px;background:#c9a84c;color:#0e0916;font-weight:700}</style></head>"
                 + "<body><div class='card'><h1>Sanskriti AI is offline</h1><p>Start the Sanskriti server or connect to the configured deployment, then try again.</p>"
                 + "<p><small>" + safeDetail + "</small></p><button onclick='location.href=\"" + normalizedAppUrl() + "\"'>Try again</button></div></body></html>";
-        webView.loadDataWithBaseURL(normalizedAppUrl(), html, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL(ERROR_PAGE_URL, html, "text/html", "UTF-8", null);
     }
 
     private boolean hasPermission(String permission) {
@@ -409,6 +476,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        mainHandler.removeCallbacksAndMessages(null);
         if (webView != null) {
             webView.stopLoading();
             webView.setWebChromeClient(null);

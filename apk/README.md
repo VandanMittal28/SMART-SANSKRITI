@@ -7,7 +7,8 @@ The APK uses Android's WebView as the presentation layer so every current page
 and server-backed feature stays in sync with the main Sanskriti app. The native
 integration adds support for camera scans, microphone access, location, file
 uploads, downloads, persistent cookies/local storage, Android back navigation,
-and an offline/retry screen.
+and an offline/retry screen. It also detects a stalled profile-loading screen
+or a visible runtime issue overlay and replaces it with a native retry screen.
 
 ## App URL
 
@@ -18,7 +19,7 @@ Android phone immediately.
 For local development, add this to this folder's private `.env.local`:
 
 ```dotenv
-SANSKRITI_APP_URL=http://10.0.2.2:3000
+SANSKRITI_APP_URL=http://10.0.2.2:3002
 ```
 
 `10.0.2.2` is Android Emulator's address for a Next.js server running on the

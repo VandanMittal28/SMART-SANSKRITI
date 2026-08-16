@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/authContext'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const { error: authError, signIn } = useAuth()
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -105,7 +105,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {error && <p className="rounded-xl border border-red-400/30 bg-red-950/30 px-3 py-2.5 text-sm text-red-200" role="alert">{error}</p>}
+            {(error || authError) && (
+              <p className="rounded-xl border border-red-400/30 bg-red-950/30 px-3 py-2.5 text-sm text-red-200" role="alert">
+                {error || authError}
+              </p>
+            )}
 
             <Button className="h-12 w-full bg-gradient-to-r from-[#e0a044] to-[#f0c46e] text-[#261508] hover:brightness-110" disabled={isSubmitting} type="submit">
               {isSubmitting ? 'Creating your journey…' : 'Enter Sanskriti AI'}
