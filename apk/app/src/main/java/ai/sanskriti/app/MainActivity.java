@@ -15,6 +15,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -23,6 +26,7 @@ import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.MimeTypeMap;
 import android.webkit.PermissionRequest;
 import android.webkit.URLUtil;
@@ -40,6 +44,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+
+import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
@@ -59,6 +66,8 @@ public final class MainActivity extends Activity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean mainPageFinished;
     private boolean showingConnectionError;
+    private TextToSpeech textToSpeech;
+    private boolean textToSpeechReady;
 
     private final Runnable pageLoadTimeout = () -> {
         if (!mainPageFinished && !showingConnectionError) {
@@ -86,6 +95,7 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         configureLayout();
+        configureTextToSpeech();
         configureWebView();
 
         if (savedInstanceState == null) {
@@ -133,6 +143,7 @@ public final class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
+        settings.setSupportMultipleWindows(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
 
         CookieManager cookies = CookieManager.getInstance();
@@ -143,6 +154,35 @@ public final class MainActivity extends Activity {
         webView.setWebViewClient(new SanskritiWebViewClient());
         webView.setWebChromeClient(new SanskritiChromeClient());
         webView.setDownloadListener(createDownloadListener());
+        webView.addJavascriptInterface(new SanskritiAndroidBridge(), "SanskritiAndroid");
+    }
+
+    private void configureTextToSpeech() {
+        textToSpeech = new TextToSpeech(this, status -> {
+            textToSpeechReady = status == TextToSpeech.SUCCESS;
+            if (!textToSpeechReady || textToSpeech == null) return;
+            textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override
+                public void onStart(String utteranceId) {
+                    emitSpeechEvent(utteranceId, "start");
+                }
+
+                @Override
+                public void onDone(String utteranceId) {
+                    emitSpeechEvent(utteranceId, "end");
+                }
+
+                @Override
+                public void onError(String utteranceId) {
+                    emitSpeechEvent(utteranceId, "error");
+                }
+
+                @Override
+                public void onError(String utteranceId, int errorCode) {
+                    emitSpeechEvent(utteranceId, "error");
+                }
+            });
+        });
     }
 
     private String normalizedAppUrl() {
@@ -159,8 +199,10 @@ public final class MainActivity extends Activity {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
             String scheme = uri.getScheme();
-            if (scheme == null || scheme.equals("http") || scheme.equals("https")) {
-                return false;
+            if (scheme == null) return false;
+            if (scheme.equals("http") || scheme.equals("https")) {
+                if (!request.isForMainFrame() || isTrustedAppUri(uri)) return false;
+                return openExternal(uri);
             }
             return openExternal(uri);
         }
@@ -192,6 +234,7 @@ public final class MainActivity extends Activity {
             mainHandler.removeCallbacks(pageLoadTimeout);
             mainHandler.removeCallbacks(pageHealthCheck);
             mainHandler.postDelayed(pageHealthCheck, PAGE_HEALTH_CHECK_DELAY_MS);
+            if (isTrustedAppUri(Uri.parse(url))) installNativeSpeechBridge(view);
             CookieManager.getInstance().flush();
         }
 
@@ -211,11 +254,150 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private final class SanskritiAndroidBridge {
+        @JavascriptInterface
+        public boolean isNativeApp() {
+            return true;
+        }
+
+        @JavascriptInterface
+        public void speak(
+                String utteranceId,
+                String text,
+                String languageTag,
+                double rate,
+                double pitch,
+                double volume
+        ) {
+            mainHandler.post(() -> speakNative(
+                    utteranceId,
+                    text,
+                    languageTag,
+                    (float) rate,
+                    (float) pitch,
+                    (float) volume
+            ));
+        }
+
+        @JavascriptInterface
+        public void stopSpeaking() {
+            mainHandler.post(() -> {
+                if (textToSpeech != null) textToSpeech.stop();
+            });
+        }
+    }
+
+    private void speakNative(
+            String utteranceId,
+            String text,
+            String languageTag,
+            float rate,
+            float pitch,
+            float volume
+    ) {
+        if (!textToSpeechReady || textToSpeech == null || text == null || text.trim().isEmpty()) {
+            emitSpeechEvent(utteranceId, "error");
+            return;
+        }
+
+        Locale locale = Locale.forLanguageTag(
+                languageTag == null || languageTag.trim().isEmpty() ? "en-US" : languageTag
+        );
+        textToSpeech.setLanguage(locale);
+        textToSpeech.setSpeechRate(Math.max(0.1f, Math.min(rate, 2.0f)));
+        textToSpeech.setPitch(Math.max(0.5f, Math.min(pitch, 2.0f)));
+
+        Bundle parameters = new Bundle();
+        parameters.putFloat(
+                TextToSpeech.Engine.KEY_PARAM_VOLUME,
+                Math.max(0.0f, Math.min(volume, 1.0f))
+        );
+        int result = textToSpeech.speak(
+                text,
+                TextToSpeech.QUEUE_ADD,
+                parameters,
+                utteranceId
+        );
+        if (result == TextToSpeech.ERROR) emitSpeechEvent(utteranceId, "error");
+    }
+
+    private void emitSpeechEvent(String utteranceId, String event) {
+        mainHandler.post(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript(
+                    "window.__sanskritiNativeSpeechEvent&&window.__sanskritiNativeSpeechEvent("
+                            + JSONObject.quote(utteranceId) + "," + JSONObject.quote(event) + ")",
+                    null
+            );
+        });
+    }
+
+    private void installNativeSpeechBridge(WebView view) {
+        view.evaluateJavascript(
+                "(function(){"
+                        + "if(!window.SanskritiAndroid||window.__sanskritiNativeSpeechInstalled)return;"
+                        + "window.__sanskritiNativeSpeechInstalled=true;"
+                        + "var entries={},sequence=0;"
+                        + "function Utterance(text){this.text=String(text||'');this.lang='en-US';this.rate=1;this.pitch=1;this.volume=1;this.voice=null;this.onstart=null;this.onend=null;this.onerror=null;}"
+                        + "var voice={default:true,lang:'en-US',localService:true,name:'Android Native',voiceURI:'android-native'};"
+                        + "var synth={speaking:false,pending:false,paused:false,onvoiceschanged:null,"
+                        + "getVoices:function(){return[voice];},pause:function(){},resume:function(){},"
+                        + "cancel:function(){window.SanskritiAndroid.stopSpeaking();entries={};this.speaking=false;this.pending=false;},"
+                        + "speak:function(utterance){var id='native-'+Date.now()+'-'+(++sequence);entries[id]=utterance;this.pending=true;window.SanskritiAndroid.speak(id,String(utterance.text||''),utterance.lang||'en-US',Number(utterance.rate)||1,Number(utterance.pitch)||1,Number(utterance.volume));}};"
+                        + "window.__sanskritiNativeSpeechEvent=function(id,event){var utterance=entries[id];if(!utterance)return;if(event==='start'){synth.speaking=true;synth.pending=false;if(typeof utterance.onstart==='function')utterance.onstart();return;}delete entries[id];synth.speaking=false;synth.pending=Object.keys(entries).length>0;var callback=event==='end'?utterance.onend:utterance.onerror;if(typeof callback==='function')callback(event==='error'?{error:'native-tts'}:undefined);};"
+                        + "try{Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,value:Utterance});}catch(error){window.SpeechSynthesisUtterance=Utterance;}"
+                        + "try{Object.defineProperty(window,'speechSynthesis',{configurable:true,value:synth});}catch(error){window.speechSynthesis=synth;}"
+                        + "})();",
+                null
+        );
+    }
+
+    private boolean isTrustedAppUri(Uri uri) {
+        if (uri == null) return false;
+        if (uri.toString().startsWith(ERROR_PAGE_URL)) return true;
+        Uri appUri = Uri.parse(normalizedAppUrl());
+        return safeEquals(appUri.getScheme(), uri.getScheme())
+                && safeEquals(appUri.getHost(), uri.getHost())
+                && effectivePort(appUri) == effectivePort(uri);
+    }
+
+    private boolean safeEquals(String left, String right) {
+        return left != null && right != null && left.equalsIgnoreCase(right);
+    }
+
+    private int effectivePort(Uri uri) {
+        if (uri.getPort() >= 0) return uri.getPort();
+        return "http".equalsIgnoreCase(uri.getScheme()) ? 80 : 443;
+    }
+
     private final class SanskritiChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             progressBar.setProgress(newProgress);
             progressBar.setVisibility(newProgress >= 100 ? View.GONE : View.VISIBLE);
+        }
+
+        @Override
+        public boolean onCreateWindow(
+                WebView view,
+                boolean isDialog,
+                boolean isUserGesture,
+                Message resultMsg
+        ) {
+            WebView externalWindow = new WebView(MainActivity.this);
+            externalWindow.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageStarted(WebView popup, String url, android.graphics.Bitmap favicon) {
+                    if ("about:blank".equals(url)) return;
+                    popup.stopLoading();
+                    openExternal(Uri.parse(url));
+                    popup.destroy();
+                }
+            });
+            WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+            transport.setWebView(externalWindow);
+            resultMsg.sendToTarget();
+            return true;
         }
 
         @Override
@@ -469,6 +651,19 @@ public final class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause() {
+        if (webView != null) webView.onPause();
+        if (textToSpeech != null) textToSpeech.stop();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) webView.onResume();
+    }
+
+    @Override
     public void onBackPressed() {
         if (webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
@@ -482,6 +677,11 @@ public final class MainActivity extends Activity {
             webView.setWebChromeClient(null);
             webView.setWebViewClient(null);
             webView.destroy();
+        }
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+            textToSpeech = null;
         }
         super.onDestroy();
     }

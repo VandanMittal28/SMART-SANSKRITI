@@ -7,8 +7,24 @@ The APK uses Android's WebView as the presentation layer so every current page
 and server-backed feature stays in sync with the main Sanskriti app. The native
 integration adds support for camera scans, microphone access, location, file
 uploads, downloads, persistent cookies/local storage, Android back navigation,
-and an offline/retry screen. It also detects a stalled profile-loading screen
-or a visible runtime issue overlay and replaces it with a native retry screen.
+and an offline/retry screen. Android-native text-to-speech is bridged into the
+web UI, so Yatrik, Chat, Audio Guide, Heritage Stories, and Hunt narration work
+inside the installed app even when WebView's browser speech API is unavailable.
+External booking links open in the phone's browser, while the privileged app
+bridge remains limited to the configured Sanskriti deployment. The app also
+detects a stalled profile-loading screen or a visible runtime issue overlay and
+replaces it with a native retry screen.
+
+## Demo behavior
+
+- This is an installable Android app with its own Sanskriti AI icon, launch
+  screen, full-screen app surface, permissions, back navigation, and lifecycle.
+- All current Next.js routes are available in the APK because the Android app
+  loads the configured Sanskriti deployment inside its app surface.
+- Camera recognition, voice input, Yatrik narration, hunt location, file
+  selection, ticket links, and downloads use Android-compatible integrations.
+- AI, authentication, profile, leaderboard, tickets, and other server-backed
+  screens require internet access and a healthy deployed web/API service.
 
 ## App URL
 
@@ -56,8 +72,9 @@ The debug APK is written to:
 
 `app/build/outputs/apk/debug/app-debug.apk`
 
-This prepared folder also includes the latest successful build at
-`Sanskriti-AI-debug.apk` for easy installation.
+For a convenient demo copy, place the latest build at
+`Sanskriti-AI-debug.apk`. APK files are ignored by Git intentionally, so the
+installable binary is shared separately from source code.
 
 For a distributable release, create a signing key and configure a release
 signing block in `app/build.gradle`; Android Studio's **Generate Signed Bundle /
