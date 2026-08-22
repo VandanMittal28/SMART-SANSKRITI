@@ -52,6 +52,7 @@ const EMPTY_PROFILE: LocalProfile = {
   user_type: 'tourist',
   language: 'en',
   admin_mode: false,
+  mascot_intro_seen_at: null,
 }
 
 const BADGES = [

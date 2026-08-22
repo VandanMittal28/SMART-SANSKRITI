@@ -15,4 +15,5 @@ export type UserProfile = {
   chat_history: Array<Record<string, unknown>>
   created_at: string
   updated_at: string
+  mascot_intro_seen_at: string | null
 }

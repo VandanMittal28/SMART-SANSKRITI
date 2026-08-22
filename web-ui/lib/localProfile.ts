@@ -30,6 +30,7 @@ export interface LocalProfile {
   user_type: 'student' | 'tourist'
   language: SupportedLanguage
   admin_mode: boolean
+  mascot_intro_seen_at: string | null
 }
 
 export const EMPTY_PROFILE: LocalProfile = {
@@ -46,6 +47,7 @@ export const EMPTY_PROFILE: LocalProfile = {
   user_type: 'tourist',
   language: 'en',
   admin_mode: false,
+  mascot_intro_seen_at: null,
 }
 
 export function getBadgeSetFromProfile(profile: LocalProfile): string[] {

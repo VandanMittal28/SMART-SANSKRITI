@@ -15,6 +15,7 @@ type ProfileRow = {
   user_type: 'student' | 'tourist' | null
   language: string | null
   admin_mode: boolean | null
+  mascot_intro_seen_at: string | null
 }
 
 type ActivityRow = {
@@ -67,6 +68,7 @@ function profileFromRow(row: ProfileRow, activity: ActivityRow[]): LocalProfile 
     user_type: row.user_type === 'student' ? 'student' : 'tourist',
     language: isSupportedLanguage(row.language) ? row.language : DEFAULT_LANGUAGE,
     admin_mode: Boolean(row.admin_mode),
+    mascot_intro_seen_at: row.mascot_intro_seen_at,
   }
 }
 
@@ -167,10 +169,10 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
 }
 
 export async function getUserProfile(userId: string): Promise<LocalProfile> {
-  const [profileResult, activityResult] = await Promise.all([
+  const [initialProfileResult, activityResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode')
+      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode, mascot_intro_seen_at')
       .eq('id', userId)
       .single(),
     supabase
@@ -180,6 +182,22 @@ export async function getUserProfile(userId: string): Promise<LocalProfile> {
       .order('created_at', { ascending: false })
       .limit(40),
   ])
+
+  let profileResult = initialProfileResult
+  if (
+    profileResult.error
+    && (profileResult.error.code === '42703' || profileResult.error.message.includes('mascot_intro_seen_at'))
+  ) {
+    const legacyResult = await supabase
+      .from('profiles')
+      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode')
+      .eq('id', userId)
+      .single()
+    profileResult = legacyResult as typeof initialProfileResult
+    if (profileResult.data) {
+      profileResult.data = { ...profileResult.data, mascot_intro_seen_at: null }
+    }
+  }
 
   if (profileResult.error) throw profileResult.error
   if (activityResult.error) throw activityResult.error
@@ -197,6 +215,29 @@ export async function updateUserProfile(userId: string, updates: Partial<LocalPr
   const { error } = await supabase.from('profiles').update(allowed).eq('id', userId)
   if (error) throw error
   return getUserProfile(userId)
+}
+
+export async function markMascotIntroSeen(userId: string): Promise<string> {
+  const seenAt = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ mascot_intro_seen_at: seenAt })
+    .eq('id', userId)
+    .is('mascot_intro_seen_at', null)
+    .select('mascot_intro_seen_at')
+    .maybeSingle()
+
+  if (error) throw error
+  if (data?.mascot_intro_seen_at) return data.mascot_intro_seen_at as string
+
+  const { data: existing, error: readError } = await supabase
+    .from('profiles')
+    .select('mascot_intro_seen_at')
+    .eq('id', userId)
+    .single()
+  if (readError) throw readError
+  if (!existing.mascot_intro_seen_at) throw new Error('The Yatrik welcome could not be saved.')
+  return existing.mascot_intro_seen_at as string
 }
 
 export async function addXP(_userId: string, xpDelta: number, eventType: string): Promise<number> {
@@ -270,6 +311,7 @@ export const authClient = {
   getCurrentUser,
   getUserProfile,
   updateUserProfile,
+  markMascotIntroSeen,
   addXP,
   addMonumentVisited,
   addQuizScore,

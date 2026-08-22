@@ -21,6 +21,7 @@ export default function LeaderboardPage() {
     user_type: 'tourist',
     language: 'en',
     admin_mode: false,
+    mascot_intro_seen_at: null,
   }), [profile])
 
   const topThree = leaderboard.slice(0, 3)

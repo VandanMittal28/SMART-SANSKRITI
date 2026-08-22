@@ -8,6 +8,9 @@ import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
 import { SupportedLanguage } from "@/lib/languages"
+import { emitYatrikEvent } from "@/lib/yatrik/events"
+import { ExploreARHud } from "@/components/explore/explore-ar-hud"
+import { useYatrikControls } from "@/components/yatrik/yatrik-provider"
 
 import { ChevronDown } from "lucide-react"
 import { getMonument, saveMonument } from "@/lib/monumentStore"
@@ -762,6 +765,7 @@ export default function ExplorePage() {
   const router = useRouter()
   const { user, setProfile } = useAuth()
   const { lang } = useLang()
+  const { muted, toggleMute } = useYatrikControls()
   const [hasMounted, setHasMounted] = useState(false)
 
   const [currentZoneIndex, setCurrentZoneIndex] = useState(0)
@@ -856,6 +860,21 @@ export default function ExplorePage() {
       setNarrationReady(true)
     }
   }, [])
+
+  const selectMonument = useCallback((id: string) => {
+    const name = monumentsList.find((monument) => monument.id === id)?.name || id
+    stopNarration()
+    setExploreMonumentId(id)
+    saveMonument(id, name)
+    setCurrentZoneIndex(0)
+    setCompletedZones([])
+    setXpEarned(0)
+    setExplorerComplete(false)
+    setArrivedAtZone(false)
+    setShowFact(false)
+    setUserPos(EXPLORE_USER_START[id] || EXPLORE_USER_START['taj-mahal'])
+    setDemoDistance(Math.floor(Math.random() * 150) + 150)
+  }, [monumentsList, stopNarration])
 
   const fetchNarration = useCallback((
     text: string,
@@ -961,7 +980,7 @@ export default function ExplorePage() {
       }
     } catch (error) {
       if (controller.signal.aborted) return
-      console.error('Narration request failed:', error)
+      console.warn('Narration request failed; captions remain available:', error)
       setIsTTSSpeaking(false)
       setNarrationReady(false)
     } finally {
@@ -1014,7 +1033,17 @@ export default function ExplorePage() {
       }
 
       window.setTimeout(() => {
-        if (!cancelled) void speakFact(direction, lang)
+        if (!cancelled) {
+          emitYatrikEvent({
+            type: 'route-prompt',
+            caption: direction,
+            narration: null,
+            priority: 20,
+            state: 'pointing',
+            durationMs: 5500,
+          })
+          void speakFact(direction, lang)
+        }
       }, 900)
     }
 
@@ -1062,6 +1091,22 @@ export default function ExplorePage() {
         story = translated.arrivalFact
       }
     }
+    emitYatrikEvent({
+      type: 'arrival-story',
+      caption: story,
+      narration: null,
+      priority: 70,
+      state: 'talking',
+      durationMs: 9000,
+    })
+    emitYatrikEvent({
+      type: 'xp-awarded',
+      caption: `You earned ${z.xp} XP at ${z.name}!`,
+      narration: null,
+      priority: 40,
+      state: 'celebrating',
+      durationMs: 4200,
+    })
     void speakFact(story, lang)
   }, [
     arrivedAtZone,
@@ -1145,6 +1190,65 @@ export default function ExplorePage() {
         ? 'Royal court historian'
         : 'Heritage storyteller'
 
+  const hudNarrationStatus = isTTSSpeaking
+    ? 'speaking'
+    : narrationReady
+      ? 'ready'
+      : translationLoading
+        ? 'loading'
+        : 'idle'
+
+  return (
+    <ExploreARHud
+      monumentId={exploreMonumentId}
+      monuments={monumentsList}
+      muted={muted}
+      onArrive={handleArrival}
+      onBack={() => router.push('/')}
+      onComplete={() => {
+        emitYatrikEvent({
+          type: 'explore-complete',
+          caption: `Amazing! You completed every zone at ${MONUMENT_NAMES[exploreMonumentId] || 'this monument'}.`,
+          priority: 90,
+          state: 'celebrating',
+          durationMs: 8500,
+        })
+        setExplorerComplete(true)
+      }}
+      onMonumentChange={selectMonument}
+      onNextZone={() => {
+        stopNarration()
+        setCurrentZoneIndex((current) => current + 1)
+      }}
+      onPauseNarration={pauseNarration}
+      onPlayNarration={playPreparedNarration}
+      onToggleMute={toggleMute}
+      state={{
+        activeZone: {
+          name: zone.name,
+          emoji: zone.emoji,
+          radiusMeters: zone.radius,
+          xp: zone.xp,
+        },
+        arrivalStatus: showFact ? 'arrived' : demoDistance <= zone.radius ? 'inside' : 'approaching',
+        bearingDegrees: bearing,
+        caption: showFact ? arrivalText : directionText,
+        distanceMeters: demoDistance,
+        fallbackStatus: 'none',
+        miniFact: showFact ? miniFactText : undefined,
+        mode: demoMode ? 'demo' : 'live',
+        narrationStatus: hudNarrationStatus,
+        story: showFact ? arrivalText : undefined,
+        targetVisible: demoDistance <= 90,
+        totalZones: activeZones.length,
+        xpEarned: showFact ? xpEarned : undefined,
+        zoneIndex: currentZoneIndex,
+      }}
+    />
+  )
+
+  /* Legacy map-first visual layer retained as the permission fallback until
+     Parth's controller supplies live fallbackStatus and map activation. */
   return (
     <AppShell>
       <style>{`
@@ -1406,7 +1510,16 @@ export default function ExplorePage() {
                 </button>
               ) : (
                 <button
-                  onClick={() => setExplorerComplete(true)}
+                  onClick={() => {
+                    emitYatrikEvent({
+                      type: 'explore-complete',
+                      caption: `Amazing! You completed every zone at ${MONUMENT_NAMES[exploreMonumentId] || 'this monument'}.`,
+                      priority: 90,
+                      state: 'celebrating',
+                      durationMs: 8500,
+                    })
+                    setExplorerComplete(true)
+                  }}
                   style={{
                     background: 'linear-gradient(135deg,#534AB7,#3d35a0)', borderRadius: '12px',
                     padding: '12px 24px', color: 'white', fontWeight: '700', fontSize: '15px',
