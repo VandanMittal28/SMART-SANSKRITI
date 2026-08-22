@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
-import { OrnamentalDivider } from "@/components/ornamental-divider"
 import { UploadZone } from "@/components/recognition/upload-zone"
 import { ResultCard } from "@/components/recognition/result-card"
 import { MonumentDetailTabs } from "@/components/recognition/monument-detail-tabs"
@@ -16,6 +15,7 @@ import { saveMonument, monumentNameToId } from "@/lib/monumentStore"
 import { useLang } from "@/lib/languageContext"
 import { useAudioGuide } from "@/hooks/useAudioGuide"
 import { resolveQuizMonumentId } from "@/lib/quizQuestions"
+import { Brain, Camera, Compass, Languages, Mic, Pause, Play, RotateCcw, Upload, Volume2, VolumeX, WifiOff } from 'lucide-react'
 import { 
   getCache, setCache, 
   CACHE_DURATION
@@ -120,6 +120,7 @@ export default function RecognitionPage() {
   const [loading, setLoading] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string>("")
+  const [recognitionError, setRecognitionError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'upload' | 'camera'>('upload')
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -164,6 +165,7 @@ export default function RecognitionPage() {
     if (!file) return
     setLoading(true)
     setResult(null)
+    setRecognitionError(null)
     setFileName(file.name)
 
     // Show preview immediately
@@ -306,13 +308,15 @@ export default function RecognitionPage() {
       } else {
         showToast(resultData.is_unknown ? 'Low confidence result. Check suggestions.' : 'Monument identified! 🏛️')
       }
-    } catch {
-      setResult({
-        monument_name: 'Unknown',
-        is_unknown: true,
-        brief_description: 'Could not identify. It might not be a recognized monument or the image was unclear.',
-        suggestions: suggestMonuments(),
-      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Recognition request failed.'
+      console.error('Monument recognition failed:', error)
+      setResult(null)
+      setRecognitionError(
+        /failed to fetch|network|resolve host|internet|timeout/i.test(message)
+          ? 'Connect to the internet and try the same photo again.'
+          : 'The recognition service could not process this photo. Please try again.',
+      )
     } finally {
       clearTimeout(slowWarningTimer)
       setLoading(false)
@@ -365,17 +369,16 @@ export default function RecognitionPage() {
   return (
     <AppShell>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
-      <div className="p-4 lg:p-8 animate-fade-in">
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#C9A84C]">
+      <div className="screen-gutter py-5 animate-fade-in">
+        <div className="mb-4">
+          <h1 className="font-heritage text-[28px] font-bold leading-9 text-[#F6F1E8]">
             {t('monument_recognition')}
           </h1>
+          <p className="mt-1 text-sm text-[#AEB6C8]">Identify a monument using your camera or a saved photo.</p>
         </div>
 
-        <OrnamentalDivider />
-
         {/* Upload / Camera tab buttons */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, marginTop: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 16, padding: 4, background: '#11182B', borderRadius: 12 }}>
           {(['upload', 'camera'] as const).map(tab => (
             <button key={tab}
               onClick={() => {
@@ -384,14 +387,14 @@ export default function RecognitionPage() {
                 else stopCamera()
               }}
               style={{
-                padding: '8px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600,
+                minHeight: 44, padding: '8px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700,
                 cursor: 'pointer',
-                background: activeTab === tab ? 'rgba(201,168,76,0.2)' : 'transparent',
-                border: activeTab === tab ? '1px solid #C9A84C' : '1px solid rgba(201,168,76,0.3)',
-                color: activeTab === tab ? '#C9A84C' : '#C4A882'
+                background: activeTab === tab ? '#D6A84B' : 'transparent',
+                border: 'none',
+                color: activeTab === tab ? '#171004' : '#AEB6C8'
               }}
             >
-              {tab === 'upload' ? t('upload_photo') : t('use_camera')}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>{tab === 'upload' ? <Upload size={15} /> : <Camera size={15} />}{tab === 'upload' ? t('upload_photo') : t('use_camera')}</span>
             </button>
           ))}
         </div>
@@ -408,7 +411,7 @@ export default function RecognitionPage() {
                 padding: '12px 32px', borderRadius: 999,
                 background: 'linear-gradient(135deg, #D4893F, #C9A84C)',
                 color: 'white', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700
-              }}>📸 Capture</button>
+              }}><Camera size={18} style={{ display: 'inline', marginRight: 8 }} />Capture</button>
               <button onClick={() => { stopCamera(); setActiveTab('upload') }} style={{
                 padding: '12px 24px', borderRadius: 999,
                 background: 'rgba(196,91,58,0.2)', color: '#E8A85C',
@@ -431,25 +434,52 @@ export default function RecognitionPage() {
           </div>
         )}
 
+        {!loading && recognitionError && (
+          <section className="my-5 rounded-2xl border border-[#E8928B]/20 bg-[#11182B] p-5 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#E8928B]/10 text-[#E8928B]">
+              <WifiOff className="h-5 w-5" />
+            </div>
+            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">Recognition is offline</p>
+            <p className="mx-auto mt-2 max-w-[280px] text-sm leading-6 text-[#AEB6C8]">{recognitionError}</p>
+            <button
+              type="button"
+              onClick={() => setRecognitionError(null)}
+              className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D6A84B] px-6 text-sm font-bold text-[#171004]"
+            >
+              <RotateCcw className="h-4 w-4" /> Choose photo again
+            </button>
+          </section>
+        )}
+
         {/* Error state when result is unknown */}
         {!loading && result?.is_unknown && !hasIdentifiedMonument && (
-          <div style={{ background: 'rgba(196,91,58,0.1)', border: '1px solid rgba(196,91,58,0.5)', borderRadius: 12, padding: 16, color: '#E8A85C', textAlign: 'center', margin: '24px 0' }}>
-            <div style={{ fontSize: 24 }}>⚠️</div>
-            <p>{t('not_identified')}</p>
-            <p style={{ fontSize: '13px', marginTop: 4 }}>{t('try_clearer')}</p>
+          <section className="my-5 rounded-2xl border border-[#E8928B]/20 bg-[#11182B] p-5 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#E8928B]/10 text-[#E8928B]">
+              <Camera className="h-5 w-5" />
+            </div>
+            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">{t('not_identified')}</p>
+            <p className="mx-auto mt-2 max-w-[280px] text-sm leading-6 text-[#AEB6C8]">{t('try_clearer')}</p>
+            <div className="mx-auto mt-4 grid max-w-[300px] grid-cols-2 gap-2 text-left text-xs text-[#C7CDDA]">
+              <span className="rounded-lg bg-[#171F34] px-3 py-2">Use daylight</span>
+              <span className="rounded-lg bg-[#171F34] px-3 py-2">Show full structure</span>
+            </div>
             <button
               onClick={() => setResult(null)}
-              style={{ background: 'rgba(201,168,76,0.2)', border: '1px solid #C9A84C', color: '#C9A84C', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginTop: 8 }}
+              className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D6A84B] px-6 text-sm font-bold text-[#171004]"
             >
-              {t('try_again')}
+              <RotateCcw className="h-4 w-4" /> {t('try_again')}
             </button>
-          </div>
+          </section>
         )}
 
         {/* Results section */}
         {!loading && result && hasIdentifiedMonument && (
-          <div className="mt-8 space-y-8 animate-slide-up">
+          <div className="mt-5 space-y-4 animate-slide-up">
             <ResultCard result={result} imagePreview={imagePreview} fileName={fileName} />
+
+            {result.monument_name && result.monument_name !== 'Unknown' && (
+              <ListenToEmperor monumentName={result.monument_name} />
+            )}
 
             {result.low_confidence && (
               <div style={{
@@ -460,136 +490,74 @@ export default function RecognitionPage() {
               </div>
             )}
 
-            {/* XP badge */}
+            {/* Recognition reward */}
             {result.monument_name && result.monument_name !== 'Unknown' && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center',
-                gap: '6px', padding: '4px 12px',
-                background: 'rgba(83,74,183,0.2)',
-                border: '1px solid rgba(83,74,183,0.5)',
-                borderRadius: '999px', marginBottom: '12px',
-                animation: 'pulse 2s ease infinite'
-              }}>
-                <span style={{ color: '#9B92F0', fontSize: '13px', fontWeight: 700 }}>
-                  ⚡ +25 XP earned!
-                </span>
+              <div className="flex min-h-11 items-center justify-between rounded-xl border border-[#63C7BA]/16 bg-[#63C7BA]/[0.06] px-4">
+                <span className="text-xs font-bold text-[#8DE0D6]">Monument added to your journey</span>
+                <span className="text-xs font-bold text-[#F3DFC0]">+25 XP</span>
               </div>
             )}
 
-            {/* Let's Explore button — shown for all demo monuments */}
-            {(() => {
-              const name = result.monument_name || ''
-              const id = result.monument_id || ''
-              const isDemoMonument =
-                name.toLowerCase().includes('taj') ||
-                name.toLowerCase().includes('red fort') ||
-                name.toLowerCase().includes('qutub') ||
-                name.toLowerCase().includes('konark') ||
-                id === 'taj-mahal' || id === 'red-fort' || id === 'qutub-minar' || id === 'konark'
-              if (!name || name === 'Unknown' || !isDemoMonument) return null
-              return (
-                <button
-                  onClick={() => router.push('/explore')}
-                  style={{
-                    background: 'linear-gradient(135deg, #C9A84C, #D4893F)',
-                    borderRadius: '16px', padding: '14px 28px',
-                    color: '#0F0B1E', fontWeight: '700', fontSize: '16px',
-                    width: '100%', border: 'none', cursor: 'pointer',
-                    marginTop: '16px', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', gap: '10px', letterSpacing: '0.5px'
-                  }}
-                >
-                  🗺️ Let&apos;s Explore {name.split(' ').slice(0,2).join(' ')}
-                  <span style={{ fontSize: '12px', opacity: 0.8 }}>+350 XP available</span>
-                </button>
-              )
-            })()}
-
-            {/* Listen to Emperor */}
+            {/* Primary next actions */}
             {result.monument_name && result.monument_name !== 'Unknown' && (
-              <ListenToEmperor monumentName={result.monument_name} />
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => speak(`Welcome to ${result.monument_name}. ${getMonumentDescription()}`)} className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-[#D6A84B]/16 bg-[#11182B] text-xs font-bold text-[#F3DFC0]">
+                  <Volume2 className="h-5 w-5 text-[#D6A84B]" /> Audio guide
+                </button>
+                <button type="button" onClick={() => router.push('/explore')} className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-[#D6A84B]/16 bg-[#11182B] text-xs font-bold text-[#F3DFC0]">
+                  <Compass className="h-5 w-5 text-[#D6A84B]" /> Start tour
+                </button>
+                <button type="button" onClick={() => router.push('/quiz')} className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-[#D6A84B]/16 bg-[#11182B] text-xs font-bold text-[#F3DFC0]">
+                  <Brain className="h-5 w-5 text-[#D6A84B]" /> Take quiz
+                </button>
+              </div>
             )}
 
-            {/* 🎧 Audio Guide Card */}
+            {/* Audio and voice controls */}
             {result.monument_name && result.monument_name !== 'Unknown' && (
-              <div style={{
-                background: 'rgba(28,22,56,0.9)',
-                border: '1px solid rgba(201,168,76,0.2)',
-                borderRadius: '16px', padding: '20px', marginTop: '16px'
-              }}>
-                <h3 style={{ color: '#C9A84C', fontFamily: 'Georgia, serif',
-                             fontSize: '18px', marginBottom: '12px' }}>
-                  🎧 Audio Guide
-                </h3>
-
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                  <button
-                    onClick={() => speak(`Welcome to ${result.monument_name}. ${getMonumentDescription()}`)}
-                    disabled={isSpeaking}
-                    style={{
-                      background: isSpeaking ? 'rgba(75,155,142,0.3)' : 'linear-gradient(135deg,#4B9B8E,#3a7a6e)',
-                      border: 'none', borderRadius: '10px', padding: '8px 16px',
-                      color: 'white', fontSize: '13px', cursor: 'pointer'
-                    }}
-                  >
-                    {isSpeaking ? '🔊 Speaking...' : '▶️ Play Guide'}
-                  </button>
-
-                  {isSpeaking && (
-                    <button onClick={stopSpeaking} style={{
-                      background: 'rgba(220,38,38,0.2)', border: '1px solid #DC2626',
-                      borderRadius: '10px', padding: '8px 16px',
-                      color: '#DC2626', fontSize: '13px', cursor: 'pointer'
-                    }}>⏹️ Stop</button>
-                  )}
-
-                  <button
-                    onClick={isListening ? stopListening : startListening}
-                    style={{
-                      background: isListening ? 'rgba(201,168,76,0.3)' : 'rgba(201,168,76,0.1)',
-                      border: `1px solid ${isListening ? '#C9A84C' : 'rgba(201,168,76,0.27)'}`,
-                      borderRadius: '10px', padding: '8px 16px',
-                      color: '#C9A84C', fontSize: '13px', cursor: 'pointer',
-                      animation: isListening ? 'pulse 1s infinite' : 'none'
-                    }}
-                  >
-                    {isListening ? '🎤 Listening...' : '🎤 Ask Question'}
-                  </button>
-
-                  <button onClick={toggleMute} style={{
-                    background: 'rgba(28,22,56,0.5)', border: '1px solid rgba(201,168,76,0.2)',
-                    borderRadius: '10px', padding: '8px 12px',
-                    color: '#C4A882', fontSize: '13px', cursor: 'pointer'
-                  }}>
-                    {isMuted ? '🔇' : '🔔'}
-                  </button>
-
-                  <button
-                    onClick={() => setAudioLang(audioLang === 'en' ? 'hi' : 'en')}
-                    style={{
-                      background: 'rgba(83,74,183,0.2)', border: '1px solid #534AB7',
-                      borderRadius: '10px', padding: '8px 12px',
-                      color: '#534AB7', fontSize: '13px', cursor: 'pointer'
-                    }}
-                  >
-                    {audioLang === 'en' ? 'हि' : 'EN'}
+              <section className="rounded-2xl border border-white/8 bg-[#11182B] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#8891A6]">Listen and learn</p>
+                    <h3 className="mt-1 font-heritage text-lg font-bold text-[#F6F1E8]">Your monument audio guide</h3>
+                    <p className="mt-1 text-xs text-[#AEB6C8]">Narration and questions in {audioLang === 'en' ? 'English' : 'Hindi'}</p>
+                  </div>
+                  <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute audio guide' : 'Mute audio guide'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/8 bg-[#171F34] text-[#D6A84B]">
+                    {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                   </button>
                 </div>
 
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => speak(`Welcome to ${result.monument_name}. ${getMonumentDescription()}`)}
+                    disabled={isSpeaking}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D6A84B] px-3 text-sm font-bold text-[#171004] disabled:opacity-60"
+                  >
+                    {isSpeaking ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}{isSpeaking ? 'Playing' : 'Play guide'}
+                  </button>
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold ${isListening ? 'border-[#63C7BA] bg-[#63C7BA]/12 text-[#8DE0D6]' : 'border-white/10 bg-[#171F34] text-[#F6F1E8]'}`}
+                  >
+                    <Mic className="h-4 w-4" />{isListening ? 'Listening…' : 'Ask a question'}
+                  </button>
+                </div>
+
+                <div className="mt-2 flex justify-between">
+                  {isSpeaking ? <button type="button" onClick={stopSpeaking} className="inline-flex min-h-10 items-center gap-2 px-1 text-xs font-bold text-[#E8928B]"><RotateCcw className="h-3.5 w-3.5" /> Stop narration</button> : <span />}
+                  <button type="button" onClick={() => setAudioLang(audioLang === 'en' ? 'hi' : 'en')} className="inline-flex min-h-10 items-center gap-2 px-1 text-xs font-bold text-[#D6A84B]"><Languages className="h-3.5 w-3.5" /> {audioLang === 'en' ? 'हिंदी' : 'English'}</button>
+                </div>
+
                 {isThinking && (
-                  <p style={{ color: '#4B9B8E', fontSize: '13px', fontStyle: 'italic' }}>🤔 Thinking...</p>
+                  <p className="mt-3 text-xs font-semibold text-[#8DE0D6]">Preparing an answer…</p>
                 )}
 
                 {lastAnswer && !isThinking && (
-                  <div style={{
-                    background: 'rgba(75,155,142,0.1)', borderLeft: '3px solid #4B9B8E',
-                    borderRadius: '8px', padding: '12px',
-                    color: '#F5E6D3', fontSize: '14px', lineHeight: '1.6'
-                  }}>
+                  <div className="mt-3 rounded-xl border-l-2 border-[#63C7BA] bg-[#63C7BA]/[0.06] p-3 text-sm leading-6 text-[#F6F1E8]">
                     {lastAnswer}
                   </div>
                 )}
-              </div>
+              </section>
             )}
 
             {/* Monument Detail Tabs */}
@@ -597,24 +565,11 @@ export default function RecognitionPage() {
               <MonumentDetailTabs monumentName={result.monument_name} />
             )}
 
-            {/* Quick action buttons */}
+            {/* Secondary actions */}
             {result.monument_name && result.monument_name !== 'Unknown' && (
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
-                <a href="/quiz" style={{
-                  padding: '10px 18px', background: 'linear-gradient(135deg, #D4893F, #C9A84C)',
-                  color: '#0F0B1E', borderRadius: '10px', textDecoration: 'none', fontSize: '13px',
-                  fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px'
-                }}>
-                  🧠 {t('take_quiz')} — {result.monument_name.split(' ')[0]}
-                </a>
-                <a href="/hunt" style={{
-                  padding: '10px 18px', background: 'rgba(83,74,183,0.2)',
-                  border: '1px solid rgba(83,74,183,0.5)', color: '#9B92F0', borderRadius: '10px',
-                  textDecoration: 'none', fontSize: '13px', fontWeight: 700,
-                  display: 'flex', alignItems: 'center', gap: '6px'
-                }}>
-                  🗺️ {t('treasure_hunt')}
-                </a>
+              <div className="grid grid-cols-2 gap-2">
+                <a href="/quiz" className="grid min-h-12 place-items-center rounded-xl bg-[#D6A84B] px-3 text-sm font-bold text-[#171004]">{t('take_quiz')}</a>
+                <a href="/hunt" className="grid min-h-12 place-items-center rounded-xl border border-white/10 bg-[#171F34] px-3 text-sm font-bold text-[#F6F1E8]">{t('treasure_hunt')}</a>
               </div>
             )}
           </div>

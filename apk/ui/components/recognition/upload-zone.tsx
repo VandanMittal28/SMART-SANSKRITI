@@ -35,6 +35,7 @@ export function UploadZone({ onFileSelect }: UploadZoneProps) {
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) handleFile(file)
+          e.target.value = ''
         }}
       />
       <div

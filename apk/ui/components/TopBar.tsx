@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Globe, UserRound } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
@@ -26,18 +26,23 @@ export function TopBar() {
       .toUpperCase()
   }, [profile])
 
-  if (normalizedPathname === '/login' || normalizedPathname === '/auth') return null
+  if (
+    normalizedPathname === '/login' ||
+    normalizedPathname === '/auth' ||
+    normalizedPathname.startsWith('/explore') ||
+    normalizedPathname.startsWith('/hunt')
+  ) return null
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#13131a]/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] w-full max-w-[420px] items-center justify-between px-6 py-4">
-        <Link href="/" className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-[#f2ca50]/20 bg-[#0e1222] shadow-[0_12px_28px_rgba(242,202,80,0.12)]">
-            <Image src="/sanskriti-logo.svg" alt="Sanskriti AI logo" width={40} height={40} className="h-full w-full object-cover" priority />
+    <header className="fixed top-0 z-50 w-full border-b border-[#D6A84B]/10 bg-[#080D1D]/95 pt-[env(safe-area-inset-top)] backdrop-blur-lg">
+      <div className="mx-auto flex h-16 w-full max-w-[420px] items-center justify-between px-5">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-[#D6A84B]/20 bg-[#11182B]">
+            <Image src="/sanskriti-logo.svg" alt="Sanskriti AI logo" width={36} height={36} className="h-full w-full object-cover" priority />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-bold tracking-tight text-[#F5E6D3]">{lang === 'hi' ? 'संस्कृति AI' : 'Sanskriti AI'}</p>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-[#8C7B63]">{lang === 'hi' ? 'जीवित विरासत' : 'Living Heritage'}</p>
+            <p className="truncate font-heritage text-sm font-bold tracking-tight text-[#F6F1E8]">{lang === 'hi' ? 'संस्कृति AI' : 'Sanskriti AI'}</p>
+            <p className="text-[9px] uppercase tracking-[0.16em] text-[#8891A6]">{lang === 'hi' ? 'जीवित विरासत' : 'Living Heritage'}</p>
           </div>
         </Link>
 
@@ -45,17 +50,16 @@ export function TopBar() {
           <label
             data-no-translate
             className={cn(
-              'relative inline-flex items-center gap-1 rounded-full border py-2 pl-2 pr-1 text-[11px] font-bold tracking-tight transition-colors',
-              'border-[#f2ca50]/20 bg-[#f2ca50]/10 text-[#f7d88c] hover:bg-[#f2ca50]/15'
+              'relative inline-flex h-9 items-center rounded-full border px-3 text-[11px] font-bold transition-colors',
+              'border-[#D6A84B]/20 bg-[#D6A84B]/8 text-[#F3DFC0]'
             )}
           >
-            <Globe className="h-4 w-4" />
             <span className="sr-only">Select language</span>
             <select
               aria-label="Select site and narration language"
               value={lang}
               onChange={(event) => setLang(event.target.value as typeof lang)}
-              className="w-[72px] cursor-pointer appearance-none bg-transparent pr-4 text-[#f7d88c] outline-none"
+              className="w-7 cursor-pointer appearance-none bg-transparent text-[#F3DFC0] outline-none"
             >
               {SUPPORTED_LANGUAGES.map((language) => (
                 <option key={language.id} value={language.id} className="bg-[#13131a] text-[#F5E6D3]">
@@ -63,12 +67,11 @@ export function TopBar() {
                 </option>
               ))}
             </select>
-            <span aria-hidden="true" className="pointer-events-none absolute right-2 text-[8px]">▼</span>
           </label>
 
           <Link
             href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#F5E6D3]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#11182B] text-[#F6F1E8]"
             aria-label="Open profile"
           >
             {profile?.full_name ? (

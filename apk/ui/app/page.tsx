@@ -1,187 +1,99 @@
 'use client'
+
+import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowRight, Camera, CheckCircle2, Clock3, Compass, Download, MapPin, Route, Ticket, Trophy } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
-import { AppCard } from '@/components/mobile/app-card'
-import { MapView } from '@/components/mobile/map-view'
-import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/authContext'
-import { useUser } from '@/lib/userContext'
 import { useLang } from '@/lib/languageContext'
-import { Sparkles, Camera, Route, Trophy, ArrowRight, Ticket } from 'lucide-react'
 
-
-const nearbyMonuments = [
-  { name: 'Taj Mahal', location: 'Agra', badge: 'Trending' },
-  { name: 'Qutub Minar', location: 'Delhi', badge: 'Nearby' },
-  { name: 'Red Fort', location: 'Delhi', badge: 'Story Mode' },
+const quickActions = [
+  { label: 'Explore nearby', detail: 'Tours & places', href: '/explore', icon: Compass },
+  { label: 'Book tickets', detail: 'Official rates', href: '/tickets', icon: Ticket },
+  { label: 'Plan a trip', detail: 'Personal itinerary', href: '/itinerary', icon: Route },
+  { label: 'Heritage hunt', detail: 'Play on location', href: '/hunt', icon: Trophy },
 ]
 
-const festivals = [
-  { name: 'Diwali Walks', date: '18 Oct', note: 'Light trails + heritage nights' },
-  { name: 'Holi at the Fort', date: '03 Mar', note: 'Color, music, and local food' },
-  { name: 'Monsoon Museums', date: '12 Jul', note: 'Indoor tours and audio guides' },
-]
-
-const learningQueue = [
-  { title: 'Mughal architecture basics', progress: 72 },
-  { title: 'UNESCO landmarks in India', progress: 46 },
-  { title: 'Monument quiz streak', progress: 88 },
+const nearby = [
+  { name: 'Agra Fort', meta: '2.4 km · Open until 6:00 PM', href: '/monument/agra-fort' },
+  { name: 'Mehtab Bagh', meta: '3.1 km · Best at sunset', href: '/explore' },
 ]
 
 export default function HomePage() {
   const { profile } = useAuth()
-  const { userType, userConfig, setUserType } = useUser()
   const { t } = useLang()
+  const displayName = profile?.full_name?.split(' ')[0] || profile?.username || t('explorer')
 
   return (
     <AppShell>
-      <div className="flex flex-col gap-4 px-4 py-4 animate-fade-in">
-        <AppCard className="hero-grid overflow-hidden p-0">
-          <div className="space-y-4 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#C9A84C]">{t('good_evening')}</p>
-                <h2 className="mt-1 text-2xl font-semibold text-[#F5E6D3]">{profile?.username ? `@${profile.username}` : profile?.full_name || t('explorer')}</h2>
-                <p className="mt-1 text-sm text-[#D9C7AA]">{userConfig?.subtitle || t('hero_caption_default')}</p>
-              </div>
-              <div className="rounded-[20px] border border-[#C9A84C]/18 bg-black/20 px-3 py-2 text-right backdrop-blur-md">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[#A89A7D]">XP</p>
-                <p className="text-xl font-semibold text-[#F7D88C]">{profile?.total_xp ?? 0}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button className="rounded-full border border-[#C9A84C]/20 bg-[#C9A84C]/12 px-3 py-1 text-xs font-semibold text-[#F7D88C]" onClick={() => setUserType(userType === 'student' ? 'tourist' : 'student')}>
-                {userType === 'student' ? t('student_mode') : t('tourist_mode')}
-              </button>
-              <button className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-[#D9C7AA]">
-                {t('offline_ready')}
-              </button>
-            </div>
+      <div className="screen-gutter flex flex-col gap-6 py-5 animate-fade-in">
+        <section>
+          <p className="text-sm font-semibold text-[#D6A84B]">Good evening, {displayName}</p>
+          <h1 className="mt-1 max-w-[320px] font-heritage text-[28px] font-bold leading-9 text-[#F6F1E8]">What would you like to discover?</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="status-chip"><Download className="h-3.5 w-3.5" /> Offline content ready</span>
+            <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.035] px-2.5 text-[11px] font-semibold text-[#AEB6C8]"><MapPin className="h-3.5 w-3.5" /> Agra</span>
           </div>
-        </AppCard>
+        </section>
 
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: t('nav_scan'), href: '/recognition', icon: Camera },
-            { label: t('nav_explore'), href: '/explore', icon: Route },
-            { label: t('nav_tickets'), href: '/tickets', icon: Ticket },
-            { label: t('nav_hunt'), href: '/hunt', icon: Trophy },
-          ].map((item) => (
-            <Link key={item.label} href={item.href} className="app-card flex flex-col items-start gap-3 rounded-[20px] p-3 transition-transform active:scale-95">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#C9A84C]/12 text-[#F7D88C]"><item.icon className="h-4 w-4" /></span>
-              <span className="text-sm font-semibold text-[#F5E6D3]">{item.label}</span>
+        <Link href="/recognition" className="group relative min-h-[148px] overflow-hidden rounded-2xl border border-[#D6A84B]/22 bg-[#171F34] p-5 transition-colors active:bg-[#1D2740]">
+          <div className="relative z-10 max-w-[245px]">
+            <span className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-[#D6A84B]/12 text-[#E8BE69]"><Camera className="h-5 w-5" /></span>
+            <h2 className="font-heritage text-xl font-bold text-[#F6F1E8]">Scan a monument</h2>
+            <p className="mt-1 text-sm leading-5 text-[#AEB6C8]">Point your camera or upload a photo</p>
+          </div>
+          <span className="absolute bottom-5 right-5 grid h-11 w-11 place-items-center rounded-full bg-[#D6A84B] text-[#171004] transition-transform group-active:scale-95"><ArrowRight className="h-5 w-5" /></span>
+          <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full border border-[#D6A84B]/10" />
+        </Link>
+
+        <section className="grid grid-cols-2 gap-3" aria-label="Quick actions">
+          {quickActions.map((item) => (
+            <Link key={item.href} href={item.href} className="min-h-[96px] rounded-2xl border border-white/8 bg-[#11182B] p-4 transition-colors active:bg-[#171F34]">
+              <item.icon className="h-5 w-5 text-[#D6A84B]" />
+              <p className="mt-3 text-sm font-bold text-[#F6F1E8]">{item.label}</p>
+              <p className="mt-0.5 text-[11px] text-[#8891A6]">{item.detail}</p>
             </Link>
           ))}
-        </div>
+        </section>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#F5E6D3]">{t('quick_actions')}</h2>
-          <Link href="/profile" className="text-sm text-[#F7D88C]">{t('view_profile')}</Link>
-        </div>
-
-        <div className="grid gap-3">
-          <Link href="/recognition" className="app-card flex items-center justify-between rounded-[22px] p-4 transition-transform active:scale-[0.99]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C9A84C]/12 text-[#F7D88C]"><Camera className="h-5 w-5" /></div>
-              <div>
-                <p className="font-semibold text-[#F5E6D3]">{t('scan_monument')}</p>
-                <p className="text-sm text-[#C4A882]">{t('scan_monument_desc')}</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-[#C9A84C]" />
-          </Link>
-
-          <Link href="/explore" className="app-card flex items-center justify-between rounded-[22px] p-4 transition-transform active:scale-[0.99]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#4B9B8E]/12 text-[#7EE4D4]"><Route className="h-5 w-5" /></div>
-              <div>
-                <p className="font-semibold text-[#F5E6D3]">{t('explore_title')}</p>
-                <p className="text-sm text-[#C4A882]">{t('explore_desc')}</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-[#C9A84C]" />
-          </Link>
-
-          <Link href="/hunt" className="app-card flex items-center justify-between rounded-[22px] p-4 transition-transform active:scale-[0.99]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#534AB7]/15 text-[#AFA7FF]"><Sparkles className="h-5 w-5" /></div>
-              <div>
-                <p className="font-semibold text-[#F5E6D3]">{t('start_hunt')}</p>
-                <p className="text-sm text-[#C4A882]">{t('start_hunt_desc')}</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-[#C9A84C]" />
-          </Link>
-
-          <Link href="/tickets" className="app-card flex items-center justify-between rounded-[22px] p-4 transition-transform active:scale-[0.99]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4893F]/15 text-[#F7B978]"><Ticket className="h-5 w-5" /></div>
-              <div>
-                <p className="font-semibold text-[#F5E6D3]">{t('book_monument_tickets')}</p>
-                <p className="text-sm text-[#C4A882]">{t('book_monument_tickets_desc')}</p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-[#C9A84C]" />
-          </Link>
-        </div>
-
-        <MapView
-          title={t('plan_itinerary')}
-          subtitle={t('plan_itinerary_desc')}
-          action={
-            <Button asChild size="sm" className="rounded-full bg-[#C9A84C] px-3 text-[#0E0916]">
-              <Link href="/explore">{t('explore_now')}</Link>
-            </Button>
-          }
-        >
-          <div className="grid grid-cols-3 gap-2">
-            {nearbyMonuments.map((item) => (
-              <div key={item.name} className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                <p className="text-sm font-semibold text-[#F5E6D3]">{item.name}</p>
-                <p className="text-xs text-[#C4A882]">{item.location}</p>
-                <span className="mt-2 inline-flex rounded-full border border-white/10 px-2 py-1 text-[10px] text-[#F7D88C]">{item.badge}</span>
-              </div>
-            ))}
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="section-title">Continue your journey</h2>
+            <Link href="/explore" className="text-xs font-bold text-[#D6A84B]">View route</Link>
           </div>
-        </MapView>
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#F5E6D3]">{t('festivals_title')}</h2>
-            <Link href="/festivals" className="text-sm text-[#F7D88C]">{t('calendar_link')}</Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 app-scroll-row">
-            {festivals.map((item) => (
-              <div key={item.name} className="app-card min-w-[200px] rounded-[22px] p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[#8C7B63]">{item.date}</p>
-                <h3 className="mt-1 text-base font-semibold text-[#F5E6D3]">{item.name}</h3>
-                <p className="mt-2 text-sm text-[#C4A882]">{item.note}</p>
+          <Link href="/explore" className="flex min-h-[106px] items-center gap-3 rounded-2xl border border-[#D6A84B]/16 bg-[#11182B] p-3.5">
+            <div className="relative h-[78px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#171F34]">
+              <Image src="/hero-monuments.png" alt="Taj Mahal heritage route" fill sizes="82px" className="object-cover" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-2">
+                <div><p className="font-bold text-[#F6F1E8]">Taj Mahal tour</p><p className="mt-0.5 text-xs text-[#AEB6C8]">Zone 1 of 19</p></div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#D6A84B]" />
               </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[6%] rounded-full bg-[#D6A84B]" /></div>
+              <p className="mt-2 text-[11px] font-semibold text-[#8891A6]">Resume exploration</p>
+            </div>
+          </Link>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between"><h2 className="section-title">Recommended near you</h2><Compass className="h-4 w-4 text-[#8891A6]" /></div>
+          <div className="divide-y divide-white/6 overflow-hidden rounded-2xl border border-white/8 bg-[#11182B]">
+            {nearby.map((place) => (
+              <Link key={place.name} href={place.href} className="flex min-h-[72px] items-center gap-3 px-4 py-3 active:bg-white/[0.03]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#D6A84B]/10 text-[#D6A84B]"><MapPin className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-[#F6F1E8]">{place.name}</span><span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#AEB6C8]"><Clock3 className="h-3 w-3" /> {place.meta}</span></span>
+                <ArrowRight className="h-4 w-4 text-[#667086]" />
+              </Link>
             ))}
           </div>
         </section>
 
-        <section className="space-y-3 safe-bottom-space">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#F5E6D3]">{t('continue_learning')}</h2>
-            <Link href="/quiz" className="text-sm text-[#F7D88C]">{t('quiz_link')}</Link>
-          </div>
-          <div className="space-y-3">
-            {learningQueue.map((item) => (
-              <div key={item.title} className="app-card rounded-[20px] p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="font-medium text-[#F5E6D3]">{item.title}</p>
-                  <span className="text-xs text-[#C4A882]">{item.progress}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-white/8">
-                  <div className="h-full rounded-full bg-[linear-gradient(135deg,#C9A84C,#D4893F)]" style={{ width: `${item.progress}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
+        <div className="flex items-center justify-between rounded-xl border border-[#63C7BA]/16 bg-[#63C7BA]/[0.06] px-4 py-3 text-xs">
+          <span className="flex items-center gap-2 font-semibold text-[#8DE0D6]"><CheckCircle2 className="h-4 w-4" /> Ready for offline exploring</span>
+          <span className="text-[#AEB6C8]">Updated today</span>
+        </div>
+        <div className="h-3" />
       </div>
     </AppShell>
   )

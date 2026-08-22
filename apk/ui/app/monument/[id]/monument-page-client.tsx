@@ -2,6 +2,8 @@
 import { useRouter, useParams } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { useLang } from '@/lib/languageContext'
+import { AppShell } from '@/components/app-shell'
+import { ArrowLeft, Brain, Headphones, MapPin, Route, Send, Ticket } from 'lucide-react'
 
 interface Message {
   id: string
@@ -313,55 +315,37 @@ export default function MonumentPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <div
-        style={{
-          backgroundColor: '#1A1035',
-          padding: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          color: 'white',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              fontSize: '24px',
-              cursor: 'pointer',
-              padding: '8px',
-            }}
-          >
-            ←
-          </button>
-          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>{monument.name}</h1>
-        </div>
-      </div>
+    <AppShell>
+      <div style={{ maxWidth: 420, margin: '0 auto', padding: 20 }}>
+        <button type="button" onClick={() => router.back()} className="mb-4 inline-flex min-h-10 items-center gap-2 text-xs font-bold text-[#AEB6C8]">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
 
-      {/* Content */}
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px' }}>
+        <section className="mb-5 rounded-2xl border border-[#D6A84B]/18 bg-[#11182B] p-4">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-[#AEB6C8]"><MapPin className="h-3.5 w-3.5" /> {monument.city}</p>
+          <h1 className="mt-2 font-heritage text-[28px] font-bold leading-9 text-[#F6F1E8]">{monument.name}</h1>
+          <p className="mt-2 text-sm leading-6 text-[#C7CDDA]">{monument.description}</p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => router.push('/chat')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Headphones className="h-5 w-5 text-[#D6A84B]" /> Audio guide</button>
+            <button type="button" onClick={() => router.push('/explore')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Route className="h-5 w-5 text-[#D6A84B]" /> Start tour</button>
+            <button type="button" onClick={() => router.push('/tickets')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Ticket className="h-5 w-5 text-[#D6A84B]" /> Tickets</button>
+          </div>
+        </section>
+
         {/* Time Travel Section with 360° viewer */}
         <div
           style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            backgroundColor: '#11182B',
+            border: '1px solid rgba(214,168,75,.16)',
+            borderRadius: '16px',
+            padding: '16px',
+            marginBottom: '16px',
           }}
         >
-          <h2 style={{ color: '#1A1035', marginTop: 0, marginBottom: '16px', fontSize: '20px', fontWeight: 600 }}>
+          <h2 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
             {lang === 'en' ? 'Time Travel' : 'समय यात्रा'}
           </h2>
+          <p style={{ color: '#AEB6C8', margin: '0 0 14px', fontSize: 12 }}>See how this place changed across eras.</p>
 
           {/* Era Buttons */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -376,11 +360,11 @@ export default function MonumentPage() {
                   style={{
                     padding: '9px 14px',
                     borderRadius: '999px',
-                    border: isActive ? 'none' : '2px solid #534AB7',
+                    border: isActive ? 'none' : '1px solid rgba(255,255,255,.1)',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    backgroundColor: isActive ? '#534AB7' : 'white',
-                    color: isActive ? 'white' : '#534AB7',
+                    backgroundColor: isActive ? '#D6A84B' : '#171F34',
+                    color: isActive ? '#171004' : '#AEB6C8',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
@@ -541,7 +525,7 @@ export default function MonumentPage() {
               fontSize: 14,
             }}
           >
-            <div style={{ color: '#E8C97A', fontWeight: 700, marginBottom: 6 }}>
+            <div style={{ color: '#F3DFC0', fontWeight: 700, marginBottom: 6 }}>
               {ERA_LABELS[activeEra].en}
             </div>
             <div>{ERA_DESCRIPTIONS[activeEra]}</div>
@@ -549,15 +533,15 @@ export default function MonumentPage() {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
           <button
             onClick={() => router.push('/quiz?monument=' + id)}
             style={{
               flex: 1,
-              minWidth: 220,
-              padding: '12px 16px',
-              background: '#534AB7',
-              color: 'white',
+              minHeight: 48,
+              padding: '12px 14px',
+              background: '#D6A84B',
+              color: '#171004',
               border: 'none',
               borderRadius: 10,
               fontWeight: 700,
@@ -565,41 +549,42 @@ export default function MonumentPage() {
               boxShadow: '0 6px 18px rgba(83, 74, 183, 0.25)',
             }}
           >
-            🏛️ Take Quiz
+            <Brain size={16} style={{ display: 'inline', marginRight: 6 }} />Take Quiz
           </button>
           <button
             onClick={() => router.push('/hunt')}
             style={{
               flex: 1,
-              minWidth: 220,
-              padding: '12px 16px',
-              background: 'white',
-              color: '#534AB7',
-              border: '2px solid #534AB7',
+              minHeight: 48,
+              padding: '12px 14px',
+              background: '#171F34',
+              color: '#F6F1E8',
+              border: '1px solid rgba(255,255,255,.1)',
               borderRadius: 10,
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            🗺️ Treasure Hunt
+            Heritage Hunt
           </button>
         </div>
 
         {/* AI Chat Section */}
         <div
           style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            backgroundColor: '#11182B',
+            borderRadius: '16px',
+            padding: '16px',
+            border: '1px solid rgba(214,168,75,.16)',
             display: 'flex',
             flexDirection: 'column',
             height: '500px',
           }}
         >
-          <h2 style={{ color: '#1A1035', marginTop: 0, marginBottom: '16px', fontSize: '20px', fontWeight: 600 }}>
+          <h2 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
             {lang === 'en' ? 'Ask AI Guide' : 'AI गाइड से पूछें'}
           </h2>
+          <p style={{ color: '#AEB6C8', fontSize: 12, margin: '0 0 14px' }}>Ask about history, architecture or your visit.</p>
 
           {/* Messages List */}
           <div
@@ -616,7 +601,7 @@ export default function MonumentPage() {
             }}
           >
             {messages.length === 0 && (
-              <div style={{ color: '#999', textAlign: 'center', marginTop: '40px' }}>
+              <div style={{ color: '#8891A6', textAlign: 'center', marginTop: '40px', fontSize: 13 }}>
                 Ask me anything about {monument.name}!
               </div>
             )}
@@ -633,8 +618,8 @@ export default function MonumentPage() {
                     maxWidth: '70%',
                     padding: '12px 16px',
                     borderRadius: 16,
-                    backgroundColor: msg.type === 'user' ? '#534AB7' : '#F3F4F6',
-                    color: msg.type === 'user' ? 'white' : '#1A1035',
+                    backgroundColor: msg.type === 'user' ? '#D6A84B' : '#171F34',
+                    color: msg.type === 'user' ? '#171004' : '#F6F1E8',
                     wordWrap: 'break-word',
                   }}
                 >
@@ -648,8 +633,8 @@ export default function MonumentPage() {
                   style={{
                     padding: '12px 16px',
                     borderRadius: 16,
-                    backgroundColor: '#F3F4F6',
-                    color: '#1A1035',
+                    backgroundColor: '#171F34',
+                    color: '#AEB6C8',
                   }}
                 >
                   Thinking...
@@ -671,8 +656,10 @@ export default function MonumentPage() {
               style={{
                 flex: 1,
                 padding: '12px 16px',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
+                border: '1px solid rgba(214,168,75,.2)',
+                background: '#080D1D',
+                color: '#F6F1E8',
+                borderRadius: '12px',
                 fontSize: '14px',
                 fontFamily: 'inherit',
               }}
@@ -682,9 +669,10 @@ export default function MonumentPage() {
               onClick={handleSendMessage}
               disabled={loading || !userInput.trim()}
               style={{
-                padding: '12px 24px',
-                background: '#534AB7',
-                color: 'white',
+                minWidth: 48,
+                padding: '12px',
+                background: '#D6A84B',
+                color: '#171004',
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 600,
@@ -692,11 +680,11 @@ export default function MonumentPage() {
                 opacity: loading || !userInput.trim() ? 0.6 : 1,
               }}
             >
-              Send
+              <Send size={17} />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

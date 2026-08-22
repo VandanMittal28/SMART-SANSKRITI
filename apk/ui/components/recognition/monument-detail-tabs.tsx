@@ -188,12 +188,12 @@ const SUSTAINABILITY_TIPS = [
 ]
 
 const TAB_ITEMS = [
-  { id: 'history', label: '📖 History' },
-  { id: 'architecture', label: '🏛️ Architecture' },
-  { id: 'facts', label: '📊 Key Facts' },
-  { id: 'fun', label: '💡 Fun Facts' },
-  { id: 'visitor', label: '🎯 Visitor Info' },
-  { id: 'timetravel', label: '⏳ Time Travel' },
+  { id: 'history', label: 'Overview' },
+  { id: 'architecture', label: 'Architecture' },
+  { id: 'facts', label: 'Key facts' },
+  { id: 'fun', label: 'Stories' },
+  { id: 'visitor', label: 'Visit' },
+  { id: 'timetravel', label: 'Time travel' },
 ]
 
 function findMonumentData(name: string) {
@@ -227,23 +227,23 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
   const currentPeriod = TIME_PERIODS.find(p => p.key === selectedEra) || TIME_PERIODS[3]
   const ttSlug = getTimeTravelSlug(monumentName)
   const imgSrc = ttSlug ? `/time_travel/${ttSlug}/${selectedEra}.jpg` : null
+  const sustainabilityTip = SUSTAINABILITY_TIPS[monumentName.length % SUSTAINABILITY_TIPS.length]
 
   return (
-    <div style={{ marginTop: 32 }}>
+    <div style={{ marginTop: 20 }}>
       {/* Tab Bar */}
       <div style={{
-        display: 'flex', gap: 0, overflowX: 'auto', borderBottom: '1px solid rgba(201,168,76,0.2)',
-        marginBottom: 0, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
+        display: 'flex', gap: 4, overflowX: 'auto', background: '#11182B', padding: 4, borderRadius: 12,
+        marginBottom: 12, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
       }}>
         {TAB_ITEMS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '12px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              background: 'transparent', border: 'none', whiteSpace: 'nowrap',
-              color: activeTab === tab.id ? '#C9A84C' : '#8A7560',
-              borderBottom: activeTab === tab.id ? '2px solid #C9A84C' : '2px solid transparent',
+              minHeight: 42, padding: '9px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              background: activeTab === tab.id ? '#D6A84B' : 'transparent', border: 'none', borderRadius: 9, whiteSpace: 'nowrap',
+              color: activeTab === tab.id ? '#171004' : '#AEB6C8',
               transition: 'all 0.2s ease'
             }}
           >
@@ -254,22 +254,22 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
 
       {/* Tab Content */}
       <div style={{
-        background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.2)',
-        borderTop: 'none', borderRadius: '0 0 16px 16px', padding: 24, minHeight: 200
+        background: '#11182B', border: '1px solid rgba(214,168,75,0.16)',
+        borderRadius: 16, padding: 16, minHeight: 200
       }}>
         {/* History Tab */}
         {activeTab === 'history' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
-                { label: '🧱 Built By', value: data.built_by },
-                { label: '📅 Year Built', value: data.year_built },
-                { label: '📍 Location', value: `${data.location}, ${data.state}` },
-                { label: '🏗️ Type', value: data.type },
+                { label: 'Built by', value: data.built_by },
+                { label: 'Year built', value: data.year_built },
+                { label: 'Location', value: `${data.location}, ${data.state}` },
+                { label: 'Type', value: data.type },
               ].map(item => (
-                <div key={item.label} style={{ background: 'rgba(15,11,30,0.6)', borderRadius: 10, padding: 14 }}>
-                  <div style={{ color: '#8A7560', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{item.label}</div>
-                  <div style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600 }}>{item.value}</div>
+                <div key={item.label} style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '12px 0' }}>
+                  <div style={{ color: '#8891A6', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 700 }}>{item.label}</div>
+                  <div style={{ color: '#F6F1E8', fontSize: 13, lineHeight: 1.45, fontWeight: 650 }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -277,21 +277,21 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               background: 'rgba(75,155,142,0.08)', border: '1px solid rgba(75,155,142,0.3)',
               borderRadius: 12, padding: 16, marginBottom: 16
             }}>
-              <div style={{ color: '#7ECDC0', fontWeight: 700, marginBottom: 6, fontSize: 13 }}>🌏 Cultural Importance</div>
-              <div style={{ color: '#C4A882', fontSize: 14, lineHeight: 1.7 }}>{data.cultural_importance}</div>
+              <div style={{ color: '#8DE0D6', fontWeight: 700, marginBottom: 6, fontSize: 13 }}>Why it matters</div>
+              <div style={{ color: '#C7CDDA', fontSize: 14, lineHeight: 1.7 }}>{data.cultural_importance}</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {data.unesco && (
                 <span style={{
                   background: 'rgba(75,155,142,0.15)', border: '1px solid rgba(75,155,142,0.5)',
                   borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#7ECDC0', fontWeight: 700
-                }}>🏆 UNESCO World Heritage</span>
+                }}>UNESCO World Heritage</span>
               )}
               {data.seven_wonders && (
                 <span style={{
                   background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)',
                   borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#E8C97A', fontWeight: 700
-                }}>✨ Seven Wonders of the World</span>
+                }}>Seven Wonders of the World</span>
               )}
             </div>
           </div>
@@ -301,7 +301,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
         {activeTab === 'architecture' && (
           <div>
             <div style={{ color: '#C9A84C', fontWeight: 700, fontSize: 16, marginBottom: 12, fontFamily: 'Georgia, serif' }}>
-              🏛️ Architecture & Construction
+              Architecture & construction
             </div>
             <div style={{
               background: 'rgba(75,155,142,0.08)', border: '1px solid rgba(75,155,142,0.3)',
@@ -337,7 +337,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               borderRadius: 16, padding: 24, fontSize: 16, lineHeight: 1.8, color: '#E8C97A',
               textAlign: 'center'
             }}>
-              💡 {data.fun_fact}
+              {data.fun_fact}
             </div>
             <div style={{ textAlign: 'center', marginTop: 20 }}>
               <a href="/quiz" style={{
@@ -345,7 +345,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
                 background: 'linear-gradient(135deg, #D4893F, #C9A84C)',
                 color: '#0F0B1E', fontWeight: 700, textDecoration: 'none', fontSize: 14
               }}>
-                🧠 Go to Quiz →
+                Test what you learned →
               </a>
             </div>
           </div>
@@ -356,11 +356,11 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ background: 'rgba(15,11,30,0.6)', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#8A7560', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>🗓️ Best Time to Visit</div>
+                <div style={{ color: '#8A7560', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Best time to visit</div>
                 <div style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600 }}>{data.best_time_to_visit}</div>
               </div>
               <div style={{ background: 'rgba(15,11,30,0.6)', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#8A7560', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>🎟️ Entry Fee</div>
+                <div style={{ color: '#8A7560', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Entry fee</div>
                 <div style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600 }}>{data.entry_fee}</div>
               </div>
             </div>
@@ -369,9 +369,9 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               background: 'rgba(75,142,110,0.1)', border: '1px solid rgba(75,142,110,0.4)',
               borderRadius: 12, padding: 16
             }}>
-              <div style={{ color: '#7ECDA0', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🌿 Sustainability Tip</div>
+              <div style={{ color: '#7ECDA0', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Visit responsibly</div>
               <div style={{ color: '#C4A882', fontSize: 13, lineHeight: 1.6 }}>
-                {SUSTAINABILITY_TIPS[Math.floor(Math.random() * SUSTAINABILITY_TIPS.length)]}
+                {sustainabilityTip.replace(/^[^\s]+\s/, '')}
               </div>
             </div>
           </div>

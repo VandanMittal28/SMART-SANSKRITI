@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { useLang } from '@/lib/languageContext'
+import { MapPin, Route } from 'lucide-react'
 import {
   generateLocalItinerary,
   type HeritageItinerary as Itinerary,
@@ -198,18 +199,25 @@ export default function ItineraryPage() {
 
   return (
     <AppShell>
-      <div style={{ padding: '24px', maxWidth: 860, margin: '0 auto' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '2rem', color: '#C9A84C', fontWeight: 700, margin: '0 0 0.5rem' }}>
-            {t('itinerary_title')}
-          </h1>
-          <p style={{ color: '#C4A882', margin: '0 0 12px' }}>{t('itinerary_subtitle')}</p>
+      <div style={{ padding: '20px', maxWidth: 420, margin: '0 auto' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <Route size={20} color="#D6A84B" />
+            <h1 style={{ fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '28px', lineHeight: '36px', color: '#F6F1E8', fontWeight: 700, margin: 0 }}>
+              {t('itinerary_title')}
+            </h1>
+          </div>
+          <p style={{ color: '#AEB6C8', margin: '6px 0 0', fontSize: 14, lineHeight: '21px' }}>Build a heritage route around your time and interests.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#11182B', padding: 4, borderRadius: 12, marginTop: 16 }}>
+            <a href="/tickets" style={{ display: 'grid', minHeight: 40, placeItems: 'center', borderRadius: 9, color: '#AEB6C8', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Tickets</a>
+            <span style={{ display: 'grid', minHeight: 40, placeItems: 'center', borderRadius: 9, background: '#D6A84B', color: '#171004', fontSize: 13, fontWeight: 800 }}>My plans</span>
+          </div>
           <a
             href="/decisions"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(75,155,142,0.12)', border: '1px solid rgba(75,155,142,0.35)',
-              borderRadius: 999, padding: '6px 14px', color: '#4B9B8E', fontSize: 13, fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10,
+              background: 'rgba(99,199,186,0.08)', border: '1px solid rgba(99,199,186,0.24)',
+              borderRadius: 999, padding: '7px 12px', color: '#8DE0D6', fontSize: 12, fontWeight: 700,
               textDecoration: 'none',
             }}
           >
@@ -217,16 +225,16 @@ export default function ItineraryPage() {
           </a>
         </div>
 
-        <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '18px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: '#11182B', border: '1px solid rgba(214,168,75,0.17)', borderRadius: '16px', padding: '16px', marginBottom: '1.5rem' }}>
           {/* Days selector */}
           <div style={{ marginBottom: '1.2rem' }}>
             <label style={{ display: 'block', color: '#C4A882', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('num_days')}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[1,2,3,4,5].map(d => (
                 <button key={d} onClick={() => setDays(d)} style={{
-                  width: 42, height: 42, borderRadius: '10px',
-                  background: days === d ? 'linear-gradient(135deg, #D4893F, #C9A84C)' : 'rgba(28,22,56,0.8)',
-                  color: days === d ? '#0F0B1E' : '#C4A882',
+                  flex: 1, minWidth: 44, height: 46, borderRadius: '10px',
+                  background: days === d ? '#D6A84B' : '#171F34',
+                  color: days === d ? '#171004' : '#AEB6C8',
                   fontSize: '15px', fontWeight: 700, cursor: 'pointer',
                   border: days === d ? 'none' : '1px solid rgba(201,168,76,0.2)',
                   transition: 'all 0.2s ease'
@@ -240,7 +248,7 @@ export default function ItineraryPage() {
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', color: '#C4A882', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('search_city')}</label>
             <input type="text" placeholder={t('search_city_placeholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              style={{ width: '100%', padding: '10px 14px', background: 'rgba(15,11,30,0.8)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '10px', color: '#F5E6D3', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', minHeight: 48, padding: '10px 14px', background: '#080D1D', border: '1px solid rgba(214,168,75,0.24)', borderRadius: '12px', color: '#F6F1E8', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
           {/* City grid */}
@@ -248,18 +256,17 @@ export default function ItineraryPage() {
             <label style={{ display: 'block', color: '#C4A882', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>
               {t('select_city')} {selectedCity && `— ${selectedCity} ${t('selected')}`}
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '196px', overflowY: 'auto', paddingRight: '4px' }}>
               {filteredCities.map(cityData => {
                 const isSelected = selectedCity === cityData.city
                 return (
                   <button key={cityData.city} onClick={() => setSelectedCity(cityData.city)} style={{
-                    padding: '10px 12px', borderRadius: '10px',
-                    background: isSelected ? 'linear-gradient(135deg, rgba(212,137,63,0.25), rgba(201,168,76,0.15))' : 'rgba(20,16,40,0.8)',
-                    border: isSelected ? '1px solid rgba(201,168,76,0.6)' : '1px solid rgba(201,168,76,0.12)',
+                    minHeight: 66, padding: '10px 12px', borderRadius: '12px',
+                    background: isSelected ? 'rgba(214,168,75,0.13)' : '#171F34',
+                    border: isSelected ? '1px solid rgba(214,168,75,0.55)' : '1px solid rgba(255,255,255,0.06)',
                     cursor: 'pointer', textAlign: 'left' as const, transition: 'all 0.2s ease'
                   }}>
-                    <div style={{ fontSize: '18px', marginBottom: '3px' }}>{cityData.emoji}</div>
-                    <div style={{ color: isSelected ? '#C9A84C' : '#F5E6D3', fontSize: '13px', fontWeight: isSelected ? 700 : 600 }}>{cityData.city}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: isSelected ? '#D6A84B' : '#F6F1E8', fontSize: '13px', fontWeight: isSelected ? 700 : 600 }}><MapPin size={14} />{cityData.city}</div>
                     <div style={{ color: '#7A6E5C', fontSize: '10px', marginTop: '2px' }}>{cityData.state}</div>
                   </button>
                 )
@@ -278,12 +285,12 @@ export default function ItineraryPage() {
           {/* Generate button */}
           <button onClick={generateItinerary} disabled={loading || !selectedCity} style={{
             width: '100%', padding: '14px',
-            background: !selectedCity ? 'rgba(201,168,76,0.2)' : loading ? 'rgba(201,168,76,0.4)' : 'linear-gradient(135deg, #D4893F, #C9A84C)',
+            background: !selectedCity ? 'rgba(214,168,75,0.18)' : loading ? 'rgba(214,168,75,0.4)' : '#D6A84B',
             color: (!selectedCity || loading) ? '#C4A882' : '#0F0B1E',
             border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700,
             cursor: (!selectedCity || loading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease'
           }}>
-            {loading ? t('generating') : !selectedCity ? t('select_city_first') : `✨ ${t('generate_itinerary')} — ${days} ${t('days_word')} ${selectedCity}`}
+            {loading ? t('generating') : !selectedCity ? t('select_city_first') : `${t('generate_itinerary')} · ${days} ${t('days_word')} · ${selectedCity}`}
           </button>
         </div>
 
