@@ -38,8 +38,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: Manrope, Avenir Next, Avenir, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-mono: 'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -271,4 +271,135 @@
 :lang(hi) h1, :lang(hi) h2, :lang(hi) h3,
 [data-lang="hi"] h1, [data-lang="hi"] h2, [data-lang="hi"] h3 {
   font-family: 'Noto Sans Devanagari', Georgia, serif !important;
+}
+
+@keyframes yatrik-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(1.5deg); }
+}
+
+@keyframes yatrik-fly-in {
+  0% { opacity: 0; transform: translate(42vw, -45vh) scale(0.35) rotate(18deg); }
+  70% { opacity: 1; transform: translate(-8px, 8px) scale(1.06) rotate(-4deg); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+}
+
+@keyframes yatrik-land {
+  0% { transform: translateY(-28px) scale(1.03); }
+  58% { transform: translateY(5px) scale(0.96, 1.04); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes yatrik-talk {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025) translateY(-3px); }
+}
+
+@keyframes yatrik-celebrate {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-9px) rotate(-4deg); }
+  75% { transform: translateY(-9px) rotate(4deg); }
+}
+
+.yatrik-welcome-art--fly-in { animation: yatrik-fly-in 850ms cubic-bezier(.2,.9,.2,1) both; }
+.yatrik-welcome-art--landing { animation: yatrik-land 700ms cubic-bezier(.2,.8,.25,1) both; }
+.yatrik-welcome-art--talking { animation: yatrik-talk 1.25s ease-in-out infinite; }
+
+.yatrik-placeholder {
+  position: relative;
+  filter: drop-shadow(0 14px 22px rgba(31, 205, 179, 0.24));
+  animation: yatrik-float 2.8s ease-in-out infinite;
+}
+
+.yatrik-placeholder--fly-in { animation: none; }
+.yatrik-placeholder--landing { animation: yatrik-land 700ms ease-out both; }
+.yatrik-placeholder--talking { animation: yatrik-talk 900ms ease-in-out infinite; }
+.yatrik-placeholder--celebrating { animation: yatrik-celebrate 900ms ease-in-out infinite; }
+.yatrik-placeholder--pointing { transform: rotate(-4deg); }
+.yatrik-placeholder--muted { filter: grayscale(.38) drop-shadow(0 12px 20px rgba(31, 205, 179, 0.12)); }
+
+.yatrik-placeholder__turban,
+.yatrik-placeholder__face,
+.yatrik-placeholder__body,
+.yatrik-placeholder__tail {
+  position: absolute;
+  left: 50%;
+  display: block;
+  transform: translateX(-50%);
+}
+
+.yatrik-placeholder__turban {
+  top: 5%;
+  z-index: 3;
+  width: 52%;
+  height: 24%;
+  border: 2px solid rgba(255, 226, 142, .7);
+  border-radius: 60% 60% 42% 42%;
+  background: linear-gradient(145deg, #e9b84f, #9c5d25);
+  box-shadow: inset 0 -5px 0 rgba(70, 31, 28, .28);
+}
+
+.yatrik-placeholder__turban::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 12%;
+  width: 20%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 3px;
+  background: #70e1d2;
+  box-shadow: 0 0 10px rgba(112, 225, 210, .75);
+}
+
+.yatrik-placeholder__face {
+  top: 20%;
+  z-index: 2;
+  display: grid;
+  width: 48%;
+  height: 37%;
+  place-items: center;
+  border: 2px solid rgba(167, 255, 239, .45);
+  border-radius: 48% 48% 54% 54%;
+  background: linear-gradient(145deg, #69ddca, #246f77);
+  color: #07191e;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.yatrik-placeholder__body {
+  top: 50%;
+  width: 42%;
+  height: 31%;
+  border-radius: 48% 48% 36% 36%;
+  background: linear-gradient(145deg, #267f83, #182c52);
+  box-shadow: inset 0 0 0 2px rgba(236, 200, 101, .26);
+}
+
+.yatrik-placeholder__tail {
+  top: 72%;
+  width: 34%;
+  height: 23%;
+  border: solid #33a6a3;
+  border-width: 0 9px 9px 0;
+  border-radius: 0 0 70% 0;
+  transform: translateX(-38%) rotate(22deg);
+}
+
+.yatrik-placeholder__sparkle {
+  position: absolute;
+  right: 3%;
+  top: 18%;
+  width: 20%;
+  height: 20%;
+  color: #f4cb72;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yatrik-placeholder,
+  .yatrik-welcome-art--fly-in,
+  .yatrik-welcome-art--landing,
+  .yatrik-welcome-art--talking {
+    animation: none !important;
+  }
 }

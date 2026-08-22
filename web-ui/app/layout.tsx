@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { UserProvider } from '@/lib/userContext'
@@ -11,16 +10,6 @@ import { ClientLangWrapper } from '@/components/client-lang-wrapper'
 import { BackendPrewarmer } from '@/components/BackendPrewarmer'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TopBar } from '@/components/TopBar'
-
-const manrope = Manrope({ 
-  subsets: ["latin"],
-  variable: '--font-manrope'
-})
-
-const playfair = Playfair_Display({ 
-  subsets: ["latin"],
-  variable: '--font-playfair'
-})
 
 export const metadata: Metadata = {
   title: 'Sanskriti AI | Discover India\'s Living Heritage',
@@ -45,7 +34,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" />
       </head>
-      <body className={`${manrope.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden bg-[#050816] text-[#F5E6D3]`}>
+      <body className="font-sans antialiased overflow-x-hidden bg-[#050816] text-[#F5E6D3]">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <BackendPrewarmer />
           <AuthProvider>

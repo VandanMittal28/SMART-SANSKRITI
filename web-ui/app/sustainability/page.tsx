@@ -48,9 +48,10 @@ export default function SustainabilityPage() {
         })
       })
       const data = await res.json()
+      if (!res.ok || !data.answer) throw new Error(data.error || 'Tips unavailable')
       setAiTips(data.answer)
     } catch {
-      setAiTips('Could not load AI tips. Please try again.')
+      setAiTips(ENVIRONMENTAL_TIPS.join('\n'))
     } finally {
       setLoadingTips(false)
     }

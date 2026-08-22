@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useLang } from '@/lib/languageContext'
 import { getLanguageConfig } from '@/lib/languages'
+import { hasNativeNvidia, translateTextsNative } from '@/lib/nativeNvidia'
 
 const CACHE_VERSION = 'v4'
 const TRANSLATABLE_ATTRIBUTES = ['placeholder', 'title', 'aria-label'] as const
@@ -105,17 +106,20 @@ export function ClientLangWrapper() {
       for (let offset = 0; offset < missing.length && !cancelled; offset += 60) {
         const batch = missing.slice(offset, offset + 60)
         try {
-          const response = await fetch('/api/site-translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ language: lang, texts: batch }),
-          })
-          if (!response.ok) continue
-          const data = await response.json() as { translations?: unknown }
-          if (!Array.isArray(data.translations) || data.translations.length !== batch.length) {
-            continue
+          let translatedBatch: unknown[]
+          if (hasNativeNvidia()) {
+            translatedBatch = await translateTextsNative(batch, lang)
+          } else {
+            const response = await fetch('/api/site-translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ language: lang, texts: batch }),
+            })
+            if (!response.ok) continue
+            const data = await response.json() as { translations?: unknown }
+            if (!Array.isArray(data.translations) || data.translations.length !== batch.length) continue
+            translatedBatch = data.translations
           }
-          const translatedBatch = data.translations as unknown[]
           batch.forEach((source, index) => {
             const translated = translatedBatch[index]
             if (typeof translated === 'string' && translated.trim()) {

@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0-placeholder",
+  "width": 512,
+  "height": 512,
+  "states": {
+    "idle": { "frames": [], "fps": 8, "loop": true },
+    "fly-in": { "frames": [], "fps": 12, "loop": false },
+    "landing": { "frames": [], "fps": 10, "loop": false },
+    "talking": { "frames": [], "fps": 10, "loop": true },
+    "listening": { "frames": [], "fps": 8, "loop": true },
+    "pointing": { "frames": [], "fps": 8, "loop": true },
+    "celebrating": { "frames": [], "fps": 12, "loop": true },
+    "muted": { "frames": [], "fps": 6, "loop": true }
+  }
+}

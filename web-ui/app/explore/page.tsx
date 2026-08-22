@@ -8,11 +8,20 @@ import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
 import { SupportedLanguage, getLanguageConfig } from "@/lib/languages"
+import { hasNativeNvidia, synthesizeNarrationNative, translateExploreGuideNative } from "@/lib/nativeNvidia"
+import { getNvidiaNarrationVoice } from "@/lib/narrationProfiles"
+import { isBundledAndroidApp } from "@/lib/supabase/client"
+import { emitYatrikEvent } from "@/lib/yatrik/events"
+import {
+  ExploreARHud,
+  type ExploreFallbackStatus,
+  type ExploreMode,
+  type ExploreNarrationStatus,
+} from "@/components/explore/explore-ar-hud"
+import { useYatrikControls } from "@/components/yatrik/yatrik-provider"
 
-import { ChevronDown } from "lucide-react"
 import { getMonument, saveMonument } from "@/lib/monumentStore"
 import { useARNavigation } from "@/hooks/useARNavigation"
-import { ARCameraView } from "@/components/explore/ARCameraView"
 import { getCustomMonument, type CustomZone } from "@/lib/customMonuments"
 
 const DEMO_MONUMENT_ID = "college"
@@ -620,11 +629,43 @@ const KONARK_ZONES = [
   }
 ]
 
+const GOLDEN_TEMPLE_ZONES = [
+  {
+    id: 51, name: 'Darshani Deori Entrance', emoji: '🚪',
+    lat: 31.61986, lng: 74.87618, radius: 45, xp: 75,
+    arrival_fact: 'You are at Darshani Deori, the ceremonial gateway opening toward the sacred pool and Harmandir Sahib. The view is intentionally framed so the gold-clad sanctum appears to float at the center of the Amrit Sarovar. Visitors pause here, cover their heads, and enter with quiet respect.',
+    direction_hint: 'Walk through the main gateway and continue toward the marble parikrama surrounding the sacred pool.',
+    mini_fact: 'The gateway creates one of the most recognizable first views of the Golden Temple.',
+  },
+  {
+    id: 52, name: 'Amrit Sarovar Parikrama', emoji: '💧',
+    lat: 31.61972, lng: 74.87652, radius: 42, xp: 100,
+    arrival_fact: 'You are beside the Amrit Sarovar, the sacred pool around which the complex developed. Pilgrims walk the marble parikrama in contemplation while the water reflects the sanctum, sky, and surrounding arcades. The open circulation expresses the Sikh principles of equality, humility, and shared devotion.',
+    direction_hint: 'Follow the marble walkway clockwise around the pool toward the causeway leading to Harmandir Sahib.',
+    mini_fact: 'The city name Amritsar is closely connected with the sacred pool, Amrit Sarovar.',
+  },
+  {
+    id: 53, name: 'Guru’s Bridge Causeway', emoji: '🌉',
+    lat: 31.61958, lng: 74.87676, radius: 38, xp: 125,
+    arrival_fact: 'You are approaching Harmandir Sahib along the narrow causeway often called Guru’s Bridge. The path crosses the sacred water and leads to the sanctum, where verses from the Guru Granth Sahib are sung in continuous kirtan. Move calmly and keep the passage clear for other visitors.',
+    direction_hint: 'Join the causeway queue and proceed respectfully toward the gold-clad sanctum at the center of the pool.',
+    mini_fact: 'The sanctum is reached across water, turning the approach into a gradual transition from public space to devotion.',
+  },
+  {
+    id: 54, name: 'Langar Hall', emoji: '🍲',
+    lat: 31.62018, lng: 74.87602, radius: 48, xp: 150,
+    arrival_fact: 'You are near the Guru Ram Das Langar, the community kitchen where visitors of every faith and background sit together and receive a free meal. Volunteers prepare, serve, and clean throughout the day. This living institution makes seva, equality, and hospitality tangible at an extraordinary scale.',
+    direction_hint: 'Leave the pool-side walkway toward the community kitchen signs and join the orderly langar entrance line.',
+    mini_fact: 'Everyone sits together on the floor in pangat, without distinction of status or background.',
+  },
+]
+
 const MONUMENT_ZONES: Record<string, typeof TAJ_ZONES> = {
   'taj-mahal': TAJ_ZONES,
   'red-fort': RED_FORT_ZONES,
   'qutub-minar': QUTUB_MINAR_ZONES,
   'konark': KONARK_ZONES,
+  'golden-temple': GOLDEN_TEMPLE_ZONES,
 }
 
 function getBearing(from: { lat: number; lng: number }, to: { lat: number; lng: number }): number {
@@ -642,6 +683,7 @@ const EXPLORE_USER_START: Record<string, { lat: number; lng: number }> = {
   'red-fort':    { lat: 28.6545, lng: 77.2375 },
   'qutub-minar': { lat: 28.5235, lng: 77.1845 },
   'konark':      { lat: 19.8876, lng: 86.0952 },
+  'golden-temple': { lat: 31.61986, lng: 74.87618 },
 }
 
 // ── LEAFLET MAP (dynamic, no SSR) ────────────────────────
@@ -778,15 +820,19 @@ export default function ExplorePage() {
   const [demoDistance, setDemoDistance] = useState(280)
   const [demoMode] = useState(true)
   const [arViewActive, setArViewActive] = useState(false)
-  const [arMuted, setArMuted] = useState(false)
   const [userPos, setUserPos] = useState(EXPLORE_USER_START['taj-mahal'])
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
   const [narrationReady, setNarrationReady] = useState(false)
+  const [narrationLoading, setNarrationLoading] = useState(false)
   const [currentTranslation, setCurrentTranslation] = useState<GuideTranslation | null>(null)
   const [translationLoading, setTranslationLoading] = useState(false)
+  const { muted, toggleMute } = useYatrikControls()
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioUrlRef = useRef<string | null>(null)
   const narrationRequestRef = useRef<AbortController | null>(null)
+  // Bumped whenever narration is cancelled/restarted, so an in-flight native
+  // narration request from a previous zone can no longer apply its result.
+  const nativeNarrationTokenRef = useRef(0)
   // Tracks the on-device speech fallback (window.speechSynthesis) lifecycle
   // separately from the server-audio path, since iOS Safari frequently
   // blocks or silently fails speech synthesis unless it's triggered by a
@@ -865,6 +911,7 @@ export default function ExplorePage() {
   }, [])
 
   const stopNarration = useCallback(() => {
+    nativeNarrationTokenRef.current += 1
     narrationRequestRef.current?.abort()
     narrationRequestRef.current = null
     if (audioRef.current) {
@@ -993,20 +1040,23 @@ export default function ExplorePage() {
     if (cached) return cached
 
     try {
-      const response = await fetch('/api/explore-translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: lang,
-          monumentId,
-          directionHint: guideZone.direction_hint,
-          arrivalFact: guideZone.arrival_fact,
-          miniFact: guideZone.mini_fact,
-        }),
-      })
-      if (!response.ok) throw new Error('Guide translation unavailable')
-
-      const translation = await response.json() as GuideTranslation
+      const source = {
+        directionHint: guideZone.direction_hint,
+        arrivalFact: guideZone.arrival_fact,
+        miniFact: guideZone.mini_fact,
+      }
+      let translation: GuideTranslation
+      if (hasNativeNvidia()) {
+        translation = await translateExploreGuideNative(source, lang)
+      } else {
+        const response = await fetch('/api/explore-translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language: lang, monumentId, ...source }),
+        })
+        if (!response.ok) throw new Error('Guide translation unavailable')
+        translation = await response.json() as GuideTranslation
+      }
       translationCacheRef.current[cacheKey] = translation
       try {
         localStorage.setItem(
@@ -1029,6 +1079,88 @@ export default function ExplorePage() {
     language: SupportedLanguage = lang,
   ) => {
     stopNarration()
+
+    if (muted) return
+
+    // Inside the bundled Android APK there is no live Next.js server for
+    // /api/narrate (ElevenLabs/Chatterbox) to reach — narrate via the
+    // native NVIDIA bridge instead, falling back to on-device speech
+    // synthesis (tagged as the Android system voice) if that fails.
+    if (isBundledAndroidApp()) {
+      const speakWithAndroidVoice = () => {
+        if (typeof window === 'undefined' || !window.speechSynthesis) return
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = getLanguageConfig(language).locale
+        utterance.rate = 0.92
+        utterance.onstart = () => {
+          setNarrationReady(false)
+          setIsTTSSpeaking(true)
+        }
+        utterance.onend = () => {
+          setIsTTSSpeaking(false)
+          setNarrationReady(true)
+        }
+        utterance.onerror = () => {
+          setIsTTSSpeaking(false)
+          setNarrationReady(false)
+        }
+        window.speechSynthesis.speak(utterance)
+      }
+
+      const narrationVoice = getNvidiaNarrationVoice(exploreMonumentId, language)
+      if (!narrationVoice) {
+        speakWithAndroidVoice()
+        return
+      }
+
+      const requestToken = nativeNarrationTokenRef.current
+      setNarrationLoading(true)
+      try {
+        const audioBase64 = await synthesizeNarrationNative(
+          text,
+          narrationVoice.language,
+          narrationVoice.voice,
+        )
+        if (nativeNarrationTokenRef.current !== requestToken) return
+        const binary = window.atob(audioBase64)
+        const bytes = new Uint8Array(binary.length)
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index)
+        }
+        const audioUrl = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+        const audio = new Audio(audioUrl)
+        audioRef.current = audio
+        audioUrlRef.current = audioUrl
+        audio.onplay = () => {
+          setNarrationLoading(false)
+          setNarrationReady(false)
+          setIsTTSSpeaking(true)
+        }
+        audio.onended = () => {
+          audio.currentTime = 0
+          setIsTTSSpeaking(false)
+          setNarrationReady(true)
+        }
+        audio.onerror = () => {
+          setNarrationLoading(false)
+          setIsTTSSpeaking(false)
+          setNarrationReady(false)
+          speakWithAndroidVoice()
+        }
+        try {
+          await audio.play()
+        } catch {
+          setNarrationLoading(false)
+          setNarrationReady(true)
+        }
+      } catch (error) {
+        if (nativeNarrationTokenRef.current !== requestToken) return
+        console.warn('NVIDIA neural narration failed; using Android voice:', error)
+        setNarrationLoading(false)
+        speakWithAndroidVoice()
+      }
+      return
+    }
 
     const controller = new AbortController()
     narrationRequestRef.current = controller
@@ -1084,7 +1216,7 @@ export default function ExplorePage() {
         narrationRequestRef.current = null
       }
     }
-  }, [fetchNarration, lang, speakWithBrowserFallback, stopNarration])
+  }, [exploreMonumentId, fetchNarration, lang, muted, speakWithBrowserFallback, stopNarration])
 
   // ── DEMO: simulate walking toward zone ──────────────────
   useEffect(() => {
@@ -1129,7 +1261,17 @@ export default function ExplorePage() {
       }
 
       window.setTimeout(() => {
-        if (!cancelled) void speakFact(direction, lang)
+        if (!cancelled) {
+          emitYatrikEvent({
+            type: 'route-prompt',
+            caption: direction,
+            narration: null,
+            priority: 20,
+            state: 'pointing',
+            durationMs: 5500,
+          })
+          void speakFact(direction, lang)
+        }
       }, 900)
     }
 
@@ -1177,6 +1319,22 @@ export default function ExplorePage() {
         story = translated.arrivalFact
       }
     }
+    emitYatrikEvent({
+      type: 'arrival-story',
+      caption: story,
+      narration: null,
+      priority: 70,
+      state: 'talking',
+      durationMs: 9000,
+    })
+    emitYatrikEvent({
+      type: 'xp-awarded',
+      caption: `You earned ${z.xp} XP at ${z.name}!`,
+      narration: null,
+      priority: 40,
+      state: 'celebrating',
+      durationMs: 4200,
+    })
     void speakFact(story, lang)
   }, [
     arrivedAtZone,
@@ -1270,357 +1428,110 @@ export default function ExplorePage() {
     lang !== 'en' && currentTranslation
       ? currentTranslation.miniFact
       : zone.mini_fact
-  const guidePersona =
-    exploreMonumentId === 'konark'
-      ? 'Calm temple scholar'
-      : ['taj-mahal', 'red-fort', 'qutub-minar'].includes(exploreMonumentId)
-        ? 'Royal court historian'
-        : 'Heritage storyteller'
+
+  const liveTracking = arViewActive && arNav.mode === 'live'
+  const insideNow = liveTracking ? arNav.arrivalUnlocked : demoDistance <= zone.radius
+
+  const hudFallbackStatus: ExploreFallbackStatus =
+    arViewActive && arNav.mode === 'fallback'
+      ? arNav.permissions.camera === 'denied' || arNav.permissions.camera === 'unavailable'
+        ? 'camera-denied'
+        : arNav.permissions.location === 'denied' || arNav.permissions.location === 'unavailable'
+          ? 'location-denied'
+          : 'orientation-unavailable'
+      : 'none'
+
+  const hudMode: ExploreMode =
+    !arViewActive
+      ? 'demo'
+      : arNav.mode === 'fallback'
+        ? 'fallback'
+        : arNav.mode === 'live'
+          ? 'live'
+          : 'demo'
+
+  const hudNarrationStatus: ExploreNarrationStatus = isTTSSpeaking
+    ? 'speaking'
+    : narrationReady
+      ? 'ready'
+      : translationLoading || narrationLoading
+        ? 'loading'
+        : 'idle'
+
+  const selectMonument = (id: string) => {
+    const name = monumentsList.find(m => m.id === id)?.name || id
+    stopNarration()
+    setExploreMonumentId(id); saveMonument(id, name)
+    setCurrentZoneIndex(0); setCompletedZones([]); setXpEarned(0)
+    setExplorerComplete(false); setArrivedAtZone(false); setShowFact(false)
+    const customFirstZone = id === DEMO_MONUMENT_ID ? customZones[0] : undefined
+    const newStart = customFirstZone
+      ? { lat: customFirstZone.lat, lng: customFirstZone.lng }
+      : EXPLORE_USER_START[id] || EXPLORE_USER_START['taj-mahal']
+    setUserPos(newStart)
+    setDemoDistance(Math.floor(Math.random() * 150) + 150)
+  }
+
+  const handleHudArrive = () => {
+    void handleArrival()
+    if (arViewActive) {
+      arNav.stop()
+      setArViewActive(false)
+    }
+  }
 
   return (
-    <AppShell>
-      <style>{`
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-      `}</style>
-
-      {arViewActive && (
-        <ARCameraView
-          nav={arNav}
-          zoneName={zone.name}
-          zoneEmoji={zone.emoji}
-          zoneIndex={currentZoneIndex}
-          zoneCount={activeZones.length}
-          captionText={directionText}
-          narrating={isTTSSpeaking}
-          muted={arMuted}
-          onToggleMute={() => setArMuted((prev) => !prev)}
-          onArrive={handleArArrive}
-          onRetryPermissions={() => arNav.retry()}
-          onExitLive={exitLiveAR}
-          arrived={arrivedAtZone}
-        />
-      )}
-
-      {/* Demo mode banner */}
-      {demoMode && (
-        <div style={{
-          background: 'rgba(201,168,76,0.15)', borderBottom: '1px solid rgba(201,168,76,0.3)',
-          padding: '8px 16px', textAlign: 'center', color: '#C9A84C', fontSize: '12px', fontWeight: 600
-        }}>
-          {lang === 'hi' ? '🎮 डेमो मोड — सिंथेटिक GPS सक्रिय | अन्वेषण करने के लिए किसी भी दूरी पर "मैं पहुँच गया" दबाएँ' : '🎮 DEMO MODE — Synthetic GPS active | Press "I\'ve Arrived" at any distance to explore'}
-        </div>
-      )}
-
-  <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              {/* Monument Switcher */}
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 4 }}>
-                <select
-                  value={exploreMonumentId}
-                  onChange={e => {
-                    const id = e.target.value
-                    const name = monumentsList.find(m => m.id === id)?.name || id
-                    // Cancel any ongoing narration first
-                    stopNarration()
-                    // Reset all zone state
-                    setExploreMonumentId(id); saveMonument(id, name)
-                    setCurrentZoneIndex(0); setCompletedZones([]); setXpEarned(0)
-                    setExplorerComplete(false); setArrivedAtZone(false); setShowFact(false)
-                    const customFirstZone = id === DEMO_MONUMENT_ID ? customZones[0] : undefined
-                    const newStart = customFirstZone
-                      ? { lat: customFirstZone.lat, lng: customFirstZone.lng }
-                      : EXPLORE_USER_START[id] || EXPLORE_USER_START['taj-mahal']
-                    setUserPos(newStart)
-                    setDemoDistance(Math.floor(Math.random() * 150) + 150)
-                  }}
-                  style={{
-                    fontFamily: 'Georgia,serif', fontSize: '22px', fontWeight: 700,
-                    color: '#C9A84C', background: 'transparent', border: 'none',
-                    paddingRight: 24, cursor: 'pointer', appearance: 'none' as const,
-                    outline: 'none'
-                  }}
-                >
-                  {monumentsList.map(m => <option key={m.id} value={m.id} style={{ background: '#1C1638', color: '#C9A84C' }}>🏛️ {m.name} {lang === 'hi' ? 'अन्वेषक' : 'Explorer'}</option>)}
-                </select>
-                <ChevronDown style={{ position: 'absolute', right: 0, top: 6, width: 14, height: 14, color: '#C9A84C', pointerEvents: 'none' }} />
-              </div>
-              <p style={{ color: '#C4A882', fontSize: '13px', margin: '4px 0 0' }}>
-                {lang === 'hi' ? 'ज़ोन' : 'Zone'} {currentZoneIndex + 1} / {activeZones.length}
-              </p>
-              <button
-                onClick={() => router.push('/explore/create')}
-                style={{
-                  marginTop: 6, background: 'transparent', border: 'none', padding: 0,
-                  color: 'rgba(201,168,76,0.7)', fontSize: 11, cursor: 'pointer', textDecoration: 'underline',
-                }}
-              >
-                🎓 {customZones.length > 0 ? 'Edit demo zones' : 'Create demo zones for this venue'}
-              </button>
-            </div>
-
-          </div>
-
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            color: '#C4A882', fontSize: '12px', margin: '-10px 0 18px',
-          }}>
-            <span aria-hidden="true">🎙️</span>
-            <span>{guidePersona}</span>
-            {translationLoading && lang !== 'en' && (
-              <span style={{ color: '#C9A84C' }}>• Preparing translated guide…</span>
-            )}
-            {isTTSSpeaking ? (
-              <button
-                type="button"
-                onClick={pauseNarration}
-                style={{
-                  marginLeft: 'auto', background: 'rgba(201,168,76,0.1)',
-                  border: '1px solid #C9A84C44', borderRadius: '999px',
-                  color: '#C9A84C', cursor: 'pointer', padding: '5px 10px',
-                  fontSize: '12px'
-                }}
-              >
-                ⏸ Pause narration
-              </button>
-            ) : narrationReady ? (
-              <button
-                type="button"
-                onClick={playPreparedNarration}
-                style={{
-                  marginLeft: 'auto', background: 'rgba(75,155,142,0.18)',
-                  border: '1px solid rgba(75,155,142,0.45)', borderRadius: '999px',
-                  color: '#83D2C4', cursor: 'pointer', padding: '5px 10px',
-                  fontSize: '12px', fontWeight: 700
-                }}
-              >
-                ▶ Play narration
-              </button>
-            ) : null}
-          </div>
-
-          {/* Breadcrumb */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
-            {activeZones.map((z, i) => (
-              <div key={z.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: 12, height: 12, borderRadius: '50%',
-                  background: completedZones.includes(z.id) ? '#4B9B8E'
-                    : i === currentZoneIndex ? '#C9A84C' : '#444',
-                  animation: i === currentZoneIndex ? 'pulse 1.5s infinite' : 'none',
-                  border: i === currentZoneIndex ? '2px solid #C9A84C' : 'none'
-                }} />
-                {i < activeZones.length - 1 && (
-                  <div style={{ width: 24, height: 2, background: completedZones.includes(z.id) ? '#4B9B8E' : '#333' }} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Map */}
-          <div style={{ marginBottom: '16px' }}>
-            <ExploreMap
-              zones={activeZones} currentZoneIndex={currentZoneIndex}
-              completedZones={completedZones} userPos={userPos}
-              monumentId={exploreMonumentId}
-            />
-          </div>
-
-          {/* ── DIRECTION CARD (before arrival) ──────── */}
-          {!showFact && (
-            <div style={{
-              background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.2)',
-              borderRadius: '16px', padding: '24px', animation: 'fadeIn 0.4s ease'
-            }}>
-              <h2 style={{ color: '#C9A84C', fontFamily: 'Georgia,serif', fontSize: '22px', marginBottom: '4px' }}>
-                {zone.emoji} {zone.name}
-              </h2>
-              <p style={{ color: '#C4A882', fontSize: '12px', marginBottom: '16px' }}>
-                {lang === 'hi' ? 'ज़ोन' : 'Zone'} {currentZoneIndex + 1} / {activeZones.length} • +{zone.xp} XP {lang === 'hi' ? 'आगमन पर' : 'on arrival'}
-              </p>
-
-              {/* Direction hint */}
-              <div style={{
-                background: 'rgba(201,168,76,0.08)', borderLeft: '3px solid #C9A84C',
-                borderRadius: '8px', padding: '12px 14px', marginBottom: '20px'
-              }}>
-                <p style={{ color: '#F5E6D3', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
-                  🧭 {directionText}
-                </p>
-              </div>
-
-              {/* Distance + Compass */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', marginBottom: '20px' }}>
-                {/* Compass arrow */}
-                <div style={{ width: 60, height: 60, position: 'relative' }}>
-                  <svg width="60" height="60" viewBox="0 0 60 60" style={{ transform: `rotate(${bearing}deg)`, transition: 'transform 0.5s ease' }}>
-                    <circle cx="30" cy="30" r="28" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="2" />
-                    <polygon points="30,6 24,26 36,26" fill="#C9A84C" />
-                    <circle cx="30" cy="30" r="4" fill="#C9A84C" />
-                  </svg>
-                </div>
-
-                {/* Distance */}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: '48px', fontWeight: '700',
-                    color: demoDistance < 30 ? '#4B9B8E' : '#C9A84C',
-                    fontFamily: 'Georgia,serif', lineHeight: 1
-                  }}>
-                    {demoDistance}m
-                  </div>
-                  <div style={{ color: '#C4A882', fontSize: '14px', marginTop: '4px' }}>
-                    {demoDistance > 100 ? (lang === 'hi' ? '🚶 चलते रहें...' : '🚶 Keep walking...') : demoDistance > 30 ? (lang === 'hi' ? '📍 करीब आ रहे हैं!' : '📍 Getting close!') : (lang === 'hi' ? '✅ आप यहाँ हैं!' : '✅ You are here!')}
-                  </div>
-                </div>
-              </div>
-
-              {/* I've Arrived button */}
-              <button
-                onClick={handleArrival}
-                disabled={arrivedAtZone}
-                style={{
-                  background: arrivedAtZone ? 'rgba(75,155,142,0.3)' : 'linear-gradient(135deg,#4B9B8E,#3a7a6e)',
-                  borderRadius: '16px', padding: '16px 32px', color: 'white',
-                  fontWeight: '700', fontSize: '18px', width: '100%',
-                  border: 'none', cursor: arrivedAtZone ? 'default' : 'pointer',
-                }}
-              >
-                {arrivedAtZone ? (lang === 'hi' ? '✅ पहुँच गए!' : '✅ Arrived!') : (lang === 'hi' ? "📍 मैं पहुँच गया!" : "📍 I've Arrived!")}
-              </button>
-
-              {!arrivedAtZone && (
-                <button
-                  onClick={enterLiveAR}
-                  style={{
-                    marginTop: '10px', background: 'transparent',
-                    border: '1px solid rgba(201,168,76,0.4)', borderRadius: '16px',
-                    padding: '12px 24px', color: '#C9A84C', fontWeight: '600', fontSize: '14px',
-                    width: '100%', cursor: 'pointer',
-                  }}
-                >
-                  {lang === 'hi' ? '📷 लाइव AR कैमरा आज़माएँ' : '📷 Try Live AR Camera'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── FACT REVEAL CARD (after arrival) ─────── */}
-          {showFact && (
-            <div style={{
-              background: 'rgba(28,22,56,0.95)', border: '1px solid #C9A84C',
-              borderRadius: '16px', padding: '24px', animation: 'fadeIn 0.5s ease'
-            }}>
-              {/* XP Badge */}
-              <div style={{
-                background: 'linear-gradient(135deg,#C9A84C,#D4893F)', borderRadius: '20px',
-                padding: '6px 16px', display: 'inline-flex', alignItems: 'center',
-                gap: '6px', marginBottom: '16px'
-              }}>
-                <span style={{ fontSize: '16px' }}>⚡</span>
-                <span style={{ color: '#0F0B1E', fontWeight: '700' }}>+{xpEarned} XP {lang === 'hi' ? 'प्राप्त किए!' : 'Earned!'}</span>
-              </div>
-
-              <h3 style={{ color: '#C9A84C', fontFamily: 'Georgia,serif', fontSize: '20px', marginBottom: '12px' }}>
-                {zone.emoji} {zone.name}
-              </h3>
-
-              <p style={{ color: '#F5E6D3', lineHeight: '1.7', fontSize: '15px', marginBottom: '16px' }}>
-                {arrivalText}
-              </p>
-
-              {/* Mini fact chip */}
-              <div style={{
-                background: 'rgba(75,155,142,0.15)', border: '1px solid rgba(75,155,142,0.2)',
-                borderRadius: '10px', padding: '10px 14px', color: '#4B9B8E', fontSize: '13px',
-                marginBottom: '16px'
-              }}>
-                💡 {miniFactText}
-              </div>
-
-              {/* Speaking indicator, or a manual retry when autoplay/TTS was blocked */}
-              {isTTSSpeaking ? (
-                <div style={{
-                  background: 'rgba(201,168,76,0.1)',
-                  border: '1px solid #C9A84C44',
-                  borderRadius: '10px',
-                  padding: '8px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  marginBottom: '12px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                      width: '8px', height: '8px',
-                      borderRadius: '50%',
-                      background: '#C9A84C',
-                      animation: 'pulse 1s infinite'
-                    }}/>
-                    <span style={{ color: '#C9A84C', fontSize: '13px' }}>
-                      🔊 Audio guide preparing or speaking…
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={pauseNarration}
-                    style={{
-                      background: 'transparent', border: '1px solid #C9A84C44',
-                      borderRadius: '999px', color: '#C9A84C', cursor: 'pointer',
-                      padding: '4px 10px', fontSize: '12px', flexShrink: 0,
-                    }}
-                  >
-                    ⏸ Pause
-                  </button>
-                </div>
-              ) : narrationReady ? (
-                <button
-                  type="button"
-                  onClick={playPreparedNarration}
-                  style={{
-                    background: 'rgba(75,155,142,0.18)', border: '1px solid rgba(75,155,142,0.45)',
-                    borderRadius: '10px', color: '#83D2C4', cursor: 'pointer', fontWeight: 700,
-                    padding: '8px 14px', fontSize: '13px', width: '100%', marginBottom: '12px',
-                  }}
-                >
-                  ▶ Play narration
-                </button>
-              ) : null}
-
-              {/* Next zone or complete */}
-              {currentZoneIndex < activeZones.length - 1 ? (
-                <button
-                  onClick={() => {
-                    stopNarration()
-                    setCurrentZoneIndex(prev => prev + 1)
-                  }}
-                  style={{
-                    background: 'linear-gradient(135deg,#C9A84C,#D4893F)', borderRadius: '12px',
-                    padding: '12px 24px', color: '#0F0B1E', fontWeight: '700', fontSize: '15px',
-                    border: 'none', cursor: 'pointer', width: '100%'
-                  }}
-                >
-                  {lang === 'hi' ? 'अगला ज़ोन' : 'Next Zone'}: {activeZones[currentZoneIndex + 1].emoji} {activeZones[currentZoneIndex + 1].name} →
-                </button>
-              ) : (
-                <button
-                  onClick={() => setExplorerComplete(true)}
-                  style={{
-                    background: 'linear-gradient(135deg,#534AB7,#3d35a0)', borderRadius: '12px',
-                    padding: '12px 24px', color: 'white', fontWeight: '700', fontSize: '15px',
-                    border: 'none', cursor: 'pointer', width: '100%'
-                  }}
-                >
-                  🎉 {lang === 'hi' ? 'अन्वेषक पूर्ण!' : 'Complete Explorer!'}
-                </button>
-              )}
-            </div>
-          )}
-      </div>
-    </AppShell>
+    <ExploreARHud
+      monumentId={exploreMonumentId}
+      monuments={monumentsList}
+      muted={muted}
+      onArrive={handleHudArrive}
+      onBack={() => router.push('/')}
+      onComplete={() => {
+        emitYatrikEvent({
+          type: 'explore-complete',
+          caption: `Amazing! You completed every zone at ${MONUMENT_NAMES[exploreMonumentId] || 'this monument'}.`,
+          priority: 90,
+          state: 'celebrating',
+          durationMs: 8500,
+        })
+        setExplorerComplete(true)
+      }}
+      onMonumentChange={selectMonument}
+      onNextZone={() => {
+        stopNarration()
+        setCurrentZoneIndex((current) => current + 1)
+      }}
+      onPauseNarration={pauseNarration}
+      onPlayNarration={() => void playPreparedNarration()}
+      onToggleMute={toggleMute}
+      onUseMapFallback={() => arNav.retry()}
+      cameraStream={liveTracking ? arNav.cameraStream : null}
+      onEnterLiveAR={enterLiveAR}
+      onExitLiveAR={exitLiveAR}
+      state={{
+        activeZone: {
+          name: zone.name,
+          emoji: zone.emoji,
+          radiusMeters: zone.radius,
+          xp: zone.xp,
+        },
+        arrivalStatus: showFact ? 'arrived' : insideNow ? 'inside' : 'approaching',
+        bearingDegrees: liveTracking && arNav.bearingDeg !== null ? arNav.bearingDeg : bearing,
+        caption: showFact ? arrivalText : directionText,
+        distanceMeters: liveTracking && arNav.distanceMeters !== null
+          ? Math.round(arNav.distanceMeters)
+          : demoDistance,
+        fallbackStatus: hudFallbackStatus,
+        miniFact: showFact ? miniFactText : undefined,
+        mode: hudMode,
+        narrationStatus: hudNarrationStatus,
+        story: showFact ? arrivalText : undefined,
+        targetVisible: liveTracking ? arNav.waypoint.visible : demoDistance <= 90,
+        totalZones: activeZones.length,
+        xpEarned: showFact ? xpEarned : undefined,
+        zoneIndex: currentZoneIndex,
+      }}
+    />
   )
 }

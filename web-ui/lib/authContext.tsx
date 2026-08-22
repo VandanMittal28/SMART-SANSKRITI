@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
+import { isBundledAndroidApp, isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
 import {
   getUserProfile,
   signIn as signInWithUsername,
@@ -70,17 +70,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        const reachable = await isSupabaseAuthReachable()
-        if (!active) return
-        if (!reachable) {
-          clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
-          return
+        // The APK keeps the Supabase token in WebView local storage. Restore
+        // that token directly on launch; a short timeout still prevents an
+        // unavailable network from trapping the app on its loading screen.
+        if (!isBundledAndroidApp()) {
+          const reachable = await isSupabaseAuthReachable()
+          if (!active) return
+          if (!reachable) {
+            clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
+            return
+          }
         }
 
-        const { error: initializeError } = await supabase.auth.initialize()
-        if (initializeError) throw initializeError
-
-        const { data, error: sessionError } = await supabase.auth.getSession()
+        // Some Android System WebView versions can leave the Supabase session
+        // bootstrap pending even though the network is reachable. Never let
+        // that keep the entire standalone app behind its loading screen.
+        const sessionTimeout = new Promise<never>((_resolve, reject) => {
+          window.setTimeout(() => reject(new Error('Session check timed out.')), 4_000)
+        })
+        const { data, error: sessionError } = await Promise.race([
+          supabase.auth.getSession(),
+          sessionTimeout,
+        ])
         if (sessionError) throw sessionError
         if (!active) return
 

@@ -6,12 +6,14 @@ import { Send, GraduationCap, Building } from "lucide-react"
 import api from "@/lib/apiClient"
 import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
-import { saveChatMessage } from "@/lib/authClient"
+import { saveChatExchange } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
 import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache'
 import { recordingToWavBase64 } from '@/lib/audio'
+import { isMonumentQuestion, monumentOnlyRefusal, offlineHeritageAnswer } from '@/lib/offlineHeritage'
+import { hasNativeNvidia, recordPhoneMicrophone, transcribeAudioNative } from '@/lib/nativeNvidia'
 
-interface Message { id: number; role: "assistant" | "user"; content: string }
+interface Message { id: string | number; role: "assistant" | "user"; content: string }
 
 export default function ChatPage() {
   const { t, lang } = useLang()
@@ -28,7 +30,7 @@ export default function ChatPage() {
   const voiceRecorderRef = useRef<MediaRecorder | null>(null)
   const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { toast, showToast, hideToast } = useToast()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
 
   // ── Robust Browser TTS ─────────────────────────────────
   const speakText = useCallback((text: string) => {
@@ -74,11 +76,28 @@ export default function ChatPage() {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, loading])
 
-  // Reset greeting when language changes
+  // Hydrate the durable conversation on login, profile changes, and language
+  // changes. Realtime profile updates keep other open tabs in sync.
   useEffect(() => {
-    setMessages([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
+    const persisted = (profile?.chat_history ?? []).flatMap((message, index): Message[] => {
+      const role = message.role
+      const content = message.content
+      if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') return []
+      const timestamp = typeof message.timestamp === 'string' ? message.timestamp : 'saved'
+      return [{ id: `${timestamp}-${index}`, role, content }]
+    })
+    setMessages([{ id: 'greeting', role: "assistant", content: t('namaste_greeting') }, ...persisted])
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang])
+  }, [lang, profile?.chat_history])
+
+  const persistExchange = async (question: string, answer: string) => {
+    if (!user) return
+    try {
+      await saveChatExchange(user.id, question, answer, monumentId)
+    } catch (error) {
+      console.warn('Chat persistence unavailable:', error)
+    }
+  }
 
   // ── Send Message ───────────────────────────────────────
   const sendMessage = async (text: string) => {
@@ -88,6 +107,16 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMsg])
     setInput("")
     setLoading(true)
+
+    if (!isMonumentQuestion(trimmed)) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: monumentOnlyRefusal(lang),
+      }])
+      setLoading(false)
+      return
+    }
 
     // Check cache first
     const cacheKey = getChatCacheKey(trimmed, monumentId)
@@ -102,6 +131,7 @@ export default function ChatPage() {
         // Text in → text out only + lightning bolt for cached result
         setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: cachedAnswer + ' ⚡' }])
       }
+      await persistExchange(trimmed, cachedAnswer)
       setLoading(false)
       return
     }
@@ -122,12 +152,16 @@ export default function ChatPage() {
         setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: aiAnswer }])
       }
 
-      if (user) { 
-        saveChatMessage(user.id, 'user', trimmed, monumentId).catch(() => null)
-        saveChatMessage(user.id, 'assistant', aiAnswer, monumentId).catch(() => null) 
-      }
+      await persistExchange(trimmed, aiAnswer)
     } catch {
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: t('sorry_trouble') }])
+      const fallbackAnswer = offlineHeritageAnswer(trimmed, monumentId, lang)
+      if (lastWasVoiceRef.current) {
+        speakText(fallbackAnswer)
+        lastWasVoiceRef.current = false
+      } else {
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: fallbackAnswer }])
+      }
+      await persistExchange(trimmed, fallbackAnswer)
     } finally { setLoading(false) }
   }
 
@@ -137,6 +171,25 @@ export default function ChatPage() {
   const startVoice = async () => {
     if (voiceRecorderRef.current?.state === 'recording') {
       voiceRecorderRef.current.stop()
+      return
+    }
+
+    if (hasNativeNvidia()) {
+      setListening(true)
+      showToast(t('listening'))
+      try {
+        const audioBase64 = await recordPhoneMicrophone(5_000)
+        const spokenText = await transcribeAudioNative(audioBase64, lang === 'hi' ? 'hi' : 'en')
+        if (!spokenText) throw new Error('Transcription was empty')
+        setInput(spokenText)
+        lastWasVoiceRef.current = true
+        await sendMessage(spokenText)
+      } catch (error) {
+        console.error('Voice transcription failed:', error)
+        showToast(lang === 'hi' ? 'आवाज़ समझ नहीं आई।' : 'Could not understand the recording.')
+      } finally {
+        setListening(false)
+      }
       return
     }
 
@@ -167,17 +220,20 @@ export default function ChatPage() {
         try {
           const audio = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
           const audioBase64 = await recordingToWavBase64(audio)
-          const response = await fetch('/api/transcribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
-          })
-          const data = await response.json()
-          if (!response.ok || !data.text) {
-            throw new Error(data.error || 'Transcription failed')
+          let spokenText = ''
+          if (hasNativeNvidia()) {
+            spokenText = await transcribeAudioNative(audioBase64, lang === 'hi' ? 'hi' : 'en')
+          } else {
+            const response = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
+            })
+            const data = await response.json()
+            if (!response.ok || !data.text) throw new Error(data.error || 'Transcription failed')
+            spokenText = String(data.text).trim()
           }
-
-          const spokenText = String(data.text).trim()
+          if (!spokenText) throw new Error('Transcription was empty')
           setInput(spokenText)
           lastWasVoiceRef.current = true
           await sendMessage(spokenText)

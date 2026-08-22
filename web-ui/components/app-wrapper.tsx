@@ -3,13 +3,14 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
+import { YatrikProvider } from '@/components/yatrik/yatrik-provider'
 
 export function AppWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const showChatButton = !['/chat', '/login', '/auth'].includes(pathname)
 
   return (
-    <>
+    <YatrikProvider>
       {children}
       {showChatButton && (
         <Link
@@ -20,6 +21,6 @@ export function AppWrapper({ children }: { children: ReactNode }) {
           <MessageCircle className="h-5 w-5" />
         </Link>
       )}
-    </>
+    </YatrikProvider>
   )
 }

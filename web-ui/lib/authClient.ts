@@ -15,6 +15,7 @@ type ProfileRow = {
   user_type: 'student' | 'tourist' | null
   language: string | null
   admin_mode: boolean | null
+  mascot_intro_seen_at: string | null
 }
 
 type ActivityRow = {
@@ -24,6 +25,10 @@ type ActivityRow = {
   metadata: Record<string, unknown> | null
   created_at: string
 }
+
+const PROFILE_FIELDS = 'username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode'
+const PROFILE_FIELDS_WITH_MASCOT = 'username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode, mascot_intro_seen_at'
+let mascotIntroColumnAvailable: boolean | null = null
 
 function activityType(actionType: string): ProfileActivity['type'] {
   if (actionType.includes('QUIZ')) return 'quiz'
@@ -67,6 +72,7 @@ function profileFromRow(row: ProfileRow, activity: ActivityRow[]): LocalProfile 
     user_type: row.user_type === 'student' ? 'student' : 'tourist',
     language: isSupportedLanguage(row.language) ? row.language : DEFAULT_LANGUAGE,
     admin_mode: Boolean(row.admin_mode),
+    mascot_intro_seen_at: row.mascot_intro_seen_at,
   }
 }
 
@@ -167,12 +173,11 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
 }
 
 export async function getUserProfile(userId: string): Promise<LocalProfile> {
-  const [profileResult, activityResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode')
-      .eq('id', userId)
-      .single(),
+  const profileRequest = mascotIntroColumnAvailable === false
+    ? supabase.from('profiles').select(PROFILE_FIELDS).eq('id', userId).single()
+    : supabase.from('profiles').select(PROFILE_FIELDS_WITH_MASCOT).eq('id', userId).single()
+  const [initialProfileResult, activityResult] = await Promise.all([
+    profileRequest,
     supabase
       .from('user_activity')
       .select('id, action_type, xp_earned, metadata, created_at')
@@ -181,13 +186,45 @@ export async function getUserProfile(userId: string): Promise<LocalProfile> {
       .limit(40),
   ])
 
-  if (profileResult.error) throw profileResult.error
+  let profileError = initialProfileResult.error
+  let profileData: ProfileRow | null = initialProfileResult.data
+    ? mascotIntroColumnAvailable === false
+      ? {
+        ...(initialProfileResult.data as unknown as Omit<ProfileRow, 'mascot_intro_seen_at'>),
+        mascot_intro_seen_at: null,
+      }
+      : initialProfileResult.data as unknown as ProfileRow
+    : null
+  if (
+    profileError
+    && (profileError.code === '42703' || profileError.message.includes('mascot_intro_seen_at'))
+  ) {
+    mascotIntroColumnAvailable = false
+    const legacyResult = await supabase
+      .from('profiles')
+      .select(PROFILE_FIELDS)
+      .eq('id', userId)
+      .single()
+    profileError = legacyResult.error
+    profileData = legacyResult.data
+      ? {
+        ...(legacyResult.data as unknown as Omit<ProfileRow, 'mascot_intro_seen_at'>),
+        mascot_intro_seen_at: null,
+      }
+      : null
+  } else if (!profileError && mascotIntroColumnAvailable !== false) {
+    mascotIntroColumnAvailable = true
+  }
+
+  if (profileError) throw profileError
+  if (!profileData) throw new Error('The profile could not be loaded.')
   if (activityResult.error) throw activityResult.error
-  return profileFromRow(profileResult.data as ProfileRow, (activityResult.data ?? []) as ActivityRow[])
+  return profileFromRow(profileData, (activityResult.data ?? []) as ActivityRow[])
 }
 
 export async function updateUserProfile(userId: string, updates: Partial<LocalProfile>) {
   const allowed: Partial<ProfileRow> = {}
+  if (typeof updates.username === 'string') allowed.username = validateUsername(updates.username)
   if (typeof updates.full_name === 'string') allowed.full_name = updates.full_name.trim().slice(0, 80)
   if (typeof updates.phone === 'string') allowed.phone = updates.phone.trim().slice(0, 30)
   if (updates.user_type === 'student' || updates.user_type === 'tourist') allowed.user_type = updates.user_type
@@ -197,6 +234,32 @@ export async function updateUserProfile(userId: string, updates: Partial<LocalPr
   const { error } = await supabase.from('profiles').update(allowed).eq('id', userId)
   if (error) throw error
   return getUserProfile(userId)
+}
+
+export async function markMascotIntroSeen(userId: string): Promise<string> {
+  if (mascotIntroColumnAvailable === false) {
+    throw new Error('The installed profile schema does not include mascot_intro_seen_at yet.')
+  }
+  const seenAt = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ mascot_intro_seen_at: seenAt })
+    .eq('id', userId)
+    .is('mascot_intro_seen_at', null)
+    .select('mascot_intro_seen_at')
+    .maybeSingle()
+
+  if (error) throw error
+  if (data?.mascot_intro_seen_at) return data.mascot_intro_seen_at as string
+
+  const { data: existing, error: readError } = await supabase
+    .from('profiles')
+    .select('mascot_intro_seen_at')
+    .eq('id', userId)
+    .single()
+  if (readError) throw readError
+  if (!existing.mascot_intro_seen_at) throw new Error('The Yatrik welcome could not be saved.')
+  return existing.mascot_intro_seen_at as string
 }
 
 export async function addXP(_userId: string, xpDelta: number, eventType: string): Promise<number> {
@@ -262,6 +325,20 @@ export async function saveChatMessage(_userId: string, role: string, content: st
   if (error) throw error
 }
 
+export async function saveChatExchange(
+  _userId: string,
+  userContent: string,
+  assistantContent: string,
+  monument: string,
+) {
+  const { error } = await supabase.rpc('append_chat_exchange', {
+    p_user_content: userContent,
+    p_assistant_content: assistantContent,
+    p_monument: monument,
+  })
+  if (error) throw error
+}
+
 export const authClient = {
   signUp,
   signIn,
@@ -270,9 +347,11 @@ export const authClient = {
   getCurrentUser,
   getUserProfile,
   updateUserProfile,
+  markMascotIntroSeen,
   addXP,
   addMonumentVisited,
   addQuizScore,
   computeAndSaveBadges,
   saveChatMessage,
+  saveChatExchange,
 }

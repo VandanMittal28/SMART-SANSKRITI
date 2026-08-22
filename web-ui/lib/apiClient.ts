@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { SupportedLanguage } from '@/lib/languages'
+import { askNativeHeritageChat, hasNativeNvidia, recognizeMonumentNative } from '@/lib/nativeNvidia'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://heritageai-backend.onrender.com'
 
@@ -27,17 +28,19 @@ export const api = {
 
   // Chat
   askChat: (question: string, monumentId = '', lang?: SupportedLanguage) =>
-    axios.post('/api/chat', {
-      question, monument_id: monumentId, lang
-    }),
+    hasNativeNvidia()
+      ? askNativeHeritageChat(question, monumentId, lang).then(answer => ({ data: { answer, response: answer } }))
+      : axios.post('/api/chat', { question, monument_id: monumentId, lang }),
 
   // Recognition
   recognize: (imageB64: string, filename = 'image.jpg', options?: Record<string, unknown>) =>
-    axios.post('/api/recognize', {
-      image_b64: imageB64,
-      filename,
-      ...(options || {}),
-    }),
+    hasNativeNvidia()
+      ? recognizeMonumentNative(imageB64).then(data => ({ data }))
+      : axios.post('/api/recognize', {
+        image_b64: imageB64,
+        filename,
+        ...(options || {}),
+      }),
 
   // Quiz
   getQuestions: (

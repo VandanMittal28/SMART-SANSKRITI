@@ -24,12 +24,18 @@ def readEnvFile = { File file ->
 }
 
 def env = readEnvFile(rootProject.file(".env.local"))
+if (env.isEmpty()) {
+    env = readEnvFile(rootProject.file("../web-ui/.env.local"))
+}
 def configuredAppUrl = providers.gradleProperty("SANSKRITI_APP_URL").orNull ?:
         System.getenv("SANSKRITI_APP_URL") ?:
         env["SANSKRITI_APP_URL"] ?:
         env["NEXT_PUBLIC_APP_URL"] ?:
-        "https://smart-sanskriti.vercel.app"
+        "https://appassets.androidplatform.net/"
 def escapedAppUrl = configuredAppUrl.replace("\\", "\\\\").replace('"', '\\"')
+def escapeBuildConfig = { String value ->
+    (value ?: "").replace("\\", "\\\\").replace('"', '\\"')
+}
 
 android {
     namespace "ai.sanskriti.app"
@@ -43,10 +49,20 @@ android {
         versionName "1.0.0"
 
         buildConfigField "String", "APP_URL", "\"${escapedAppUrl}\""
+        buildConfigField "String", "NVIDIA_API_KEY", "\"${escapeBuildConfig(env["NVIDIA_API_KEY"])}\""
+        buildConfigField "String", "NVIDIA_CHAT_MODEL", "\"${escapeBuildConfig(env["NVIDIA_MODEL"] ?: "nvidia/nemotron-3-nano-30b-a3b")}\""
+        buildConfigField "String", "NVIDIA_VISION_MODEL", "\"${escapeBuildConfig(env["NVIDIA_VISION_MODEL"] ?: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")}\""
+        buildConfigField "String", "NVIDIA_SPEECH_MODEL", "\"${escapeBuildConfig(env["NVIDIA_SPEECH_MODEL"] ?: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")}\""
     }
 
     buildFeatures {
         buildConfig true
+    }
+
+    androidResources {
+        // Next.js stores its runtime in `_next`; AAPT ignores underscore-prefixed
+        // directories by default, so keep the standard ignores without `<dir>_*`.
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
     }
 
     buildTypes {
@@ -65,4 +81,21 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+def bundleWebUi = tasks.register("bundleWebUi", Exec) {
+    workingDir rootProject.projectDir
+    commandLine "bash", "scripts/build-web-bundle.sh"
+    inputs.dir rootProject.file("../web-ui/app")
+    inputs.dir rootProject.file("../web-ui/components")
+    inputs.dir rootProject.file("../web-ui/hooks")
+    inputs.dir rootProject.file("../web-ui/lib")
+    inputs.dir rootProject.file("../web-ui/public")
+    inputs.file rootProject.file("../web-ui/next.config.ts")
+    inputs.file rootProject.file("../web-ui/package.json")
+    outputs.dir rootProject.file("app/src/main/assets/www")
+}
+
+tasks.named("preBuild").configure {
+    dependsOn bundleWebUi
 }
