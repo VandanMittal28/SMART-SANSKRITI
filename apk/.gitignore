@@ -1,0 +1,15 @@
+.gradle/
+.idea/
+local.properties
+*.iml
+app/build/
+build/
+captures/
+*.apk
+
+# Private configuration copied from the web project. Never commit it.
+.env
+.env.local
+.env.production.local
+.env*.local
+!.env.example
