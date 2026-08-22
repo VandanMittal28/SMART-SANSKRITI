@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/authContext"
 import { addXP, addQuizScore, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
 import { getMonument, saveMonument, clearMonument, type StoredMonument } from "@/lib/monumentStore"
-import { resolveQuizMonumentId } from "@/lib/quizQuestions"
+import { getQuizQuestions, resolveQuizMonumentId } from "@/lib/quizQuestions"
 
 interface Question {
   id: string
@@ -110,7 +110,13 @@ export default function QuizPage() {
         setLoading(false)
       })
       .catch(() => {
-        setError('Could not load questions. Check your connection.')
+        const localQuestions = getQuizQuestions(mid)
+        if (localQuestions.length > 0) {
+          setQuestions(localQuestions)
+          setError(null)
+        } else {
+          setError('Questions are not available for this monument yet.')
+        }
         setLoading(false)
       })
   }

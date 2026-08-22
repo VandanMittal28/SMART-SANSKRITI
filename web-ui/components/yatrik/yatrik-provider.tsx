@@ -10,7 +10,9 @@ import { subscribeToYatrikEvents } from '@/lib/yatrik/events'
 import type { YatrikAssetManifest, YatrikEvent, YatrikState } from '@/lib/yatrik/types'
 
 const MUTE_STORAGE_KEY = 'sanskriti-yatrik-muted-v1'
+const WELCOME_STORAGE_PREFIX = 'sanskriti-yatrik-welcome-v2:'
 const HIDDEN_PATHS = new Set(['/login', '/auth', '/chat'])
+const SHOW_WELCOME_OVERLAY = true
 
 type WelcomePhase = 'idle' | 'fly-in' | 'landing' | 'ready' | 'talking' | 'complete'
 
@@ -36,8 +38,25 @@ function speak(text: string, muted: boolean): void {
   window.speechSynthesis.speak(utterance)
 }
 
+function hasLocalWelcome(userId: string): boolean {
+  try {
+    return localStorage.getItem(`${WELCOME_STORAGE_PREFIX}${userId}`) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function saveLocalWelcome(userId: string): void {
+  try {
+    localStorage.setItem(`${WELCOME_STORAGE_PREFIX}${userId}`, 'true')
+  } catch {
+    // The welcome still completes for the current session.
+  }
+}
+
 export function YatrikProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
   const router = useRouter()
   const { profile, setProfile, user } = useAuth()
   const [manifest, setManifest] = useState<YatrikAssetManifest | null>(null)
@@ -104,7 +123,11 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
   }, [activeEvent, muted])
 
   useEffect(() => {
-    if (!preferencesLoaded || !user || !profile || profile.mascot_intro_seen_at || welcomePhase !== 'idle') return
+    if (!preferencesLoaded || !user || !profile || welcomePhase !== 'idle') return
+    if (hasLocalWelcome(user.id)) {
+      setWelcomePhase('complete')
+      return
+    }
     setWelcomePhase('fly-in')
   }, [preferencesLoaded, profile, user, welcomePhase])
 
@@ -119,10 +142,6 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => setWelcomePhase('ready'), 700)
     return () => window.clearTimeout(timer)
   }, [welcomePhase])
-
-  useEffect(() => {
-    if (profile?.mascot_intro_seen_at && welcomePhase === 'idle') setWelcomePhase('complete')
-  }, [profile?.mascot_intro_seen_at, welcomePhase])
 
   useEffect(() => () => {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel()
@@ -149,15 +168,17 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
     setWelcomePhase('talking')
     speak(greeting, muted)
 
+    let seenAt = new Date().toISOString()
     try {
-      const seenAt = await markMascotIntroSeen(user.id)
+      seenAt = await markMascotIntroSeen(user.id)
+    } catch {
+      // The deployed database may not have the optional welcome column yet,
+      // or the phone may be offline. Device-local persistence keeps this
+      // non-critical introduction from blocking the installed app.
+    } finally {
+      saveLocalWelcome(user.id)
       setProfile((current) => current ? { ...current, mascot_intro_seen_at: seenAt } : current)
       window.setTimeout(() => setWelcomePhase('complete'), 2600)
-    } catch {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel()
-      setWelcomeError('Your welcome could not be saved. Please try Continue again.')
-      setWelcomePhase('ready')
-    } finally {
       setSavingWelcome(false)
     }
   }, [muted, savingWelcome, setProfile, user])
@@ -168,13 +189,15 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
     : welcomePhase === 'landing'
       ? 'landing'
       : 'talking'
-  const companionVisible = Boolean(user) && !welcomeVisible && !HIDDEN_PATHS.has(pathname)
+  const isExplore = normalizedPathname === '/explore'
+  const yatrikHidden = HIDDEN_PATHS.has(normalizedPathname)
+  const companionVisible = Boolean(user) && (!welcomeVisible || isExplore) && !yatrikHidden
   const controls = useMemo(() => ({ muted, toggleMute }), [muted, toggleMute])
 
   return (
     <YatrikControlsContext.Provider value={controls}>
       {children}
-      {welcomeVisible && (
+      {SHOW_WELCOME_OVERLAY && welcomeVisible && !yatrikHidden && !isExplore && (
         <YatrikWelcome
           error={welcomeError}
           manifest={manifest}
@@ -188,7 +211,6 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
       )}
       {companionVisible && (
         <YatrikCompanion
-          caption={activeEvent?.caption ?? null}
           manifest={manifest}
           muted={muted}
           onOpenChat={() => router.push('/chat')}

@@ -9,6 +9,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,6 +26,7 @@ import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.window.OnBackInvokedDispatcher;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.GeolocationPermissions;
@@ -41,6 +45,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import android.util.Base64;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,9 +53,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.json.JSONObject;
 
@@ -62,6 +77,9 @@ public final class MainActivity extends Activity {
     private static final long PAGE_HEALTH_CHECK_DELAY_MS = 6_000L;
     private static final String ERROR_PAGE_URL = "https://sanskriti.local/error";
     private static final String BUNDLED_APP_HOST = "appassets.androidplatform.net";
+    private static final String NVIDIA_CHAT_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+    private static final String NVIDIA_STATUS_URL = "https://integrate.api.nvidia.com/v1/status/";
+    private static final String NVIDIA_TTS_URL = "https://877104f7-e885-42b9-8de8-f6e4c6303969.invocation.api.nvcf.nvidia.com/v1/audio/synthesize";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -75,6 +93,7 @@ public final class MainActivity extends Activity {
     private boolean showingConnectionError;
     private TextToSpeech textToSpeech;
     private boolean textToSpeechReady;
+    private final ExecutorService networkExecutor = Executors.newFixedThreadPool(2);
 
     private final Runnable pageLoadTimeout = () -> {
         if (!mainPageFinished && !showingConnectionError) {
@@ -104,6 +123,12 @@ public final class MainActivity extends Activity {
         configureLayout();
         configureTextToSpeech();
         configureWebView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                    this::handleBackNavigation
+            );
+        }
 
         if (savedInstanceState == null) {
             webView.loadUrl(normalizedAppUrl());
@@ -372,6 +397,287 @@ public final class MainActivity extends Activity {
                 if (textToSpeech != null) textToSpeech.stop();
             });
         }
+
+        @JavascriptInterface
+        public String getNvidiaModel(String task) {
+            if ("vision".equals(task)) return BuildConfig.NVIDIA_VISION_MODEL;
+            if ("speech".equals(task)) return BuildConfig.NVIDIA_SPEECH_MODEL;
+            return BuildConfig.NVIDIA_CHAT_MODEL;
+        }
+
+        @JavascriptInterface
+        public void requestNvidia(String requestId, String requestBody) {
+            if (BuildConfig.NVIDIA_API_KEY.trim().isEmpty()) {
+                emitNvidiaResult(requestId, "", "NVIDIA API key is not configured in this APK.");
+                return;
+            }
+            networkExecutor.execute(() -> {
+                try {
+                    String responseBody = executeNvidiaRequest(NVIDIA_CHAT_URL, "POST", requestBody);
+                    JSONObject responseJson = new JSONObject(responseBody);
+                    if (responseJson.has("requestId") && !responseJson.has("choices")) {
+                        responseBody = pollNvidiaResult(responseJson.getString("requestId"));
+                    }
+                    emitNvidiaResult(requestId, responseBody, "");
+                } catch (Exception error) {
+                    emitNvidiaResult(
+                            requestId,
+                            "",
+                            error.getMessage() == null ? "NVIDIA request failed." : error.getMessage()
+                    );
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void requestNvidiaSpeech(
+                String requestId,
+                String text,
+                String language,
+                String voice
+        ) {
+            if (BuildConfig.NVIDIA_API_KEY.trim().isEmpty()) {
+                emitNvidiaSpeechResult(requestId, "", "NVIDIA API key is not configured in this APK.");
+                return;
+            }
+            networkExecutor.execute(() -> {
+                try {
+                    byte[] audio = executeNvidiaSpeechRequest(text, language, voice);
+                    emitNvidiaSpeechResult(
+                            requestId,
+                            Base64.encodeToString(audio, Base64.NO_WRAP),
+                            ""
+                    );
+                } catch (Exception error) {
+                    emitNvidiaSpeechResult(
+                            requestId,
+                            "",
+                            error.getMessage() == null ? "NVIDIA narration failed." : error.getMessage()
+                    );
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void recordMicrophone(String requestId, int durationMs) {
+            if (!hasPermission(Manifest.permission.RECORD_AUDIO)) {
+                emitMicrophoneResult(requestId, "", "Microphone permission is required.");
+                return;
+            }
+            networkExecutor.execute(() -> recordPhoneMicrophone(
+                    requestId,
+                    Math.max(1_000, Math.min(durationMs, 8_000))
+            ));
+        }
+    }
+
+    @SuppressWarnings("MissingPermission")
+    private void recordPhoneMicrophone(String requestId, int durationMs) {
+        final int sampleRate = 16_000;
+        final int channelConfig = AudioFormat.CHANNEL_IN_MONO;
+        final int encoding = AudioFormat.ENCODING_PCM_16BIT;
+        int minimumBuffer = AudioRecord.getMinBufferSize(sampleRate, channelConfig, encoding);
+        if (minimumBuffer <= 0) minimumBuffer = sampleRate;
+        AudioRecord recorder = null;
+        try {
+            recorder = new AudioRecord(
+                    MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                    sampleRate,
+                    channelConfig,
+                    encoding,
+                    Math.max(minimumBuffer * 2, sampleRate)
+            );
+            if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
+                throw new IOException("The phone microphone could not be initialized.");
+            }
+
+            byte[] buffer = new byte[minimumBuffer];
+            ByteArrayOutputStream pcm = new ByteArrayOutputStream(sampleRate * 2 * durationMs / 1_000);
+            long finishAt = System.currentTimeMillis() + durationMs;
+            recorder.startRecording();
+            while (System.currentTimeMillis() < finishAt) {
+                int count = recorder.read(buffer, 0, buffer.length);
+                if (count > 0) pcm.write(buffer, 0, count);
+                else if (count < 0) throw new IOException("Microphone recording failed with code " + count + ".");
+            }
+            recorder.stop();
+            byte[] wav = pcmToWav(pcm.toByteArray(), sampleRate, 1, 16);
+            emitMicrophoneResult(requestId, Base64.encodeToString(wav, Base64.NO_WRAP), "");
+        } catch (Exception error) {
+            emitMicrophoneResult(
+                    requestId,
+                    "",
+                    error.getMessage() == null ? "Microphone recording failed." : error.getMessage()
+            );
+        } finally {
+            if (recorder != null) {
+                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) recorder.stop();
+                recorder.release();
+            }
+        }
+    }
+
+    private byte[] pcmToWav(byte[] pcm, int sampleRate, int channels, int bitsPerSample) throws IOException {
+        int byteRate = sampleRate * channels * bitsPerSample / 8;
+        ByteBuffer header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN);
+        header.put("RIFF".getBytes(StandardCharsets.US_ASCII));
+        header.putInt(36 + pcm.length);
+        header.put("WAVE".getBytes(StandardCharsets.US_ASCII));
+        header.put("fmt ".getBytes(StandardCharsets.US_ASCII));
+        header.putInt(16);
+        header.putShort((short) 1);
+        header.putShort((short) channels);
+        header.putInt(sampleRate);
+        header.putInt(byteRate);
+        header.putShort((short) (channels * bitsPerSample / 8));
+        header.putShort((short) bitsPerSample);
+        header.put("data".getBytes(StandardCharsets.US_ASCII));
+        header.putInt(pcm.length);
+        ByteArrayOutputStream wav = new ByteArrayOutputStream(44 + pcm.length);
+        wav.write(header.array());
+        wav.write(pcm);
+        return wav.toByteArray();
+    }
+
+    private void emitMicrophoneResult(String requestId, String audioBase64, String error) {
+        mainHandler.post(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('sanskriti-microphone-result',{detail:{requestId:"
+                            + JSONObject.quote(requestId == null ? "" : requestId)
+                            + ",audioBase64:" + JSONObject.quote(audioBase64 == null ? "" : audioBase64)
+                            + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}))",
+                    null
+            );
+        });
+    }
+
+    private String pollNvidiaResult(String nvidiaRequestId) throws Exception {
+        for (int attempt = 0; attempt < 30; attempt++) {
+            Thread.sleep(1_000L);
+            try {
+                return executeNvidiaRequest(NVIDIA_STATUS_URL + nvidiaRequestId, "GET", null);
+            } catch (PendingNvidiaRequest ignored) {
+                // The hosted model is still processing the request.
+            }
+        }
+        throw new IOException("NVIDIA request timed out.");
+    }
+
+    private String executeNvidiaRequest(String endpoint, String method, String requestBody) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
+        connection.setRequestMethod(method);
+        connection.setConnectTimeout(15_000);
+        connection.setReadTimeout(60_000);
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Authorization", "Bearer " + BuildConfig.NVIDIA_API_KEY);
+        if (requestBody != null) {
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json");
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(requestBody.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+
+        int status = connection.getResponseCode();
+        InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+        StringBuilder responseBody = new StringBuilder();
+        if (stream != null) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(stream, StandardCharsets.UTF_8)
+            )) {
+                String line;
+                while ((line = reader.readLine()) != null) responseBody.append(line);
+            }
+        }
+        connection.disconnect();
+
+        if (status == 202 && "GET".equals(method)) throw new PendingNvidiaRequest();
+        if (status == 202) return responseBody.toString();
+        if (status < 200 || status >= 300) {
+            String detail = responseBody.length() == 0
+                    ? "NVIDIA returned HTTP " + status + "."
+                    : responseBody.toString();
+            throw new IOException(detail.length() > 500 ? detail.substring(0, 500) : detail);
+        }
+        return responseBody.toString();
+    }
+
+    private byte[] executeNvidiaSpeechRequest(String text, String language, String voice) throws Exception {
+        String boundary = "----SanskritiNvidia" + System.currentTimeMillis();
+        HttpURLConnection connection = (HttpURLConnection) new URL(NVIDIA_TTS_URL).openConnection();
+        connection.setRequestMethod("POST");
+        connection.setConnectTimeout(15_000);
+        connection.setReadTimeout(60_000);
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Accept", "audio/wav");
+        connection.setRequestProperty("Authorization", "Bearer " + BuildConfig.NVIDIA_API_KEY);
+        connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+        try (OutputStream output = connection.getOutputStream()) {
+            writeMultipartField(output, boundary, "text", text == null ? "" : text);
+            writeMultipartField(output, boundary, "language", language == null ? "en-US" : language);
+            writeMultipartField(output, boundary, "voice", voice == null ? "" : voice);
+            writeMultipartField(output, boundary, "encoding", "LINEAR_PCM");
+            writeMultipartField(output, boundary, "sample_rate_hz", "22050");
+            output.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        }
+
+        int status = connection.getResponseCode();
+        InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+        ByteArrayOutputStream response = new ByteArrayOutputStream();
+        if (stream != null) {
+            try (InputStream input = stream) {
+                byte[] buffer = new byte[8_192];
+                int count;
+                while ((count = input.read(buffer)) >= 0) {
+                    if (count > 0) response.write(buffer, 0, count);
+                }
+            }
+        }
+        connection.disconnect();
+        if (status < 200 || status >= 300) {
+            String detail = new String(response.toByteArray(), StandardCharsets.UTF_8);
+            throw new IOException(detail.isEmpty() ? "NVIDIA narration returned HTTP " + status + "." : detail);
+        }
+        return response.toByteArray();
+    }
+
+    private void writeMultipartField(OutputStream output, String boundary, String name, String value)
+            throws IOException {
+        String header = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n";
+        output.write(header.getBytes(StandardCharsets.UTF_8));
+        output.write(value.getBytes(StandardCharsets.UTF_8));
+        output.write("\r\n".getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static final class PendingNvidiaRequest extends Exception {}
+
+    private void emitNvidiaResult(String requestId, String responseBody, String error) {
+        mainHandler.post(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('sanskriti-nvidia-result',{detail:{requestId:"
+                            + JSONObject.quote(requestId == null ? "" : requestId)
+                            + ",response:" + JSONObject.quote(responseBody == null ? "" : responseBody)
+                            + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}))",
+                    null
+            );
+        });
+    }
+
+    private void emitNvidiaSpeechResult(String requestId, String audioBase64, String error) {
+        mainHandler.post(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('sanskriti-nvidia-speech-result',{detail:{requestId:"
+                            + JSONObject.quote(requestId == null ? "" : requestId)
+                            + ",audioBase64:" + JSONObject.quote(audioBase64 == null ? "" : audioBase64)
+                            + ",error:" + JSONObject.quote(error == null ? "" : error) + "}}))",
+                    null
+            );
+        });
     }
 
     private void speakNative(
@@ -752,8 +1058,24 @@ public final class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        handleBackNavigation();
+    }
+
+    private void handleBackNavigation() {
+        if (webView == null) {
+            finish();
+            return;
+        }
+        webView.evaluateJavascript(
+                "(function(){var path=location.pathname.replace(/\\/+$/,'')||'/';"
+                        + "if(path!=='/'&&path!=='/login'&&history.length>1){history.back();return true;}"
+                        + "return false;})()",
+                handled -> {
+                    if ("true".equals(handled)) return;
+                    if (webView.canGoBack()) webView.goBack();
+                    else finish();
+                }
+        );
     }
 
     @Override
@@ -770,6 +1092,7 @@ public final class MainActivity extends Activity {
             textToSpeech.shutdown();
             textToSpeech = null;
         }
+        networkExecutor.shutdownNow();
         super.onDestroy();
     }
 }

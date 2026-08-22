@@ -14,6 +14,7 @@ export function TopBar() {
   const { profile } = useAuth()
   const { lang, setLang } = useLang()
   const pathname = usePathname()
+  const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
 
   const initials = useMemo(() => {
     const source = profile?.full_name || profile?.username || 'SA'
@@ -25,7 +26,7 @@ export function TopBar() {
       .toUpperCase()
   }, [profile])
 
-  if (pathname === '/login' || pathname === '/auth') return null
+  if (normalizedPathname === '/login' || normalizedPathname === '/auth') return null
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#13131a]/80 backdrop-blur-xl">

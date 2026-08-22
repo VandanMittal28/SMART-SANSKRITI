@@ -26,6 +26,10 @@ type ActivityRow = {
   created_at: string
 }
 
+const PROFILE_FIELDS = 'username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode'
+const PROFILE_FIELDS_WITH_MASCOT = 'username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode, mascot_intro_seen_at'
+let mascotIntroColumnAvailable: boolean | null = null
+
 function activityType(actionType: string): ProfileActivity['type'] {
   if (actionType.includes('QUIZ')) return 'quiz'
   if (actionType.includes('HUNT')) return 'hunt'
@@ -169,12 +173,11 @@ export async function getCurrentUser(): Promise<LocalUser | null> {
 }
 
 export async function getUserProfile(userId: string): Promise<LocalProfile> {
+  const profileRequest = mascotIntroColumnAvailable === false
+    ? supabase.from('profiles').select(PROFILE_FIELDS).eq('id', userId).single()
+    : supabase.from('profiles').select(PROFILE_FIELDS_WITH_MASCOT).eq('id', userId).single()
   const [initialProfileResult, activityResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode, mascot_intro_seen_at')
-      .eq('id', userId)
-      .single(),
+    profileRequest,
     supabase
       .from('user_activity')
       .select('id, action_type, xp_earned, metadata, created_at')
@@ -183,29 +186,45 @@ export async function getUserProfile(userId: string): Promise<LocalProfile> {
       .limit(40),
   ])
 
-  let profileResult = initialProfileResult
+  let profileError = initialProfileResult.error
+  let profileData: ProfileRow | null = initialProfileResult.data
+    ? mascotIntroColumnAvailable === false
+      ? {
+        ...(initialProfileResult.data as unknown as Omit<ProfileRow, 'mascot_intro_seen_at'>),
+        mascot_intro_seen_at: null,
+      }
+      : initialProfileResult.data as unknown as ProfileRow
+    : null
   if (
-    profileResult.error
-    && (profileResult.error.code === '42703' || profileResult.error.message.includes('mascot_intro_seen_at'))
+    profileError
+    && (profileError.code === '42703' || profileError.message.includes('mascot_intro_seen_at'))
   ) {
+    mascotIntroColumnAvailable = false
     const legacyResult = await supabase
       .from('profiles')
-      .select('username, full_name, email, phone, total_xp, monuments_visited, quiz_scores, profile_badges, chat_history, user_type, language, admin_mode')
+      .select(PROFILE_FIELDS)
       .eq('id', userId)
       .single()
-    profileResult = legacyResult as typeof initialProfileResult
-    if (profileResult.data) {
-      profileResult.data = { ...profileResult.data, mascot_intro_seen_at: null }
-    }
+    profileError = legacyResult.error
+    profileData = legacyResult.data
+      ? {
+        ...(legacyResult.data as unknown as Omit<ProfileRow, 'mascot_intro_seen_at'>),
+        mascot_intro_seen_at: null,
+      }
+      : null
+  } else if (!profileError && mascotIntroColumnAvailable !== false) {
+    mascotIntroColumnAvailable = true
   }
 
-  if (profileResult.error) throw profileResult.error
+  if (profileError) throw profileError
+  if (!profileData) throw new Error('The profile could not be loaded.')
   if (activityResult.error) throw activityResult.error
-  return profileFromRow(profileResult.data as ProfileRow, (activityResult.data ?? []) as ActivityRow[])
+  return profileFromRow(profileData, (activityResult.data ?? []) as ActivityRow[])
 }
 
 export async function updateUserProfile(userId: string, updates: Partial<LocalProfile>) {
   const allowed: Partial<ProfileRow> = {}
+  if (typeof updates.username === 'string') allowed.username = validateUsername(updates.username)
   if (typeof updates.full_name === 'string') allowed.full_name = updates.full_name.trim().slice(0, 80)
   if (typeof updates.phone === 'string') allowed.phone = updates.phone.trim().slice(0, 30)
   if (updates.user_type === 'student' || updates.user_type === 'tourist') allowed.user_type = updates.user_type
@@ -218,6 +237,9 @@ export async function updateUserProfile(userId: string, updates: Partial<LocalPr
 }
 
 export async function markMascotIntroSeen(userId: string): Promise<string> {
+  if (mascotIntroColumnAvailable === false) {
+    throw new Error('The installed profile schema does not include mascot_intro_seen_at yet.')
+  }
   const seenAt = new Date().toISOString()
   const { data, error } = await supabase
     .from('profiles')
@@ -303,6 +325,20 @@ export async function saveChatMessage(_userId: string, role: string, content: st
   if (error) throw error
 }
 
+export async function saveChatExchange(
+  _userId: string,
+  userContent: string,
+  assistantContent: string,
+  monument: string,
+) {
+  const { error } = await supabase.rpc('append_chat_exchange', {
+    p_user_content: userContent,
+    p_assistant_content: assistantContent,
+    p_monument: monument,
+  })
+  if (error) throw error
+}
+
 export const authClient = {
   signUp,
   signIn,
@@ -317,4 +353,5 @@ export const authClient = {
   addQuizScore,
   computeAndSaveBadges,
   saveChatMessage,
+  saveChatExchange,
 }

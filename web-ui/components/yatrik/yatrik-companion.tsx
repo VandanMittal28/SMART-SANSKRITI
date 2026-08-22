@@ -14,7 +14,6 @@ interface Position {
 }
 
 interface YatrikCompanionProps {
-  caption: string | null
   manifest: YatrikAssetManifest | null
   muted: boolean
   onOpenChat: () => void
@@ -37,7 +36,6 @@ function clampPosition(position: Position): Position {
 }
 
 export function YatrikCompanion({
-  caption,
   manifest,
   muted,
   onOpenChat,
@@ -116,8 +114,6 @@ export function YatrikCompanion({
 
   if (!position) return null
 
-  const showCaptionOnLeft = position.x > window.innerWidth / 2
-
   return (
     <div
       aria-label="Yatrik travel companion. Tap to open chat or drag to move."
@@ -133,14 +129,6 @@ export function YatrikCompanion({
         if (event.key === 'Enter' || event.key === ' ') onOpenChat()
       }}
     >
-      {caption && (
-        <div
-          aria-live="polite"
-          className={`absolute bottom-[92px] w-[min(230px,calc(100vw-32px))] rounded-2xl border border-[#f2ca50]/25 bg-[#10162a]/95 px-3.5 py-3 text-sm leading-5 text-[#fff2d7] shadow-2xl backdrop-blur-xl ${showCaptionOnLeft ? 'right-[72px]' : 'left-[72px]'}`}
-        >
-          {caption}
-        </div>
-      )}
       <YatrikArtwork manifest={manifest} size={COMPANION_SIZE} state={muted ? 'muted' : state} />
       <button
         aria-label={muted ? 'Unmute Yatrik' : 'Mute Yatrik'}

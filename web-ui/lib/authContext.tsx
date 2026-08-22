@@ -69,20 +69,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initializeAuth = async () => {
-      // The installed demo must open immediately even when the phone is
-      // offline. Sign-in still talks directly to Supabase when the user asks
-      // for it; only the optional persisted-session restore is skipped.
-      if (isBundledAndroidApp()) {
-        clearAuthenticatedUser()
-        return
-      }
-
       try {
-        const reachable = await isSupabaseAuthReachable()
-        if (!active) return
-        if (!reachable) {
-          clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
-          return
+        // The APK keeps the Supabase token in WebView local storage. Restore
+        // that token directly on launch; a short timeout still prevents an
+        // unavailable network from trapping the app on its loading screen.
+        if (!isBundledAndroidApp()) {
+          const reachable = await isSupabaseAuthReachable()
+          if (!active) return
+          if (!reachable) {
+            clearAuthenticatedUser('Cloud profiles are temporarily unavailable. Please try again shortly.')
+            return
+          }
         }
 
         // Some Android System WebView versions can leave the Supabase session

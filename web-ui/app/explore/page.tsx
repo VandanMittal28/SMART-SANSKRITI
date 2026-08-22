@@ -7,7 +7,10 @@ import { AppShell } from "@/components/app-shell"
 import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
-import { SupportedLanguage } from "@/lib/languages"
+import { getLanguageConfig, SupportedLanguage } from "@/lib/languages"
+import { hasNativeNvidia, synthesizeNarrationNative, translateExploreGuideNative } from "@/lib/nativeNvidia"
+import { getNvidiaNarrationVoice } from "@/lib/narrationProfiles"
+import { isBundledAndroidApp } from "@/lib/supabase/client"
 import { emitYatrikEvent } from "@/lib/yatrik/events"
 import { ExploreARHud } from "@/components/explore/explore-ar-hud"
 import { useYatrikControls } from "@/components/yatrik/yatrik-provider"
@@ -618,11 +621,43 @@ const KONARK_ZONES = [
   }
 ]
 
+const GOLDEN_TEMPLE_ZONES = [
+  {
+    id: 51, name: 'Darshani Deori Entrance', emoji: '🚪',
+    lat: 31.61986, lng: 74.87618, radius: 45, xp: 75,
+    arrival_fact: 'You are at Darshani Deori, the ceremonial gateway opening toward the sacred pool and Harmandir Sahib. The view is intentionally framed so the gold-clad sanctum appears to float at the center of the Amrit Sarovar. Visitors pause here, cover their heads, and enter with quiet respect.',
+    direction_hint: 'Walk through the main gateway and continue toward the marble parikrama surrounding the sacred pool.',
+    mini_fact: 'The gateway creates one of the most recognizable first views of the Golden Temple.',
+  },
+  {
+    id: 52, name: 'Amrit Sarovar Parikrama', emoji: '💧',
+    lat: 31.61972, lng: 74.87652, radius: 42, xp: 100,
+    arrival_fact: 'You are beside the Amrit Sarovar, the sacred pool around which the complex developed. Pilgrims walk the marble parikrama in contemplation while the water reflects the sanctum, sky, and surrounding arcades. The open circulation expresses the Sikh principles of equality, humility, and shared devotion.',
+    direction_hint: 'Follow the marble walkway clockwise around the pool toward the causeway leading to Harmandir Sahib.',
+    mini_fact: 'The city name Amritsar is closely connected with the sacred pool, Amrit Sarovar.',
+  },
+  {
+    id: 53, name: 'Guru’s Bridge Causeway', emoji: '🌉',
+    lat: 31.61958, lng: 74.87676, radius: 38, xp: 125,
+    arrival_fact: 'You are approaching Harmandir Sahib along the narrow causeway often called Guru’s Bridge. The path crosses the sacred water and leads to the sanctum, where verses from the Guru Granth Sahib are sung in continuous kirtan. Move calmly and keep the passage clear for other visitors.',
+    direction_hint: 'Join the causeway queue and proceed respectfully toward the gold-clad sanctum at the center of the pool.',
+    mini_fact: 'The sanctum is reached across water, turning the approach into a gradual transition from public space to devotion.',
+  },
+  {
+    id: 54, name: 'Langar Hall', emoji: '🍲',
+    lat: 31.62018, lng: 74.87602, radius: 48, xp: 150,
+    arrival_fact: 'You are near the Guru Ram Das Langar, the community kitchen where visitors of every faith and background sit together and receive a free meal. Volunteers prepare, serve, and clean throughout the day. This living institution makes seva, equality, and hospitality tangible at an extraordinary scale.',
+    direction_hint: 'Leave the pool-side walkway toward the community kitchen signs and join the orderly langar entrance line.',
+    mini_fact: 'Everyone sits together on the floor in pangat, without distinction of status or background.',
+  },
+]
+
 const MONUMENT_ZONES: Record<string, typeof TAJ_ZONES> = {
   'taj-mahal': TAJ_ZONES,
   'red-fort': RED_FORT_ZONES,
   'qutub-minar': QUTUB_MINAR_ZONES,
   'konark': KONARK_ZONES,
+  'golden-temple': GOLDEN_TEMPLE_ZONES,
 }
 
 function getBearing(from: { lat: number; lng: number }, to: { lat: number; lng: number }): number {
@@ -640,6 +675,7 @@ const EXPLORE_USER_START: Record<string, { lat: number; lng: number }> = {
   'red-fort':    { lat: 28.6545, lng: 77.2375 },
   'qutub-minar': { lat: 28.5235, lng: 77.1845 },
   'konark':      { lat: 19.8876, lng: 86.0952 },
+  'golden-temple': { lat: 31.6203, lng: 74.8758 },
 }
 
 // ── LEAFLET MAP (dynamic, no SSR) ────────────────────────
@@ -779,11 +815,13 @@ export default function ExplorePage() {
   const [userPos, setUserPos] = useState(EXPLORE_USER_START['taj-mahal'])
   const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
   const [narrationReady, setNarrationReady] = useState(false)
+  const [narrationLoading, setNarrationLoading] = useState(false)
   const [currentTranslation, setCurrentTranslation] = useState<GuideTranslation | null>(null)
   const [translationLoading, setTranslationLoading] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioUrlRef = useRef<string | null>(null)
   const narrationRequestRef = useRef<AbortController | null>(null)
+  const nativeNarrationTokenRef = useRef(0)
   const translationCacheRef = useRef<Record<string, GuideTranslation>>({})
 
   const [exploreMonumentId, setExploreMonumentId] = useState('taj-mahal')
@@ -816,6 +854,7 @@ export default function ExplorePage() {
   }, [])
 
   const stopNarration = useCallback(() => {
+    nativeNarrationTokenRef.current += 1
     narrationRequestRef.current?.abort()
     narrationRequestRef.current = null
     if (audioRef.current) {
@@ -827,8 +866,10 @@ export default function ExplorePage() {
       URL.revokeObjectURL(audioUrlRef.current)
       audioUrlRef.current = null
     }
+    window.speechSynthesis?.cancel()
     setIsTTSSpeaking(false)
     setNarrationReady(false)
+    setNarrationLoading(false)
   }, [])
 
   const pauseNarration = useCallback(() => {
@@ -836,8 +877,9 @@ export default function ExplorePage() {
     if (!audio) {
       narrationRequestRef.current?.abort()
       narrationRequestRef.current = null
+      window.speechSynthesis?.cancel()
       setIsTTSSpeaking(false)
-      setNarrationReady(false)
+      setNarrationReady(true)
       return
     }
     audio.pause()
@@ -896,20 +938,23 @@ export default function ExplorePage() {
     if (cached) return cached
 
     try {
-      const response = await fetch('/api/explore-translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: lang,
-          monumentId,
-          directionHint: guideZone.direction_hint,
-          arrivalFact: guideZone.arrival_fact,
-          miniFact: guideZone.mini_fact,
-        }),
-      })
-      if (!response.ok) throw new Error('Guide translation unavailable')
-
-      const translation = await response.json() as GuideTranslation
+      const source = {
+        directionHint: guideZone.direction_hint,
+        arrivalFact: guideZone.arrival_fact,
+        miniFact: guideZone.mini_fact,
+      }
+      let translation: GuideTranslation
+      if (hasNativeNvidia()) {
+        translation = await translateExploreGuideNative(source, lang)
+      } else {
+        const response = await fetch('/api/explore-translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language: lang, monumentId, ...source }),
+        })
+        if (!response.ok) throw new Error('Guide translation unavailable')
+        translation = await response.json() as GuideTranslation
+      }
       translationCacheRef.current[cacheKey] = translation
       try {
         localStorage.setItem(
@@ -920,7 +965,8 @@ export default function ExplorePage() {
         // In-memory translation still works when storage is unavailable.
       }
       return translation
-    } catch {
+    } catch (error) {
+      console.warn('Explore guide translation failed:', error)
       return null
     }
   }, [lang])
@@ -932,6 +978,85 @@ export default function ExplorePage() {
     language: SupportedLanguage = lang,
   ) => {
     stopNarration()
+
+    if (muted) return
+
+    const speakWithAndroidVoice = () => {
+      if (!window.speechSynthesis) return
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = getLanguageConfig(language).locale
+      utterance.rate = 0.92
+      utterance.pitch = 1
+      utterance.onstart = () => {
+        setNarrationReady(false)
+        setIsTTSSpeaking(true)
+      }
+      utterance.onend = () => {
+        setIsTTSSpeaking(false)
+        setNarrationReady(true)
+      }
+      utterance.onerror = () => {
+        setIsTTSSpeaking(false)
+        setNarrationReady(false)
+      }
+      window.speechSynthesis.speak(utterance)
+    }
+
+    if (isBundledAndroidApp()) {
+      const narrationVoice = getNvidiaNarrationVoice(exploreMonumentId, language)
+      if (!narrationVoice) {
+        speakWithAndroidVoice()
+        return
+      }
+
+      const requestToken = nativeNarrationTokenRef.current
+      setNarrationLoading(true)
+      try {
+        const audioBase64 = await synthesizeNarrationNative(
+          text,
+          narrationVoice.language,
+          narrationVoice.voice,
+        )
+        if (nativeNarrationTokenRef.current !== requestToken) return
+        const binary = window.atob(audioBase64)
+        const bytes = new Uint8Array(binary.length)
+        for (let index = 0; index < binary.length; index += 1) {
+          bytes[index] = binary.charCodeAt(index)
+        }
+        const audioUrl = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+        const audio = new Audio(audioUrl)
+        audioRef.current = audio
+        audioUrlRef.current = audioUrl
+        audio.onplay = () => {
+          setNarrationLoading(false)
+          setNarrationReady(false)
+          setIsTTSSpeaking(true)
+        }
+        audio.onended = () => {
+          audio.currentTime = 0
+          setIsTTSSpeaking(false)
+          setNarrationReady(true)
+        }
+        audio.onerror = () => {
+          setNarrationLoading(false)
+          setIsTTSSpeaking(false)
+          setNarrationReady(false)
+          speakWithAndroidVoice()
+        }
+        try {
+          await audio.play()
+        } catch {
+          setNarrationLoading(false)
+          setNarrationReady(true)
+        }
+      } catch (error) {
+        if (nativeNarrationTokenRef.current !== requestToken) return
+        console.warn('NVIDIA neural narration failed; using Android voice:', error)
+        setNarrationLoading(false)
+        speakWithAndroidVoice()
+      }
+      return
+    }
 
     const controller = new AbortController()
     narrationRequestRef.current = controller
@@ -988,7 +1113,7 @@ export default function ExplorePage() {
         narrationRequestRef.current = null
       }
     }
-  }, [fetchNarration, lang, stopNarration])
+  }, [exploreMonumentId, fetchNarration, lang, muted, stopNarration])
 
   // ── DEMO: simulate walking toward zone ──────────────────
   useEffect(() => {
@@ -1184,7 +1309,9 @@ export default function ExplorePage() {
       ? currentTranslation.miniFact
       : zone.mini_fact
   const guidePersona =
-    exploreMonumentId === 'konark'
+    exploreMonumentId === 'golden-temple'
+      ? 'Warm Sikh heritage guide'
+      : exploreMonumentId === 'konark'
       ? 'Calm temple scholar'
       : ['taj-mahal', 'red-fort', 'qutub-minar'].includes(exploreMonumentId)
         ? 'Royal court historian'
@@ -1194,7 +1321,7 @@ export default function ExplorePage() {
     ? 'speaking'
     : narrationReady
       ? 'ready'
-      : translationLoading
+      : translationLoading || narrationLoading
         ? 'loading'
         : 'idle'
 
@@ -1221,7 +1348,10 @@ export default function ExplorePage() {
         setCurrentZoneIndex((current) => current + 1)
       }}
       onPauseNarration={pauseNarration}
-      onPlayNarration={playPreparedNarration}
+      onPlayNarration={() => {
+        if (audioRef.current) void playPreparedNarration()
+        else void speakFact(showFact ? arrivalText : directionText, lang)
+      }}
       onToggleMute={toggleMute}
       state={{
         activeZone: {

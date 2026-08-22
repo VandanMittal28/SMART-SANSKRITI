@@ -1,6 +1,9 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { recordingToWavBase64 } from '@/lib/audio'
+import { offlineHeritageAnswer } from '@/lib/offlineHeritage'
+import { hasNativeNvidia, recordPhoneMicrophone, synthesizeNarrationNative, transcribeAudioNative } from '@/lib/nativeNvidia'
+import { getNvidiaNarrationVoice } from '@/lib/narrationProfiles'
 
 export interface Message {
   role: 'user' | 'assistant' | 'zone'
@@ -65,6 +68,8 @@ export function useAudioGuide(): UseAudioGuideReturn {
   const audioChunksRef = useRef<BlobPart[]>([])
   const currentZoneRef = useRef<string | null>(null)
   const askQuestionRef = useRef<((q: string, id: string) => Promise<void>) | null>(null)
+  const narrationAudioRef = useRef<HTMLAudioElement | null>(null)
+  const narrationAudioUrlRef = useRef<string | null>(null)
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -75,7 +80,13 @@ export function useAudioGuide(): UseAudioGuideReturn {
   const speak = useCallback((text: string) => {
     if (isMuted) return
     if (!window.speechSynthesis) return
-    
+
+    narrationAudioRef.current?.pause()
+    narrationAudioRef.current = null
+    if (narrationAudioUrlRef.current) {
+      URL.revokeObjectURL(narrationAudioUrlRef.current)
+      narrationAudioUrlRef.current = null
+    }
     window.speechSynthesis.cancel()
     
     const doSpeak = () => {
@@ -132,6 +143,39 @@ export function useAudioGuide(): UseAudioGuideReturn {
       }
     }
 
+    const voice = getNvidiaNarrationVoice(
+      currentZoneRef.current || 'taj-mahal',
+      lang,
+    )
+    if (hasNativeNvidia() && voice) {
+      setIsSpeaking(true)
+      void synthesizeNarrationNative(text, voice.language, voice.voice)
+        .then((audioBase64) => {
+          const binary = window.atob(audioBase64)
+          const bytes = new Uint8Array(binary.length)
+          for (let index = 0; index < binary.length; index += 1) {
+            bytes[index] = binary.charCodeAt(index)
+          }
+          const audioUrl = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+          const audio = new Audio(audioUrl)
+          narrationAudioRef.current = audio
+          narrationAudioUrlRef.current = audioUrl
+          audio.volume = volume
+          audio.onended = () => setIsSpeaking(false)
+          audio.onerror = () => {
+            setIsSpeaking(false)
+            doSpeak()
+          }
+          return audio.play()
+        })
+        .catch((error) => {
+          console.warn('NVIDIA recognition narration failed; using Android voice:', error)
+          setIsSpeaking(false)
+          doSpeak()
+        })
+      return
+    }
+
     if (window.speechSynthesis.getVoices().length === 0) {
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.onvoiceschanged = null
@@ -143,12 +187,41 @@ export function useAudioGuide(): UseAudioGuideReturn {
   }, [lang, volume, isMuted])
 
   const stopSpeaking = useCallback(() => {
+    narrationAudioRef.current?.pause()
+    narrationAudioRef.current = null
+    if (narrationAudioUrlRef.current) {
+      URL.revokeObjectURL(narrationAudioUrlRef.current)
+      narrationAudioUrlRef.current = null
+    }
     window.speechSynthesis?.cancel()
     setIsSpeaking(false)
   }, [])
 
   // ── SPEECH TO TEXT ─────────────────────────────────────
   const startListening = useCallback(async () => {
+    if (hasNativeNvidia()) {
+      setTranscript('')
+      setIsListening(true)
+      stopSpeaking()
+      try {
+        const audioBase64 = await recordPhoneMicrophone(5_000)
+        const spokenText = await transcribeAudioNative(audioBase64, lang)
+        setTranscript(spokenText)
+        if (spokenText) {
+          const monumentId = currentZoneRef.current
+            ? currentZoneRef.current.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+            : 'taj-mahal'
+          void askQuestionRef.current?.(spokenText, monumentId)
+        }
+      } catch (error) {
+        console.error('Error transcribing audio:', error)
+        setTranscript('')
+      } finally {
+        setIsListening(false)
+      }
+      return
+    }
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Microphone recording is blocked by your browser on unencrypted connections. Please use localhost or HTTPS.')
@@ -194,24 +267,26 @@ export function useAudioGuide(): UseAudioGuideReturn {
         
         try {
           const audioBase64 = await recordingToWavBase64(audioBlob)
-          const response = await fetch('/api/transcribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              audio_b64: audioBase64,
-              language: lang,
-            }),
-          })
+          let spokenText = ''
+          if (hasNativeNvidia()) {
+            spokenText = await transcribeAudioNative(audioBase64, lang)
+          } else {
+            const response = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || 'Transcription failed')
+            spokenText = typeof data.text === 'string' ? data.text.trim() : ''
+          }
 
-          const data = await response.json()
-          if (!response.ok) throw new Error(data.error || 'Transcription failed')
-          
-          if (data.text && data.text.trim()) {
-            setTranscript(data.text)
+          if (spokenText) {
+            setTranscript(spokenText)
             const monumentId = currentZoneRef.current
               ? currentZoneRef.current.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
               : 'taj-mahal'
-            askQuestionRef.current?.(data.text.trim(), monumentId)
+            askQuestionRef.current?.(spokenText, monumentId)
           } else {
             setIsThinking(false)
             setTranscript('')
@@ -275,6 +350,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
         }
       )
       const data = await response.json()
+      if (!response.ok || !data.answer) throw new Error(data.error || 'Guide unavailable')
       const answer = data.answer || 'I could not get a response. Please try again.'
       
       setLastAnswer(answer)
@@ -290,10 +366,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
       speak(answer)
 
     } catch {
-      const fallback = `I am having trouble connecting right now. 
-        But I can tell you that ${monumentId.replace(/-/g, ' ')} 
-        is one of India's most magnificent heritage sites with 
-        thousands of years of history.`
+      const fallback = offlineHeritageAnswer(question, monumentId, lang)
       setLastAnswer(fallback)
       setIsThinking(false)
       setConversationHistory(prev => [...prev, {

@@ -243,6 +243,8 @@ export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
 
 type LangUpdater = Lang | ((prev: Lang) => Lang)
 
+const LANGUAGE_STORAGE_KEY = 'sanskriti-language-v1'
+
 interface LangContextType {
   lang: Lang
   setLang: (l: LangUpdater) => void
@@ -262,9 +264,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANGUAGE)
 
   useEffect(() => {
-    const saved = isSupportedLanguage(profile?.language)
-      ? profile.language
-      : DEFAULT_LANGUAGE
+    let localLanguage: string | null = null
+    try {
+      localLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+    } catch {
+      // The profile/default language remains available when storage is blocked.
+    }
+    const saved = isSupportedLanguage(localLanguage)
+      ? localLanguage
+      : isSupportedLanguage(profile?.language)
+        ? profile.language
+        : DEFAULT_LANGUAGE
     setLangState(saved)
     document.documentElement.lang = saved
     document.documentElement.setAttribute('data-lang', saved)
@@ -276,6 +286,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(safeLang)
     document.documentElement.lang = safeLang
     document.documentElement.setAttribute('data-lang', safeLang)
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, safeLang)
+    } catch {
+      // Keep the selected language for the current session if storage is blocked.
+    }
     if (user && safeLang !== profile?.language) {
       void updateUserProfile(user.id, { language: safeLang })
     }

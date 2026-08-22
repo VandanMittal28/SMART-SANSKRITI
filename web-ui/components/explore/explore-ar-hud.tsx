@@ -244,7 +244,7 @@ export function ExploreARHud({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#79dfd0]">Yatrik says</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#f7ead1]">{state.caption}</p>
+                <p data-no-translate className="mt-1 line-clamp-2 text-sm leading-5 text-[#f7ead1]">{state.caption}</p>
               </div>
               {state.narrationStatus === 'speaking' ? (
                 <button aria-label="Pause narration" className="grid size-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5" onClick={onPauseNarration} type="button"><Pause className="size-3.5" /></button>
@@ -260,8 +260,8 @@ export function ExploreARHud({
                 <span className="rounded-full bg-[linear-gradient(135deg,#efc566,#da8f38)] px-3 py-1 text-xs font-black text-[#241507]">+{state.xpEarned ?? state.activeZone.xp} XP</span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6fd6c6]">Arrival unlocked</span>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm leading-5 text-[#f6e9d0]">{state.story}</p>
-              {state.miniFact && <p className="mt-2 line-clamp-1 text-xs text-[#86cabe]">💡 {state.miniFact}</p>}
+              <p data-no-translate className="mt-2 line-clamp-2 text-sm leading-5 text-[#f6e9d0]">{state.story}</p>
+              {state.miniFact && <p data-no-translate className="mt-2 line-clamp-1 text-xs text-[#86cabe]">💡 {state.miniFact}</p>}
               <button
                 className="mt-3 h-11 w-full rounded-2xl bg-[linear-gradient(135deg,#efc566,#d99b44)] text-sm font-black text-[#211406]"
                 onClick={isFinalZone ? onComplete : onNextZone}

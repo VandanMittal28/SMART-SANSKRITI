@@ -18,8 +18,12 @@ Yatrik, Chat, Audio Guide, Heritage Stories, and Hunt narration.
   the APK and open without a website deployment.
 - Camera recognition, voice input, Yatrik narration, hunt location, file
   selection, ticket links, and downloads use Android-compatible integrations.
-- Supabase-backed screens use the internet directly. AI `/api/*` actions return
-  a clear temporary error until the separate API server is connected.
+- Supabase-backed screens use the internet directly. Until the separate AI API
+  server is connected, chat, quiz, itinerary, sustainability, narration, and
+  recognition screens use curated local fallbacks instead of blocking the demo.
+- Voice questions are recorded inside the app with the phone microphone and
+  transcribed by the configured NVIDIA multimodal model. No Google speech
+  dialog is opened. Android-native text-to-speech reads guide answers aloud.
 
 ## Bundled UI
 
