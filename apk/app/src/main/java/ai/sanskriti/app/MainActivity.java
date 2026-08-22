@@ -532,6 +532,25 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void startDemoCompass(double referenceLatitude, double referenceLongitude) {
+            mainHandler.post(() -> {
+                if (arNavigationController == null) return;
+                try {
+                    arNavigationController.startCompass(referenceLatitude, referenceLongitude);
+                } catch (IllegalArgumentException error) {
+                    emitArNavigationError(error.getMessage());
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void stopDemoCompass() {
+            mainHandler.post(() -> {
+                if (arNavigationController != null) arNavigationController.stop();
+            });
+        }
+
+        @JavascriptInterface
         public String getArNavigationState() {
             if (arNavigationController == null) return "{}";
             return arNavigationController.getCurrentState().toJson().toString();
@@ -821,6 +840,8 @@ public final class MainActivity extends Activity {
                         + "start:function(target){target=target||{};window.SanskritiAndroid.startArNavigation(Number(target.lat),Number(target.lng),Number(target.radius),Number(target.cameraFovDeg||65),Number(target.geofenceGraceMeters||0));},"
                         + "retry:function(){window.SanskritiAndroid.retryArNavigation();},"
                         + "stop:function(){window.SanskritiAndroid.stopArNavigation();},"
+                        + "startCompass:function(reference){reference=reference||{};window.SanskritiAndroid.startDemoCompass(Number(reference.lat),Number(reference.lng));},"
+                        + "stopCompass:function(){window.SanskritiAndroid.stopDemoCompass();},"
                         + "getState:function(){try{return JSON.parse(window.SanskritiAndroid.getArNavigationState()||'{}');}catch(error){return{};}}"
                         + "};"
                         + "window.dispatchEvent(new CustomEvent('sanskriti-ar-navigation-ready',{detail:window.SanskritiAndroidAR.getState()}));"

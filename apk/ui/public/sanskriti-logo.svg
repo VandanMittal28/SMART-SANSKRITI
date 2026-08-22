@@ -43,6 +43,6 @@
     <circle cx="315" cy="186" r="5"/>
   </g>
 
-  <text x="256" y="396" text-anchor="middle" fill="url(#gold)" font-family="Manrope, Arial, sans-serif" font-size="52" letter-spacing="8">SANSKRITI</text>
-  <text x="256" y="444" text-anchor="middle" fill="url(#gold)" font-family="Manrope, Arial, sans-serif" font-size="42" letter-spacing="12">AI</text>
+  <text x="256" y="396" text-anchor="middle" fill="url(#gold)" font-family="Manrope, Arial, sans-serif" font-size="42" letter-spacing="4">SANSKRITI</text>
+  <text x="256" y="444" text-anchor="middle" fill="url(#gold)" font-family="Manrope, Arial, sans-serif" font-size="38" letter-spacing="8">AI</text>
 </svg>

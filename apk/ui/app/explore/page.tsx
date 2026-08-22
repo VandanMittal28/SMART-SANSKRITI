@@ -908,6 +908,7 @@ export default function ExplorePage() {
   // only engaged when the user explicitly taps "Try Live AR Camera".
   const arNav = useARNavigation({
     zone: { lat: liveZone.lat, lng: liveZone.lng, radius: liveZone.radius },
+    demoHeadingReference: DEMO_ANCHOR,
   })
 
   useEffect(() => {

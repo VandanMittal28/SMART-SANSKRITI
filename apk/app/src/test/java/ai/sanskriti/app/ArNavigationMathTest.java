@@ -25,6 +25,29 @@ public final class ArNavigationMathTest {
     }
 
     @Test
+    public void cameraHeadingUsesTopEdgeWhilePhoneIsFlat() {
+        assertEquals(0.0, ArNavigationMath.cameraHeadingDegrees(new float[]{
+                1, 0, 0,
+                0, 1, 0,
+                0, 0, 1,
+        }), EPSILON);
+    }
+
+    @Test
+    public void cameraHeadingUsesRearCameraWhilePhoneIsUpright() {
+        assertEquals(0.0, ArNavigationMath.cameraHeadingDegrees(new float[]{
+                1, 0, 0,
+                0, 0, -1,
+                0, 1, 0,
+        }), EPSILON);
+        assertEquals(90.0, ArNavigationMath.cameraHeadingDegrees(new float[]{
+                0, 0, -1,
+                -1, 0, 0,
+                0, 1, 0,
+        }), EPSILON);
+    }
+
+    @Test
     public void angleDifferenceWrapsAcrossNorth() {
         assertEquals(20.0, ArNavigationMath.angleDifferenceDegrees(10.0, 350.0), EPSILON);
         assertEquals(-20.0, ArNavigationMath.angleDifferenceDegrees(350.0, 10.0), EPSILON);

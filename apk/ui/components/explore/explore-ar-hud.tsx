@@ -97,10 +97,16 @@ function normalizeBearing(value: number): number {
 }
 
 function DirectionNeedle({ degrees, className = 'size-7' }: { degrees: number; className?: string }) {
+  const previousAngleRef = useRef(degrees)
+  const continuousAngleRef = useRef(degrees)
+  const delta = ((degrees - previousAngleRef.current + 540) % 360) - 180
+  continuousAngleRef.current += delta
+  previousAngleRef.current = degrees
+
   return (
     <span
-      className={`${className} block transition-transform duration-300`}
-      style={{ transform: `rotate(${degrees}deg)` }}
+      className={`${className} block transition-transform duration-150 ease-out`}
+      style={{ transform: `rotate(${continuousAngleRef.current}deg)` }}
     >
       <svg
         aria-hidden="true"
@@ -211,8 +217,8 @@ export function ExploreARHud({
 
           <div className="flex items-center gap-2 rounded-2xl border border-white/8 bg-black/20 px-2.5 py-2">
             <div className="relative grid size-9 place-items-center rounded-full border border-[#efc566]/25 bg-[#07101c]">
-              <span className="absolute top-0.5 text-[6px] font-black text-[#79dfd0]">N</span>
-              {cameraMode ? <DirectionNeedle className="size-5" degrees={bearing} /> : <Map className="size-4 text-[#79dfd0]" />}
+              <span className="absolute top-0.5 text-[6px] font-black text-[#79dfd0]">GO</span>
+              {cameraMode ? <DirectionNeedle className="size-5" degrees={relativeDirection} /> : <Map className="size-4 text-[#79dfd0]" />}
             </div>
             <div className="text-right">
               <p className="font-serif text-xl font-bold leading-none text-[#efc566]">{state.distanceMeters}m</p>
