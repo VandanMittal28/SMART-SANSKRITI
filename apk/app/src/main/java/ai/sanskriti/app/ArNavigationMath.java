@@ -44,6 +44,26 @@ public final class ArNavigationMath {
         return ((degrees % 360.0) + 360.0) % 360.0;
     }
 
+    /**
+     * Resolves the rear-camera direction from an Android rotation matrix. If
+     * the phone is nearly flat, it uses the phone's top edge because the rear
+     * camera has no stable horizontal projection in that posture.
+     */
+    public static double cameraHeadingDegrees(float[] rotationMatrix) {
+        if (rotationMatrix == null || rotationMatrix.length < 9) {
+            throw new IllegalArgumentException("A 3x3 rotation matrix is required.");
+        }
+        double cameraEast = -rotationMatrix[2];
+        double cameraNorth = -rotationMatrix[5];
+        if (Math.hypot(cameraEast, cameraNorth) >= 0.5) {
+            return normalizeDegrees(Math.toDegrees(Math.atan2(cameraEast, cameraNorth)));
+        }
+
+        double topEast = rotationMatrix[1];
+        double topNorth = rotationMatrix[4];
+        return normalizeDegrees(Math.toDegrees(Math.atan2(topEast, topNorth)));
+    }
+
     /** Returns {@code first - second} normalized to the range [-180, 180). */
     public static double angleDifferenceDegrees(double first, double second) {
         return ((first - second + 540.0) % 360.0 + 360.0) % 360.0 - 180.0;

@@ -1,6 +1,7 @@
 import { EMPTY_PROFILE, type LocalProfile, type LocalUser } from '@/lib/localProfile'
 
 const LOCAL_SESSION_KEY = 'sanskriti-ai-local-session-v1'
+const LOCAL_PROFILE_STORE_KEY = 'sanskriti-ai-local-profiles-v2'
 const LOCAL_USER_PREFIX = 'local:'
 
 export interface StoredLocalSession {
@@ -8,29 +9,73 @@ export interface StoredLocalSession {
   profile: LocalProfile
 }
 
+interface StoredLocalProfileVault {
+  activeUserId: string | null
+  sessions: StoredLocalSession[]
+}
+
 export function isLocalUserId(userId: string): boolean {
   return userId.startsWith(LOCAL_USER_PREFIX)
 }
 
-export function readLocalSession(): StoredLocalSession | null {
-  if (typeof window === 'undefined') return null
+function validSession(value: StoredLocalSession | null | undefined): value is StoredLocalSession {
+  return Boolean(value?.user?.id && value.user.username && value.profile?.username)
+}
+
+function readVault(): StoredLocalProfileVault {
+  if (typeof window === 'undefined') return { activeUserId: null, sessions: [] }
   try {
-    const stored = JSON.parse(localStorage.getItem(LOCAL_SESSION_KEY) || 'null') as StoredLocalSession | null
-    if (!stored?.user?.id || !stored.user.username || !stored.profile?.username) return null
-    return stored
+    const rawVault = localStorage.getItem(LOCAL_PROFILE_STORE_KEY)
+    if (rawVault !== null) {
+      const stored = JSON.parse(rawVault) as Partial<StoredLocalProfileVault> | null
+      const sessions = Array.isArray(stored?.sessions) ? stored.sessions.filter(validSession) : []
+      const activeUserId = sessions.some((session) => session.user.id === stored?.activeUserId)
+        ? stored?.activeUserId ?? null
+        : null
+      return { activeUserId, sessions }
+    }
+
+    const legacy = JSON.parse(localStorage.getItem(LOCAL_SESSION_KEY) || 'null') as StoredLocalSession | null
+    const migrated: StoredLocalProfileVault = validSession(legacy)
+      ? { activeUserId: legacy.user.id, sessions: [legacy] }
+      : { activeUserId: null, sessions: [] }
+    localStorage.setItem(LOCAL_PROFILE_STORE_KEY, JSON.stringify(migrated))
+    localStorage.removeItem(LOCAL_SESSION_KEY)
+    return migrated
   } catch {
-    return null
+    return { activeUserId: null, sessions: [] }
   }
 }
 
-export function writeLocalSession(session: StoredLocalSession): void {
+function writeVault(vault: StoredLocalProfileVault): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(session))
+  localStorage.setItem(LOCAL_PROFILE_STORE_KEY, JSON.stringify(vault))
+}
+
+export function listLocalSessions(): StoredLocalSession[] {
+  return readVault().sessions
+}
+
+export function readLocalSession(): StoredLocalSession | null {
+  const vault = readVault()
+  return vault.sessions.find((session) => session.user.id === vault.activeUserId) ?? null
+}
+
+export function writeLocalSession(session: StoredLocalSession): void {
+  const vault = readVault()
+  const existingIndex = vault.sessions.findIndex((candidate) => candidate.user.id === session.user.id)
+  const sessions = [...vault.sessions]
+  if (existingIndex >= 0) sessions[existingIndex] = session
+  else sessions.push(session)
+  writeVault({ activeUserId: session.user.id, sessions })
 }
 
 export function createLocalSession(username: string): StoredLocalSession {
-  const existing = readLocalSession()
-  if (existing?.user.username === username) return existing
+  const existing = listLocalSessions().find((session) => session.profile.username === username)
+  if (existing) {
+    writeLocalSession(existing)
+    return existing
+  }
 
   const user: LocalUser = {
     id: `${LOCAL_USER_PREFIX}${username}`,
@@ -70,5 +115,6 @@ export function updateLocalProfile(
 
 export function clearLocalSession(): void {
   if (typeof window === 'undefined') return
-  localStorage.removeItem(LOCAL_SESSION_KEY)
+  const vault = readVault()
+  writeVault({ ...vault, activeUserId: null })
 }

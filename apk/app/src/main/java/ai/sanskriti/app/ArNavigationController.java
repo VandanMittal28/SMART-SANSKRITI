@@ -8,6 +8,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.hardware.GeomagneticField;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.location.Location;
@@ -74,7 +75,8 @@ public final class ArNavigationController implements SensorEventListener, Locati
     private static final long MIN_STATE_INTERVAL_MS = 80L;
     private static final float MIN_LOCATION_DISTANCE_METERS = 0.5f;
     private static final long MIN_LOCATION_INTERVAL_MS = 500L;
-    private static final float HEADING_SMOOTHING_FACTOR = 0.22f;
+    private static final float HEADING_SMOOTHING_FACTOR = 0.18f;
+    private static final double HEADING_DEAD_BAND_DEGREES = 0.65;
 
     private final Activity activity;
     private final int permissionRequestCode;
@@ -85,6 +87,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
     private final CameraManager cameraManager;
 
     private Target target;
+    private boolean headingOnly;
     private boolean tracking;
     private boolean paused;
     private boolean locationListening;
@@ -96,6 +99,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
     private float[] latestMagneticField;
     private Location latestLocation;
     private Double smoothedHeadingDegrees;
+    private double magneticDeclinationDegrees;
     private long lastStateDispatchElapsedMs;
 
     private ArNavigationState.PermissionState cameraPermission =
@@ -141,13 +145,44 @@ public final class ArNavigationController implements SensorEventListener, Locati
         requireMainThread();
         stopWatches();
         target = nextTarget;
+        headingOnly = false;
+        tracking = true;
+        paused = false;
+        latestLocation = null;
+        smoothedHeadingDegrees = null;
+        magneticDeclinationDegrees = 0.0;
+        latestAcceleration = null;
+        latestMagneticField = null;
+        refreshCapabilitiesAndRequestPermissions();
+    }
+
+    /** Starts sensor-only heading for Demo Camera without requesting GPS. */
+    public void startCompass(double referenceLatitude, double referenceLongitude) {
+        requireMainThread();
+        if (!Double.isFinite(referenceLatitude) || referenceLatitude < -90.0 || referenceLatitude > 90.0
+                || !Double.isFinite(referenceLongitude) || referenceLongitude < -180.0 || referenceLongitude > 180.0) {
+            throw new IllegalArgumentException("Compass reference coordinates are invalid.");
+        }
+        stopWatches();
+        target = null;
+        headingOnly = true;
         tracking = true;
         paused = false;
         latestLocation = null;
         smoothedHeadingDegrees = null;
         latestAcceleration = null;
         latestMagneticField = null;
-        refreshCapabilitiesAndRequestPermissions();
+        magneticDeclinationDegrees = new GeomagneticField(
+                (float) referenceLatitude,
+                (float) referenceLongitude,
+                0.0f,
+                System.currentTimeMillis()
+        ).getDeclination();
+        cameraPermission = ArNavigationState.PermissionState.UNREQUESTED;
+        locationPermission = ArNavigationState.PermissionState.UNREQUESTED;
+        updateOrientationCapability();
+        startOrientationWatch();
+        dispatchState(true);
     }
 
     public void retry() {
@@ -156,6 +191,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
         stopWatches();
         latestLocation = null;
         smoothedHeadingDegrees = null;
+        magneticDeclinationDegrees = 0.0;
         cameraPermission = ArNavigationState.PermissionState.UNREQUESTED;
         locationPermission = ArNavigationState.PermissionState.UNREQUESTED;
         orientationPermission = ArNavigationState.PermissionState.UNREQUESTED;
@@ -168,10 +204,12 @@ public final class ArNavigationController implements SensorEventListener, Locati
         requireMainThread();
         tracking = false;
         paused = false;
+        headingOnly = false;
         target = null;
         stopWatches();
         latestLocation = null;
         smoothedHeadingDegrees = null;
+        magneticDeclinationDegrees = 0.0;
         cameraPermission = ArNavigationState.PermissionState.UNREQUESTED;
         locationPermission = ArNavigationState.PermissionState.UNREQUESTED;
         orientationPermission = ArNavigationState.PermissionState.UNREQUESTED;
@@ -188,7 +226,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
 
     public void resume() {
         requireMainThread();
-        if (!tracking || !paused || target == null) return;
+        if (!tracking || !paused || (!headingOnly && target == null)) return;
         paused = false;
         beginWatchesWhenPossible();
         dispatchState(true);
@@ -197,6 +235,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
     public void destroy() {
         requireMainThread();
         tracking = false;
+        headingOnly = false;
         target = null;
         stopWatches();
         mainHandler.removeCallbacksAndMessages(null);
@@ -306,7 +345,7 @@ public final class ArNavigationController implements SensorEventListener, Locati
 
     private void beginWatchesWhenPossible() {
         if (!tracking || paused) return;
-        if (locationPermission == ArNavigationState.PermissionState.GRANTED) startLocationWatch();
+        if (!headingOnly && locationPermission == ArNavigationState.PermissionState.GRANTED) startLocationWatch();
         if (orientationPermission == ArNavigationState.PermissionState.REQUESTING
                 || orientationPermission == ArNavigationState.PermissionState.GRANTED) {
             startOrientationWatch();
@@ -416,6 +455,12 @@ public final class ArNavigationController implements SensorEventListener, Locati
         if (latestLocation == null
                 || location.getElapsedRealtimeNanos() >= latestLocation.getElapsedRealtimeNanos()) {
             latestLocation = new Location(location);
+            magneticDeclinationDegrees = new GeomagneticField(
+                    (float) latestLocation.getLatitude(),
+                    (float) latestLocation.getLongitude(),
+                    (float) latestLocation.getAltitude(),
+                    System.currentTimeMillis()
+            ).getDeclination();
             locationPermission = ArNavigationState.PermissionState.GRANTED;
             mainHandler.removeCallbacks(locationTimeout);
             dispatchState(false);
@@ -471,15 +516,18 @@ public final class ArNavigationController implements SensorEventListener, Locati
         }
 
         float[] adjustedMatrix = remapForDisplayRotation(rotationMatrix);
-        float[] orientation = SensorManager.getOrientation(adjustedMatrix, new float[3]);
-        double rawHeading = ArNavigationMath.normalizeDegrees(Math.toDegrees(orientation[0]));
+        double rawHeading = ArNavigationMath.normalizeDegrees(
+                ArNavigationMath.cameraHeadingDegrees(adjustedMatrix) + magneticDeclinationDegrees
+        );
         if (smoothedHeadingDegrees == null) {
             smoothedHeadingDegrees = rawHeading;
         } else {
             double delta = ArNavigationMath.angleDifferenceDegrees(rawHeading, smoothedHeadingDegrees);
-            smoothedHeadingDegrees = ArNavigationMath.normalizeDegrees(
-                    smoothedHeadingDegrees + delta * HEADING_SMOOTHING_FACTOR
-            );
+            if (Math.abs(delta) >= HEADING_DEAD_BAND_DEGREES) {
+                smoothedHeadingDegrees = ArNavigationMath.normalizeDegrees(
+                        smoothedHeadingDegrees + delta * HEADING_SMOOTHING_FACTOR
+                );
+            }
         }
         orientationPermission = ArNavigationState.PermissionState.GRANTED;
         mainHandler.removeCallbacks(orientationTimeout);
@@ -550,10 +598,14 @@ public final class ArNavigationController implements SensorEventListener, Locati
 
         String fallbackReason = fallbackReason();
         ArNavigationState.Mode mode;
-        if (!tracking || target == null) {
+        if (!tracking || (!headingOnly && target == null)) {
             mode = ArNavigationState.Mode.IDLE;
         } else if (fallbackReason != null) {
             mode = ArNavigationState.Mode.FALLBACK;
+        } else if (headingOnly) {
+            mode = paused || smoothedHeadingDegrees == null
+                    ? ArNavigationState.Mode.REQUESTING
+                    : ArNavigationState.Mode.LIVE;
         } else if (paused || distance == null || smoothedHeadingDegrees == null
                 || cameraPermission != ArNavigationState.PermissionState.GRANTED) {
             mode = ArNavigationState.Mode.REQUESTING;

@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   BadgeCheck,
   Brain,
@@ -9,12 +10,14 @@ import {
   Compass,
   Flame,
   Globe,
+  LogOut,
   MapPinned,
   MessageCircle,
   Pencil,
   Sparkles,
   Target,
   Trophy,
+  UserRoundPlus,
   X,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
@@ -30,6 +33,7 @@ import {
 } from '@/lib/localProfile'
 import { buildSyntheticLeaderboard } from '@/lib/syntheticLeaderboard'
 import { updateUserProfile } from '@/lib/authClient'
+import { isBundledAndroidApp } from '@/lib/supabase/client'
 
 const LEVELS = [
   { min: 0, max: 499, title: 'Heritage Explorer', next: 500 },
@@ -195,11 +199,13 @@ function fallbackActivity(profile: LocalProfile): ProfileActivity[] {
 }
 
 export default function ProfilePage() {
-  const { user, profile, setProfile, refreshProfile } = useAuth()
+  const router = useRouter()
+  const { availableProfiles, user, profile, setProfile, refreshProfile, signOut } = useAuth()
   const { lang, t } = useLang()
   const { userType, setUserType, userConfig } = useUser()
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
+  const [leavingProfile, setLeavingProfile] = useState(false)
 
   const safeProfile = profile || EMPTY_PROFILE
   const level = getLevel(safeProfile.total_xp)
@@ -283,6 +289,22 @@ export default function ProfilePage() {
       }
     }
     setEditingName(false)
+  }
+
+  const leaveCurrentProfile = async () => {
+    if (leavingProfile) return
+    setLeavingProfile(true)
+    try {
+      await signOut()
+      if (isBundledAndroidApp()) {
+        window.location.replace(new URL('/login', window.location.href).toString())
+      } else {
+        router.replace('/login')
+        router.refresh()
+      }
+    } finally {
+      setLeavingProfile(false)
+    }
   }
 
   return (
@@ -659,6 +681,41 @@ export default function ProfilePage() {
             </span>
           </button>
         </div>
+
+        <AppCard className="border-[#7ECDC0]/20 bg-[linear-gradient(135deg,rgba(75,155,142,0.1),rgba(9,13,25,0.96))]">
+          <div className="flex items-start gap-3">
+            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#7ECDC0]/12 text-[#7ECDC0]">
+              <UserRoundPlus className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[#F5E6D3]">Profiles on this device</p>
+              <p className="mt-1 text-sm text-[#9CBAB4]">
+                {availableProfiles.length} profile{availableProfiles.length === 1 ? '' : 's'} saved. Each profile keeps separate XP, badges, chats, and journey history.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button
+              className="h-11 rounded-xl bg-[#7ECDC0] text-[#07131A] hover:bg-[#9BE5D9]"
+              disabled={leavingProfile}
+              onClick={() => void leaveCurrentProfile()}
+              type="button"
+            >
+              <UserRoundPlus className="size-4" />
+              Switch / add
+            </Button>
+            <Button
+              className="h-11 rounded-xl border border-red-300/20 bg-red-950/25 text-red-200 hover:bg-red-950/40"
+              disabled={leavingProfile}
+              onClick={() => void leaveCurrentProfile()}
+              type="button"
+              variant="outline"
+            >
+              <LogOut className="size-4" />
+              Log out
+            </Button>
+          </div>
+        </AppCard>
 
         <AppCard className="safe-bottom-space">
           <div className="flex items-center gap-3">

@@ -13,7 +13,9 @@ import {
   clearLocalSession,
   createLocalSession,
   isLocalUserId,
+  listLocalSessions,
   readLocalSession,
+  type StoredLocalSession,
   updateLocalProfile,
 } from '@/lib/localSession'
 
@@ -22,6 +24,7 @@ interface AuthContextType {
   profile: LocalProfile | null
   loading: boolean
   error: string | null
+  availableProfiles: StoredLocalSession[]
   setProfile: (updater: LocalProfile | ((prev: LocalProfile | null) => LocalProfile | null)) => void
   refreshProfile: () => Promise<void>
   signIn: (username: string) => Promise<{ user: LocalUser }>
@@ -34,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   error: null,
+  availableProfiles: [],
   setProfile: () => {},
   refreshProfile: async () => {},
   signIn: async () => { throw new Error('AuthProvider is unavailable.') },
@@ -46,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<LocalProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [availableProfiles, setAvailableProfiles] = useState<StoredLocalSession[]>([])
 
   const loadAuthenticatedUser = useCallback(async (
     userId: string,
@@ -80,9 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         if (isBundledAndroidApp()) {
           const localSession = readLocalSession()
+          const savedProfiles = listLocalSessions()
           if (!active) return
           setUser(localSession?.user ?? null)
           setProfileState(localSession?.profile ?? null)
+          setAvailableProfiles(savedProfiles)
           setError(null)
           setLoading(false)
           return
@@ -205,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (next && user && isLocalUserId(user.id)) {
         try {
           updateLocalProfile(user.id, next)
+          setAvailableProfiles(listLocalSessions())
         } catch {
           // Keep the in-memory profile usable if WebView storage is unavailable.
         }
@@ -222,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const localSession = createLocalSession(normalized)
       setUser(localSession.user)
       setProfileState(localSession.profile)
+      setAvailableProfiles(listLocalSessions())
       setError(null)
       setLoading(false)
       return { user: localSession.user }
@@ -247,6 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearLocalSession()
       setUser(null)
       setProfileState(null)
+      setAvailableProfiles(listLocalSessions())
       setError(null)
       return
     }
@@ -262,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     user,
     profile,
+    availableProfiles,
     loading,
     error,
     setProfile,
@@ -269,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signOut,
     signUp,
-  }), [error, loading, profile, refreshProfile, setProfile, signIn, signOut, signUp, user])
+  }), [availableProfiles, error, loading, profile, refreshProfile, setProfile, signIn, signOut, signUp, user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

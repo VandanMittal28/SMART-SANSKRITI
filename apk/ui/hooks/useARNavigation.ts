@@ -14,7 +14,12 @@ import {
 
 /** Minimum time between browser heading updates. Native updates are already throttled. */
 const HEADING_THROTTLE_MS = 80
-const HEADING_MIN_DELTA_DEG = 1
+const HEADING_MIN_DELTA_DEG = 0.65
+const HEADING_SMOOTHING_FACTOR = 0.18
+
+function normalizeHeading(degrees: number): number {
+  return ((degrees % 360) + 360) % 360
+}
 
 export interface ARNavigationZone extends LatLng {
   radius: number
@@ -50,6 +55,8 @@ export interface ARNavigationState {
 
 export interface UseARNavigationOptions {
   zone: ARNavigationZone | null
+  /** True-north reference used by the native sensor-only Demo Camera compass. */
+  demoHeadingReference?: LatLng
   /** Explicit, clearly-labelled synthetic mode. Skips all permission requests. */
   demoMode?: boolean
   cameraFovDeg?: number
@@ -80,6 +87,8 @@ interface NativeARNavigationBridge {
   }) => void
   retry: () => void
   stop: () => void
+  startCompass: (reference: LatLng) => void
+  stopCompass: () => void
   getState: () => NativeARNavigationState
 }
 
@@ -131,6 +140,7 @@ function permissionsBlockLive(permissions: ARPermissionStatus): string | null {
  */
 export function useARNavigation({
   zone,
+  demoHeadingReference,
   demoMode = false,
   cameraFovDeg = DEFAULT_CAMERA_FOV_DEG,
   geofenceGraceMeters = 0,
@@ -156,6 +166,7 @@ export function useARNavigation({
   const nativeModeRef = useRef(false)
   const nativeCameraAttemptedRef = useRef(false)
   const nativeTargetKeyRef = useRef("")
+  const nativeDemoCompassRef = useRef(false)
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -183,7 +194,9 @@ export function useARNavigation({
   const teardown = useCallback(() => {
     generationRef.current += 1
     if (nativeModeRef.current) getNativeBridge()?.stop()
+    if (nativeDemoCompassRef.current) getNativeBridge()?.stopCompass()
     nativeModeRef.current = false
+    nativeDemoCompassRef.current = false
     nativeTargetKeyRef.current = ""
     nativeCameraAttemptedRef.current = false
     setNativeActive(false)
@@ -205,9 +218,13 @@ export function useARNavigation({
 
   useEffect(() => {
     const receiveNativeState = (event: Event) => {
-      if (!nativeModeRef.current) return
       const detail = (event as CustomEvent<unknown>).detail
-      if (isNativeState(detail)) setNativeState(detail)
+      if (!isNativeState(detail)) return
+      if (nativeModeRef.current) setNativeState(detail)
+      if (nativeDemoCompassRef.current && typeof detail.headingDeg === "number") {
+        setPermissions((previous) => ({ ...previous, orientation: "granted" }))
+        setHeadingDeg(detail.headingDeg)
+      }
     }
     window.addEventListener("sanskriti-ar-navigation-state", receiveNativeState)
     return () => window.removeEventListener("sanskriti-ar-navigation-state", receiveNativeState)
@@ -264,17 +281,25 @@ export function useARNavigation({
 
     if (generationRef.current !== generation) return
     let receivedReading = false
+    let absoluteSourceSeen = false
     const handler = (event: DeviceOrientationEvent) => {
       const webkitHeading = (event as DeviceOrientationEvent & {
         webkitCompassHeading?: number
       }).webkitCompassHeading
-      const heading = typeof webkitHeading === "number"
+      if (event.type === "deviceorientationabsolute") absoluteSourceSeen = true
+      if (absoluteSourceSeen && event.type === "deviceorientation" && typeof webkitHeading !== "number") return
+
+      const rawHeading = typeof webkitHeading === "number"
         ? webkitHeading
         : event.alpha !== null && event.alpha !== undefined
           ? (360 - event.alpha) % 360
           : null
 
-      if (heading === null) return
+      if (rawHeading === null) return
+      const screenAngle = typeof window.screen.orientation?.angle === "number"
+        ? window.screen.orientation.angle
+        : 0
+      const heading = normalizeHeading(rawHeading + screenAngle)
       if (!receivedReading) {
         receivedReading = true
         setPermissions((previous) => ({ ...previous, orientation: "granted" }))
@@ -286,14 +311,16 @@ export function useARNavigation({
 
       const now = performance.now()
       const previousHeading = lastHeadingValueRef.current
-      const movedEnough = previousHeading === null || Math.abs(
-        angleDiffDegrees(heading, previousHeading),
-      ) >= HEADING_MIN_DELTA_DEG
+      const delta = previousHeading === null ? 0 : angleDiffDegrees(heading, previousHeading)
+      const movedEnough = previousHeading === null || Math.abs(delta) >= HEADING_MIN_DELTA_DEG
       const dueForUpdate = now - lastHeadingUpdateRef.current >= HEADING_THROTTLE_MS
       if (movedEnough && dueForUpdate) {
-        lastHeadingValueRef.current = heading
+        const smoothedHeading = previousHeading === null
+          ? heading
+          : normalizeHeading(previousHeading + delta * HEADING_SMOOTHING_FACTOR)
+        lastHeadingValueRef.current = smoothedHeading
         lastHeadingUpdateRef.current = now
-        setHeadingDeg(heading)
+        setHeadingDeg(smoothedHeading)
       }
     }
 
@@ -338,13 +365,24 @@ export function useARNavigation({
   }, [])
 
   const requestCameraPreview = useCallback(async () => {
+    const nativeBridge = getNativeBridge()
+    if (nativeBridge && demoHeadingReference) {
+      stopOrientationWatch()
+      nativeDemoCompassRef.current = true
+      setPermissions((previous) => ({ ...previous, orientation: "requesting" }))
+      nativeBridge.startCompass(demoHeadingReference)
+      await (streamRef.current ? Promise.resolve() : startCamera())
+      return
+    }
     await Promise.all([
       streamRef.current ? Promise.resolve() : startCamera(),
       startOrientationWatch(),
     ])
-  }, [startCamera, startOrientationWatch])
+  }, [demoHeadingReference, startCamera, startOrientationWatch, stopOrientationWatch])
 
   const stopCameraPreview = useCallback(() => {
+    if (nativeDemoCompassRef.current) getNativeBridge()?.stopCompass()
+    nativeDemoCompassRef.current = false
     stopCamera()
     stopOrientationWatch()
     setPermissions((previous) => ({
