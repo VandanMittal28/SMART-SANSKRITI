@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Gradle start-up script for POSIX generated projects.
+APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P) || exit 1
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
+if [ -n "$JAVA_HOME" ]; then
+    JAVACMD=$JAVA_HOME/bin/java
+else
+    JAVACMD=java
+fi
+
+if [ ! -x "$JAVACMD" ]; then
+    echo "Java was not found. Open this project in Android Studio or set JAVA_HOME." >&2
+    exit 1
+fi
+
+exec "$JAVACMD" \
+  "-Dorg.gradle.appname=gradlew" \
+  -classpath "$CLASSPATH" \
+  org.gradle.wrapper.GradleWrapperMain "$@"
