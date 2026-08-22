@@ -10,6 +10,7 @@ import {
   PACE_OPTIONS,
   type TripDecision,
 } from "@/lib/tripDecisions"
+import { getSharedTripDecisionByToken } from "@/lib/tripDecisionsRemote"
 
 export default function DecisionsListPage() {
   const router = useRouter()
@@ -22,6 +23,10 @@ export default function DecisionsListPage() {
   const [budgetInr, setBudgetInr] = useState(3000)
   const [pace, setPace] = useState<TripPace>("balanced")
   const [mustHaves, setMustHaves] = useState("")
+
+  const [joinCode, setJoinCode] = useState("")
+  const [joinBusy, setJoinBusy] = useState(false)
+  const [joinError, setJoinError] = useState<string | null>(null)
 
   useEffect(() => {
     setDecisions(listTripDecisions())
@@ -41,7 +46,26 @@ export default function DecisionsListPage() {
         mustHaves: mustHaves.split(",").map((place) => place.trim()).filter(Boolean),
       },
     )
-    router.push(`/decisions/${decision.id}`)
+    router.push(`/decisions/view?id=${decision.id}`)
+  }
+
+  const handleJoin = async () => {
+    const code = joinCode.trim()
+    if (!code) return
+    setJoinBusy(true)
+    setJoinError(null)
+    try {
+      const decision = await getSharedTripDecisionByToken(code)
+      if (!decision) {
+        setJoinError("No shared decision found for that code.")
+        return
+      }
+      router.push(`/decisions/view?t=${encodeURIComponent(code)}`)
+    } catch {
+      setJoinError("Could not look up that code — check it and try again.")
+    } finally {
+      setJoinBusy(false)
+    }
   }
 
   return (
@@ -55,12 +79,39 @@ export default function DecisionsListPage() {
           as things change.
         </p>
 
+        <div style={{
+          background: "rgba(75,155,142,0.08)", border: "1px solid rgba(75,155,142,0.25)",
+          borderRadius: 14, padding: "14px 16px", marginBottom: 24,
+        }}>
+          <h2 style={{ color: "#4B9B8E", fontSize: 14, marginBottom: 8 }}>Have a code from a friend?</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              placeholder="e.g. 3f9a1b2c4d"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              onClick={handleJoin}
+              disabled={joinBusy || !joinCode.trim()}
+              style={{
+                background: "linear-gradient(135deg,#4B9B8E,#3a7a6e)", borderRadius: 10,
+                padding: "10px 16px", color: "white", fontWeight: 700, fontSize: 13,
+                border: "none", cursor: joinBusy ? "default" : "pointer", opacity: joinBusy ? 0.6 : 1, flexShrink: 0,
+              }}
+            >
+              {joinBusy ? "Checking…" : "Join"}
+            </button>
+          </div>
+          {joinError && <p style={{ color: "#E08A8A", fontSize: 12, marginTop: 8 }}>{joinError}</p>}
+        </div>
+
         {decisions.length > 0 && (
           <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
             {decisions.map((decision) => (
               <button
                 key={decision.id}
-                onClick={() => router.push(`/decisions/${decision.id}`)}
+                onClick={() => router.push(`/decisions/view?id=${decision.id}`)}
                 style={{
                   textAlign: "left", background: "rgba(28,22,56,0.9)", border: "1px solid rgba(201,168,76,0.2)",
                   borderRadius: 12, padding: "12px 16px", cursor: "pointer", width: "100%",
