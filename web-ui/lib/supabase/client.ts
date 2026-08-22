@@ -3,18 +3,26 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+export function isBundledAndroidApp() {
+  return typeof window !== 'undefined'
+    && window.location.hostname === 'appassets.androidplatform.net'
+}
+
 function createSanskritiClient() {
+  const bundledAndroidApp = isBundledAndroidApp()
+  const directAppLock = async <Result>(
+    _name: string,
+    _acquireTimeout: number,
+    operation: () => Promise<Result>,
+  ): Promise<Result> => operation()
+
   const auth = {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: !bundledAndroidApp,
     storageKey: 'sanskriti-ai-auth',
-    // AuthProvider initializes after a lightweight reachability check. This
-    // prevents an unavailable Auth host from becoming a Next.js runtime error.
-    skipAutoInitialize: true,
-  } as NonNullable<NonNullable<Parameters<typeof createClient>[2]>['auth']> & {
-    skipAutoInitialize: boolean
-  }
+    ...(bundledAndroidApp ? { lock: directAppLock } : {}),
+  } as NonNullable<NonNullable<Parameters<typeof createClient>[2]>['auth']>
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth,

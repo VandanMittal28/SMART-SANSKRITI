@@ -34,6 +34,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -43,8 +44,13 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.json.JSONObject;
 
@@ -55,6 +61,7 @@ public final class MainActivity extends Activity {
     private static final long PAGE_LOAD_TIMEOUT_MS = 15_000L;
     private static final long PAGE_HEALTH_CHECK_DELAY_MS = 6_000L;
     private static final String ERROR_PAGE_URL = "https://sanskriti.local/error";
+    private static final String BUNDLED_APP_HOST = "appassets.androidplatform.net";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -187,7 +194,7 @@ public final class MainActivity extends Activity {
 
     private String normalizedAppUrl() {
         String url = BuildConfig.APP_URL.trim();
-        if (url.isEmpty()) return "https://smart-sanskriti.vercel.app";
+        if (url.isEmpty()) return "https://" + BUNDLED_APP_HOST + "/";
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             return "https://" + url;
         }
@@ -195,6 +202,15 @@ public final class MainActivity extends Activity {
     }
 
     private final class SanskritiWebViewClient extends WebViewClient {
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            Uri uri = request.getUrl();
+            if (BUNDLED_APP_HOST.equalsIgnoreCase(uri.getHost())) {
+                return serveBundledRequest(uri);
+            }
+            return super.shouldInterceptRequest(view, request);
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
@@ -252,6 +268,77 @@ public final class MainActivity extends Activity {
                 showConnectionError("The Sanskriti service returned HTTP " + errorResponse.getStatusCode() + ".");
             }
         }
+    }
+
+    private WebResourceResponse serveBundledRequest(Uri uri) {
+        String requestPath = uri.getPath() == null ? "/" : uri.getPath();
+        if (requestPath.startsWith("/api/")) {
+            String json = "{\"error\":\"AI server is not configured in this standalone demo build.\"}";
+            return response(
+                    "application/json",
+                    503,
+                    "Service Unavailable",
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))
+            );
+        }
+
+        String relativePath = requestPath.replaceFirst("^/+", "");
+        if (relativePath.isEmpty()) relativePath = "index.html";
+        if (relativePath.endsWith("/")) relativePath += "index.html";
+
+        WebResourceResponse direct = openBundledAsset(relativePath);
+        if (direct != null) return direct;
+
+        if (!relativePath.contains(".")) {
+            WebResourceResponse route = openBundledAsset(relativePath + "/index.html");
+            if (route != null) return route;
+        }
+
+        String notFound = "<!doctype html><meta name='viewport' content='width=device-width'>"
+                + "<body style='background:#070a16;color:#f5e6d3;font-family:sans-serif;padding:32px'>"
+                + "This bundled screen was not found.</body>";
+        return response(
+                "text/html",
+                404,
+                "Not Found",
+                new ByteArrayInputStream(notFound.getBytes(StandardCharsets.UTF_8))
+        );
+    }
+
+    private WebResourceResponse openBundledAsset(String relativePath) {
+        try {
+            InputStream stream = getAssets().open("www/" + relativePath, android.content.res.AssetManager.ACCESS_STREAMING);
+            return response(mimeTypeFor(relativePath), 200, "OK", stream);
+        } catch (IOException ignored) {
+            return null;
+        }
+    }
+
+    private WebResourceResponse response(
+            String mimeType,
+            int statusCode,
+            String reason,
+            InputStream stream
+    ) {
+        return new WebResourceResponse(
+                mimeType,
+                "UTF-8",
+                statusCode,
+                reason,
+                Collections.singletonMap("Cache-Control", "no-cache"),
+                stream
+        );
+    }
+
+    private String mimeTypeFor(String path) {
+        String extension = MimeTypeMap.getFileExtensionFromUrl(path);
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        if (mimeType != null) return mimeType;
+        if (path.endsWith(".js")) return "application/javascript";
+        if (path.endsWith(".json") || path.endsWith(".txt")) return "application/json";
+        if (path.endsWith(".svg")) return "image/svg+xml";
+        if (path.endsWith(".woff2")) return "font/woff2";
+        return "application/octet-stream";
     }
 
     private final class SanskritiAndroidBridge {

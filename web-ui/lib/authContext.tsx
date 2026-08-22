@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
+import { isBundledAndroidApp, isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
 import {
   getUserProfile,
   signIn as signInWithUsername,
@@ -69,6 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initializeAuth = async () => {
+      // The installed demo must open immediately even when the phone is
+      // offline. Sign-in still talks directly to Supabase when the user asks
+      // for it; only the optional persisted-session restore is skipped.
+      if (isBundledAndroidApp()) {
+        clearAuthenticatedUser()
+        return
+      }
+
       try {
         const reachable = await isSupabaseAuthReachable()
         if (!active) return
@@ -77,10 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        const { error: initializeError } = await supabase.auth.initialize()
-        if (initializeError) throw initializeError
-
-        const { data, error: sessionError } = await supabase.auth.getSession()
+        // Some Android System WebView versions can leave the Supabase session
+        // bootstrap pending even though the network is reachable. Never let
+        // that keep the entire standalone app behind its loading screen.
+        const sessionTimeout = new Promise<never>((_resolve, reject) => {
+          window.setTimeout(() => reject(new Error('Session check timed out.')), 4_000)
+        })
+        const { data, error: sessionError } = await Promise.race([
+          supabase.auth.getSession(),
+          sessionTimeout,
+        ])
         if (sessionError) throw sessionError
         if (!active) return
 

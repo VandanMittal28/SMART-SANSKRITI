@@ -19,7 +19,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading } = useAuth()
-  const isPublicPath = PUBLIC_PATHS.has(pathname)
+  const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const isPublicPath = PUBLIC_PATHS.has(normalizedPathname)
 
   useEffect(() => {
     if (loading) return
@@ -27,6 +28,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (user && isPublicPath) router.replace('/')
   }, [isPublicPath, loading, router, user])
 
+  // Keep the login form usable while a background session restore is pending.
+  // This is especially important for an installed APK started without network.
+  if (isPublicPath && !user) return <>{children}</>
   if (loading) return <LoadingScreen />
   if (!user && !isPublicPath) return <LoadingScreen />
   if (user && isPublicPath) return <LoadingScreen />
