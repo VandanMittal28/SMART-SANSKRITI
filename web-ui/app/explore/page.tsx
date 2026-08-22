@@ -787,9 +787,15 @@ export default function ExplorePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioUrlRef = useRef<string | null>(null)
   const narrationRequestRef = useRef<AbortController | null>(null)
-  // True while narration is playing via the on-device speech fallback
-  // (window.speechSynthesis) rather than the server-generated audio file.
-  const browserTTSActiveRef = useRef(false)
+  // Tracks the on-device speech fallback (window.speechSynthesis) lifecycle
+  // separately from the server-audio path, since iOS Safari frequently
+  // blocks or silently fails speech synthesis unless it's triggered by a
+  // direct, synchronous tap — 'failed' lets the manual Play button retry
+  // with a fresh gesture instead of resuming a dead utterance.
+  const browserTTSStateRef = useRef<'idle' | 'speaking' | 'paused' | 'failed'>('idle')
+  // Last narration text/language attempted, so a manual retry (a genuine
+  // user gesture, which iOS is far more permissive about) can re-run it.
+  const pendingNarrationRef = useRef<{ text: string; language: SupportedLanguage } | null>(null)
   const translationCacheRef = useRef<Record<string, GuideTranslation>>({})
 
   const [exploreMonumentId, setExploreMonumentId] = useState('taj-mahal')
@@ -870,19 +876,27 @@ export default function ExplorePage() {
       URL.revokeObjectURL(audioUrlRef.current)
       audioUrlRef.current = null
     }
-    if (browserTTSActiveRef.current && typeof window !== 'undefined' && window.speechSynthesis) {
+    if (browserTTSStateRef.current !== 'idle' && typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel()
     }
-    browserTTSActiveRef.current = false
+    browserTTSStateRef.current = 'idle'
     setIsTTSSpeaking(false)
     setNarrationReady(false)
   }, [])
 
   // Speaks via the browser's built-in speech synthesis. Used when the
   // server-generated narration audio is unavailable, so the guided tour
-  // still narrates without depending on any external TTS service.
+  // still narrates without depending on any external TTS service. iOS
+  // Safari is strict about requiring a direct, synchronous user gesture
+  // for this API — a call made after an awaited fetch (as happens on the
+  // automatic path) can silently fail there. onerror leaves state
+  // 'failed' with narrationReady so the manual Play button can retry
+  // from directly inside a tap, which iOS does allow.
   const speakWithBrowserFallback = useCallback((text: string, language: SupportedLanguage) => {
+    pendingNarrationRef.current = { text, language }
+
     if (typeof window === 'undefined' || !window.speechSynthesis) {
+      browserTTSStateRef.current = 'idle'
       setIsTTSSpeaking(false)
       setNarrationReady(false)
       return
@@ -893,25 +907,26 @@ export default function ExplorePage() {
     utterance.lang = getLanguageConfig(language).locale
     utterance.rate = 0.95
     utterance.onend = () => {
-      browserTTSActiveRef.current = false
+      browserTTSStateRef.current = 'idle'
       setIsTTSSpeaking(false)
       setNarrationReady(false)
     }
     utterance.onerror = () => {
-      browserTTSActiveRef.current = false
+      browserTTSStateRef.current = 'failed'
       setIsTTSSpeaking(false)
-      setNarrationReady(false)
+      setNarrationReady(true)
     }
 
-    browserTTSActiveRef.current = true
+    browserTTSStateRef.current = 'speaking'
     setIsTTSSpeaking(true)
     setNarrationReady(false)
     window.speechSynthesis.speak(utterance)
   }, [])
 
   const pauseNarration = useCallback(() => {
-    if (browserTTSActiveRef.current && typeof window !== 'undefined' && window.speechSynthesis) {
+    if (browserTTSStateRef.current === 'speaking' && typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.pause()
+      browserTTSStateRef.current = 'paused'
       setIsTTSSpeaking(false)
       setNarrationReady(true)
       return
@@ -930,10 +945,17 @@ export default function ExplorePage() {
   }, [])
 
   const playPreparedNarration = useCallback(async () => {
-    if (browserTTSActiveRef.current && typeof window !== 'undefined' && window.speechSynthesis) {
+    if (browserTTSStateRef.current === 'paused' && typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.resume()
+      browserTTSStateRef.current = 'speaking'
       setIsTTSSpeaking(true)
       setNarrationReady(false)
+      return
+    }
+    if (browserTTSStateRef.current === 'failed' && pendingNarrationRef.current) {
+      // Fresh attempt from directly inside this tap — the direct gesture
+      // iOS requires to allow speech synthesis.
+      speakWithBrowserFallback(pendingNarrationRef.current.text, pendingNarrationRef.current.language)
       return
     }
     const audio = audioRef.current
@@ -949,7 +971,7 @@ export default function ExplorePage() {
       setIsTTSSpeaking(false)
       setNarrationReady(true)
     }
-  }, [])
+  }, [speakWithBrowserFallback])
 
   const fetchNarration = useCallback((
     text: string,
@@ -1519,8 +1541,8 @@ export default function ExplorePage() {
                 💡 {miniFactText}
               </div>
 
-              {/* Speaking indicator + stop button */}
-              {isTTSSpeaking && (
+              {/* Speaking indicator, or a manual retry when autoplay/TTS was blocked */}
+              {isTTSSpeaking ? (
                 <div style={{
                   background: 'rgba(201,168,76,0.1)',
                   border: '1px solid #C9A84C44',
@@ -1528,20 +1550,46 @@ export default function ExplorePage() {
                   padding: '8px 14px',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: '8px',
                   marginBottom: '12px'
                 }}>
-                  <div style={{
-                    width: '8px', height: '8px',
-                    borderRadius: '50%',
-                    background: '#C9A84C',
-                    animation: 'pulse 1s infinite'
-                  }}/>
-                  <span style={{ color: '#C9A84C', fontSize: '13px' }}>
-                    🔊 Audio guide preparing or speaking…
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '8px', height: '8px',
+                      borderRadius: '50%',
+                      background: '#C9A84C',
+                      animation: 'pulse 1s infinite'
+                    }}/>
+                    <span style={{ color: '#C9A84C', fontSize: '13px' }}>
+                      🔊 Audio guide preparing or speaking…
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={pauseNarration}
+                    style={{
+                      background: 'transparent', border: '1px solid #C9A84C44',
+                      borderRadius: '999px', color: '#C9A84C', cursor: 'pointer',
+                      padding: '4px 10px', fontSize: '12px', flexShrink: 0,
+                    }}
+                  >
+                    ⏸ Pause
+                  </button>
                 </div>
-              )}
+              ) : narrationReady ? (
+                <button
+                  type="button"
+                  onClick={playPreparedNarration}
+                  style={{
+                    background: 'rgba(75,155,142,0.18)', border: '1px solid rgba(75,155,142,0.45)',
+                    borderRadius: '10px', color: '#83D2C4', cursor: 'pointer', fontWeight: 700,
+                    padding: '8px 14px', fontSize: '13px', width: '100%', marginBottom: '12px',
+                  }}
+                >
+                  ▶ Play narration
+                </button>
+              ) : null}
 
               {/* Next zone or complete */}
               {currentZoneIndex < activeZones.length - 1 ? (
