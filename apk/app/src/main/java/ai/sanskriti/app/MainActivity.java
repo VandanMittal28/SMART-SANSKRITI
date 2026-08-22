@@ -73,6 +73,7 @@ public final class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int WEB_PERMISSION_REQUEST = 1002;
     private static final int GEOLOCATION_REQUEST = 1003;
+    private static final int AR_NAVIGATION_PERMISSION_REQUEST = 1004;
     private static final long PAGE_LOAD_TIMEOUT_MS = 15_000L;
     private static final long PAGE_HEALTH_CHECK_DELAY_MS = 6_000L;
     private static final String ERROR_PAGE_URL = "https://sanskriti.local/error";
@@ -93,6 +94,7 @@ public final class MainActivity extends Activity {
     private boolean showingConnectionError;
     private TextToSpeech textToSpeech;
     private boolean textToSpeechReady;
+    private ArNavigationController arNavigationController;
     private final ExecutorService networkExecutor = Executors.newFixedThreadPool(2);
 
     private final Runnable pageLoadTimeout = () -> {
@@ -123,6 +125,11 @@ public final class MainActivity extends Activity {
         configureLayout();
         configureTextToSpeech();
         configureWebView();
+        arNavigationController = new ArNavigationController(
+                this,
+                AR_NAVIGATION_PERMISSION_REQUEST,
+                this::emitArNavigationState
+        );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                     OnBackInvokedDispatcher.PRIORITY_DEFAULT,
@@ -257,6 +264,14 @@ public final class MainActivity extends Activity {
                 mainHandler.removeCallbacks(pageHealthCheck);
                 return;
             }
+            Uri pageUri = Uri.parse(url);
+            String pagePath = pageUri.getPath();
+            if (arNavigationController != null
+                    && arNavigationController.getCurrentState().tracking
+                    && isTrustedAppUri(pageUri)
+                    && (pagePath == null || !pagePath.startsWith("/explore"))) {
+                arNavigationController.stop();
+            }
             showingConnectionError = false;
             mainPageFinished = false;
             mainHandler.removeCallbacks(pageLoadTimeout);
@@ -275,7 +290,10 @@ public final class MainActivity extends Activity {
             mainHandler.removeCallbacks(pageLoadTimeout);
             mainHandler.removeCallbacks(pageHealthCheck);
             mainHandler.postDelayed(pageHealthCheck, PAGE_HEALTH_CHECK_DELAY_MS);
-            if (isTrustedAppUri(Uri.parse(url))) installNativeSpeechBridge(view);
+            if (isTrustedAppUri(Uri.parse(url))) {
+                installNativeSpeechBridge(view);
+                installNativeArNavigationBridge(view);
+            }
             CookieManager.getInstance().flush();
         }
 
@@ -468,6 +486,55 @@ public final class MainActivity extends Activity {
                     requestId,
                     Math.max(1_000, Math.min(durationMs, 8_000))
             ));
+        }
+
+        /**
+         * Starts the neutral native AR controller for one active zone. The
+         * controller never awards XP or advances routes; the bundled Explore
+         * flow remains the single owner of those product actions.
+         */
+        @JavascriptInterface
+        public void startArNavigation(
+                double targetLatitude,
+                double targetLongitude,
+                double radiusMeters,
+                double cameraFovDegrees,
+                double geofenceGraceMeters
+        ) {
+            mainHandler.post(() -> {
+                if (arNavigationController == null) return;
+                try {
+                    arNavigationController.start(new ArNavigationController.Target(
+                            targetLatitude,
+                            targetLongitude,
+                            radiusMeters,
+                            cameraFovDegrees,
+                            geofenceGraceMeters
+                    ));
+                } catch (IllegalArgumentException error) {
+                    emitArNavigationError(error.getMessage());
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void retryArNavigation() {
+            mainHandler.post(() -> {
+                if (arNavigationController != null) arNavigationController.retry();
+            });
+        }
+
+        @JavascriptInterface
+        public void stopArNavigation() {
+            mainHandler.post(() -> {
+                if (arNavigationController != null) arNavigationController.stop();
+            });
+        }
+
+        @JavascriptInterface
+        public String getArNavigationState() {
+            if (arNavigationController == null) return "{}";
+            return arNavigationController.getCurrentState().toJson().toString();
         }
     }
 
@@ -707,7 +774,7 @@ public final class MainActivity extends Activity {
         );
         int result = textToSpeech.speak(
                 text,
-                TextToSpeech.QUEUE_ADD,
+                TextToSpeech.QUEUE_FLUSH,
                 parameters,
                 utteranceId
         );
@@ -741,6 +808,43 @@ public final class MainActivity extends Activity {
                         + "try{Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,value:Utterance});}catch(error){window.SpeechSynthesisUtterance=Utterance;}"
                         + "try{Object.defineProperty(window,'speechSynthesis',{configurable:true,value:synth});}catch(error){window.speechSynthesis=synth;}"
                         + "})();",
+                null
+        );
+    }
+
+    private void installNativeArNavigationBridge(WebView view) {
+        view.evaluateJavascript(
+                "(function(){"
+                        + "if(!window.SanskritiAndroid||window.__sanskritiNativeArInstalled)return;"
+                        + "window.__sanskritiNativeArInstalled=true;"
+                        + "window.SanskritiAndroidAR={"
+                        + "start:function(target){target=target||{};window.SanskritiAndroid.startArNavigation(Number(target.lat),Number(target.lng),Number(target.radius),Number(target.cameraFovDeg||65),Number(target.geofenceGraceMeters||0));},"
+                        + "retry:function(){window.SanskritiAndroid.retryArNavigation();},"
+                        + "stop:function(){window.SanskritiAndroid.stopArNavigation();},"
+                        + "getState:function(){try{return JSON.parse(window.SanskritiAndroid.getArNavigationState()||'{}');}catch(error){return{};}}"
+                        + "};"
+                        + "window.dispatchEvent(new CustomEvent('sanskriti-ar-navigation-ready',{detail:window.SanskritiAndroidAR.getState()}));"
+                        + "})();",
+                null
+        );
+    }
+
+    private void emitArNavigationState(ArNavigationState state) {
+        if (webView == null || state == null) return;
+        String stateJson = state.toJson().toString();
+        webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('sanskriti-ar-navigation-state',{detail:JSON.parse("
+                        + JSONObject.quote(stateJson) + ")}))",
+                null
+        );
+    }
+
+    private void emitArNavigationError(String message) {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('sanskriti-ar-navigation-error',{detail:{message:"
+                        + JSONObject.quote(message == null ? "Invalid AR navigation target." : message)
+                        + "}}))",
                 null
         );
     }
@@ -958,6 +1062,9 @@ public final class MainActivity extends Activity {
             pendingGeoCallback.invoke(pendingGeoOrigin, granted, false);
             pendingGeoCallback = null;
             pendingGeoOrigin = null;
+        } else if (requestCode == AR_NAVIGATION_PERMISSION_REQUEST
+                && arNavigationController != null) {
+            arNavigationController.onPermissionResult();
         }
     }
 
@@ -1045,6 +1152,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        if (arNavigationController != null) arNavigationController.pause();
         if (webView != null) webView.onPause();
         if (textToSpeech != null) textToSpeech.stop();
         super.onPause();
@@ -1054,6 +1162,7 @@ public final class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (webView != null) webView.onResume();
+        if (arNavigationController != null) arNavigationController.resume();
     }
 
     @Override
@@ -1081,6 +1190,10 @@ public final class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         mainHandler.removeCallbacksAndMessages(null);
+        if (arNavigationController != null) {
+            arNavigationController.destroy();
+            arNavigationController = null;
+        }
         if (webView != null) {
             webView.stopLoading();
             webView.setWebChromeClient(null);

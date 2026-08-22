@@ -1,21 +1,11 @@
 # Sanskriti AI
 
-The repository is split into two independent applications:
+This repository contains one self-contained Android application:
 
-- [`web-ui/`](web-ui/) — the Next.js web and PC application, including its API routes, assets, Supabase files, and local AI services.
-- [`apk/`](apk/) — the native Android WebView wrapper and Gradle project.
+- [`apk/`](apk/) — the native Android project, Android integrations, and the
+  mobile UI source bundled directly into every APK.
 
-## Run the web application
-
-```bash
-cd web-ui
-npm install
-npm run dev -- --port 3002
-```
-
-Copy `web-ui/.env.example` to `web-ui/.env.local` and fill in the required values.
-
-## Build the Android APK
+## Build
 
 ```bash
 cd apk
@@ -24,6 +14,5 @@ cd apk
 
 The debug APK is written to `apk/app/build/outputs/apk/debug/app-debug.apk`.
 
-The Android wrapper loads the deployed web application by default. For emulator
-testing against the local web server, set `SANSKRITI_APP_URL=http://10.0.2.2:3002`
-in `apk/.env.local`.
+The APK runs from files packaged inside the app and does not require a website,
+Vercel deployment, or local development server.

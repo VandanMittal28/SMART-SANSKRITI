@@ -25,7 +25,7 @@ def readEnvFile = { File file ->
 
 def env = readEnvFile(rootProject.file(".env.local"))
 if (env.isEmpty()) {
-    env = readEnvFile(rootProject.file("../web-ui/.env.local"))
+    env = readEnvFile(rootProject.file("ui/.env.local"))
 }
 def configuredAppUrl = providers.gradleProperty("SANSKRITI_APP_URL").orNull ?:
         System.getenv("SANSKRITI_APP_URL") ?:
@@ -83,19 +83,23 @@ android {
     }
 }
 
-def bundleWebUi = tasks.register("bundleWebUi", Exec) {
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+}
+
+def bundleMobileUi = tasks.register("bundleMobileUi", Exec) {
     workingDir rootProject.projectDir
-    commandLine "bash", "scripts/build-web-bundle.sh"
-    inputs.dir rootProject.file("../web-ui/app")
-    inputs.dir rootProject.file("../web-ui/components")
-    inputs.dir rootProject.file("../web-ui/hooks")
-    inputs.dir rootProject.file("../web-ui/lib")
-    inputs.dir rootProject.file("../web-ui/public")
-    inputs.file rootProject.file("../web-ui/next.config.ts")
-    inputs.file rootProject.file("../web-ui/package.json")
+    commandLine "bash", "scripts/build-mobile-ui.sh"
+    inputs.dir rootProject.file("ui/app")
+    inputs.dir rootProject.file("ui/components")
+    inputs.dir rootProject.file("ui/hooks")
+    inputs.dir rootProject.file("ui/lib")
+    inputs.dir rootProject.file("ui/public")
+    inputs.file rootProject.file("ui/next.config.ts")
+    inputs.file rootProject.file("ui/package.json")
     outputs.dir rootProject.file("app/src/main/assets/www")
 }
 
 tasks.named("preBuild").configure {
-    dependsOn bundleWebUi
+    dependsOn bundleMobileUi
 }

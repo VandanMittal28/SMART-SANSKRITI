@@ -1,7 +1,7 @@
 # Sanskriti AI Android APK
 
-This folder is an independent Android project. It exports the Sanskriti web UI
-as static files and packages those files inside the APK.
+This folder is the complete Sanskriti AI Android project. Its mobile UI source
+is kept internally in `ui/` and packaged as app assets during each APK build.
 
 The APK uses Android's WebView only as its internal rendering engine; it does
 not load the UI from Vercel or require a Mac development server. The native
@@ -9,6 +9,12 @@ integration supports camera scans, microphone access, location, file uploads,
 downloads, persistent cookies/local storage, Android back navigation, and an
 offline/retry screen. Android-native text-to-speech is bridged into the UI for
 Yatrik, Chat, Audio Guide, Heritage Stories, and Hunt narration.
+
+The APK also includes a native, presentation-neutral AR navigation controller
+for Explore. It owns just-in-time camera/location permission state, live GPS,
+device heading, bearing and distance math, geofence validation, waypoint
+projection, edge-arrow state, fallback status, and activity lifecycle cleanup.
+Its bridge contract is documented in [`docs/ar-navigation-controller.md`](docs/ar-navigation-controller.md).
 
 ## Demo behavior
 
@@ -27,20 +33,13 @@ Yatrik, Chat, Audio Guide, Heritage Stories, and Hunt narration.
 
 ## Bundled UI
 
-`scripts/build-web-bundle.sh` creates a static mobile export from `../web-ui`
-without its Next.js API routes, then writes it to the generated Android asset
-folder. Gradle runs this script automatically before compiling the APK.
+`scripts/build-mobile-ui.sh` compiles the internal `ui/` source and writes it
+to the generated Android asset folder. Gradle runs this automatically before
+compiling the APK. There is no separate website project or server route bundle.
 
 The app serves these files internally from:
 
 `https://appassets.androidplatform.net/`
-
-For temporary remote-development testing only, `.env.local` may override the
-bundled URL:
-
-```dotenv
-SANSKRITI_APP_URL=http://10.0.2.2:3002
-```
 
 Do not add private production keys to the APK. Any value compiled into an APK
 can be extracted. The future separate API server should hold private AI keys.
@@ -68,5 +67,5 @@ APK** wizard can do this without storing the password in source control.
 
 ## Configuration safety
 
-The static export reads the web project's `.env.local`. Only `NEXT_PUBLIC_*`
-values can enter browser code. Private env files remain ignored by Git.
+The mobile UI build reads `ui/.env.local`, while Android build settings can use
+the project-level `.env.local`. Private env files remain ignored by Git.

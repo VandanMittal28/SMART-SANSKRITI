@@ -1,0 +1,77 @@
+{
+  "version": "1.1.0-pulkit",
+  "width": 512,
+  "height": 512,
+  "states": {
+    "idle": {
+      "frames": [
+        "/yatrik/pulkit-v1/idle/idle-01.webp",
+        "/yatrik/pulkit-v1/idle/idle-02.webp",
+        "/yatrik/pulkit-v1/idle/idle-04.webp"
+      ],
+      "fps": 1,
+      "loop": true
+    },
+    "fly-in": {
+      "frames": [
+        "/yatrik/pulkit-v1/fly-in/fly-in-01.webp",
+        "/yatrik/pulkit-v1/fly-in/fly-in-02.webp",
+        "/yatrik/pulkit-v1/fly-in/fly-in-03.webp"
+      ],
+      "fps": 3,
+      "loop": false
+    },
+    "landing": {
+      "frames": [
+        "/yatrik/pulkit-v1/landing/landing-01.webp",
+        "/yatrik/pulkit-v1/landing/landing-02.webp",
+        "/yatrik/pulkit-v1/landing/landing-03.webp"
+      ],
+      "fps": 2,
+      "loop": false
+    },
+    "talking": {
+      "frames": [
+        "/yatrik/pulkit-v1/talking/talking-01.webp",
+        "/yatrik/pulkit-v1/talking/talking-05.webp"
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "listening": {
+      "frames": [
+        "/yatrik/pulkit-v1/listening/listening-01.webp",
+        "/yatrik/pulkit-v1/listening/listening-02.webp",
+        "/yatrik/pulkit-v1/listening/listening-03.webp"
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "pointing": {
+      "frames": [
+        "/yatrik/pulkit-v1/pointing/pointing-01.webp",
+        "/yatrik/pulkit-v1/pointing/pointing-02.webp",
+        "/yatrik/pulkit-v1/pointing/pointing-03.webp"
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "celebrating": {
+      "frames": [
+        "/yatrik/pulkit-v1/celebrating/celebrating-01.webp",
+        "/yatrik/pulkit-v1/celebrating/celebrating-02.webp",
+        "/yatrik/pulkit-v1/celebrating/celebrating-03.webp"
+      ],
+      "fps": 3,
+      "loop": true
+    },
+    "muted": {
+      "frames": [
+        "/yatrik/pulkit-v1/muted/muted-01.webp",
+        "/yatrik/pulkit-v1/muted/muted-02.webp"
+      ],
+      "fps": 1,
+      "loop": true
+    }
+  }
+}
