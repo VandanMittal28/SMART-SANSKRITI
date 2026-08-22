@@ -203,7 +203,18 @@ export default function ItineraryPage() {
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '2rem', color: '#C9A84C', fontWeight: 700, margin: '0 0 0.5rem' }}>
             {t('itinerary_title')}
           </h1>
-          <p style={{ color: '#C4A882', margin: 0 }}>{t('itinerary_subtitle')}</p>
+          <p style={{ color: '#C4A882', margin: '0 0 12px' }}>{t('itinerary_subtitle')}</p>
+          <a
+            href="/decisions"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(75,155,142,0.12)', border: '1px solid rgba(75,155,142,0.35)',
+              borderRadius: 999, padding: '6px 14px', color: '#4B9B8E', fontSize: 13, fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            🤝 {lang === 'hi' ? 'साथ मिलकर योजना बनाएँ' : 'Plan together with a drift indicator'}
+          </a>
         </div>
 
         <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '18px', padding: '1.5rem', marginBottom: '1.5rem' }}>
