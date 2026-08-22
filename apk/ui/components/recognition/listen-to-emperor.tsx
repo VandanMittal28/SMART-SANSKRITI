@@ -1,5 +1,6 @@
 'use client'
 import { useLang } from '@/lib/languageContext'
+import { Crown } from 'lucide-react'
 
 interface ListenToEmperorProps {
   monumentName: string
@@ -23,35 +24,31 @@ export function ListenToEmperor({ monumentName }: ListenToEmperorProps) {
   if (!slug) return null
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg,rgba(212,137,63,0.1),rgba(201,168,76,0.05))',
-      border: '1px solid rgba(212,137,63,0.35)',
-      borderRadius: '14px', padding: '1.2rem 1.5rem',
-      marginTop: '1.5rem'
-    }}>
-      <div style={{
-        fontFamily: 'Georgia, serif',
-        fontSize: '1.05rem', color: '#E8C97A',
-        fontWeight: 600, marginBottom: '0.4rem'
-      }}>
-        {t('listen_emperor')}
+    <section className="overflow-hidden rounded-2xl border border-[#D6A84B]/20 bg-[#11182B]">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#D6A84B]/10 text-[#D6A84B]">
+          <Crown className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#D6A84B]">Voice from history</p>
+          <h3 className="mt-1 font-heritage text-lg font-bold text-[#F6F1E8]">{t('listen_emperor')}</h3>
+          <p className="mt-1 text-xs leading-5 text-[#AEB6C8]">
+            {t('historical_narration')} {monumentName}
+          </p>
+        </div>
       </div>
-      <div style={{
-        color: '#C4A882', fontSize: '0.82rem',
-        fontStyle: 'italic', marginBottom: '0.8rem'
-      }}>
-        {t('historical_narration')} {monumentName}
+      <div className="border-t border-white/8 bg-[#0D1426] px-4 py-3">
+        <audio
+          key={`${slug}_${lang}`}
+          controls
+          className="h-10 w-full"
+          preload="metadata"
+        >
+          <source src={`/audio/${slug}_${lang}.mp3`} type="audio/mpeg" />
+          <source src={`/audio/${slug}_en.mp3`} type="audio/mpeg" />
+          Your browser does not support audio.
+        </audio>
       </div>
-      <audio
-        key={`${slug}_${lang}`}
-        controls
-        style={{ width: '100%', height: '40px', borderRadius: '8px' }}
-        preload="metadata"
-      >
-        <source src={`/audio/${slug}_${lang}.mp3`} type="audio/mpeg" />
-        <source src={`/audio/${slug}_en.mp3`} type="audio/mpeg" />
-        Your browser does not support audio.
-      </audio>
-    </div>
+    </section>
   )
 }

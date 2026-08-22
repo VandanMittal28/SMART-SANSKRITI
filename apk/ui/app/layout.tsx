@@ -9,6 +9,11 @@ import { ClientLangWrapper } from '@/components/client-lang-wrapper'
 import { BackendPrewarmer } from '@/components/BackendPrewarmer'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TopBar } from '@/components/TopBar'
+import { Literata, Manrope, Noto_Sans_Devanagari } from 'next/font/google'
+
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' })
+const literata = Literata({ subsets: ['latin'], variable: '--font-literata', display: 'swap' })
+const devanagari = Noto_Sans_Devanagari({ subsets: ['devanagari'], variable: '--font-devanagari', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'Sanskriti AI | Discover India\'s Living Heritage',
@@ -29,11 +34,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" />
-      </head>
-      <body className="font-sans antialiased overflow-x-hidden bg-[#050816] text-[#F5E6D3]">
+    <html lang="en" className={`dark ${manrope.variable} ${literata.variable} ${devanagari.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased overflow-x-hidden bg-[#050816] text-[#F6F1E8]">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <BackendPrewarmer />
           <AuthProvider>

@@ -5,28 +5,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #0F0B1E;
-  --foreground: #F5E6D3;
-  --card: rgba(28, 22, 56, 0.9);
-  --card-foreground: #F5E6D3;
-  --popover: rgba(28, 22, 56, 0.95);
-  --popover-foreground: #F5E6D3;
-  --primary: #C9A84C;
-  --primary-foreground: #0F0B1E;
-  --secondary: #D4893F;
-  --secondary-foreground: #0F0B1E;
-  --muted: #1C1638;
-  --muted-foreground: #C4A882;
-  --accent: #534AB7;
-  --accent-foreground: #F5E6D3;
+  --background: #080D1D;
+  --foreground: #F6F1E8;
+  --card: #11182B;
+  --card-foreground: #F6F1E8;
+  --popover: #171F34;
+  --popover-foreground: #F6F1E8;
+  --primary: #D6A84B;
+  --primary-foreground: #171004;
+  --secondary: #63C7BA;
+  --secondary-foreground: #071B19;
+  --muted: #171F34;
+  --muted-foreground: #AEB6C8;
+  --accent: #C66B4E;
+  --accent-foreground: #F6F1E8;
   --destructive: #DC2626;
   --destructive-foreground: #F5E6D3;
-  --border: #C9A84C;
-  --input: rgba(28, 22, 56, 0.9);
-  --ring: #C9A84C;
-  --success: #4B9B8E;
+  --border: rgba(214, 168, 75, 0.2);
+  --input: #11182B;
+  --ring: #D6A84B;
+  --success: #63C7BA;
   --success-foreground: #F5E6D3;
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   --sidebar: #0F0B1E;
   --sidebar-foreground: #F5E6D3;
   --sidebar-primary: #C9A84C;
@@ -38,8 +38,8 @@
 }
 
 @theme inline {
-  --font-sans: Manrope, Avenir Next, Avenir, system-ui, sans-serif;
-  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-manrope), Avenir Next, Avenir, system-ui, sans-serif;
+  --font-serif: var(--font-literata), Georgia, "Times New Roman", serif;
   --font-mono: 'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -88,6 +88,11 @@
     @apply bg-background text-foreground;
     min-height: 100dvh;
     overscroll-behavior: none;
+    font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
   }
 }
 
@@ -174,10 +179,8 @@
   max-width: 420px;
   min-height: 100dvh;
   margin: 0 auto;
-  background:
-    radial-gradient(circle at top, rgba(201, 168, 76, 0.12), transparent 28%),
-    linear-gradient(180deg, #08070f 0%, #0b1020 55%, #060814 100%);
-  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.08), 0 24px 80px rgba(0, 0, 0, 0.45);
+  background: #080D1D;
+  box-shadow: 0 0 0 1px rgba(214, 168, 75, 0.08), 0 24px 80px rgba(0, 0, 0, 0.32);
 }
 
 .mobile-shell::before {
@@ -185,9 +188,8 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 18px 18px;
-  opacity: 0.18;
+  background: linear-gradient(180deg, rgba(214,168,75,.035), transparent 22%);
+  opacity: 1;
 }
 
 .mobile-scroll {
@@ -204,21 +206,19 @@
 }
 
 .app-safe-padding {
-  padding-top: calc(80px + env(safe-area-inset-top));
-  padding-bottom: calc(108px + env(safe-area-inset-bottom));
+  padding-top: calc(64px + env(safe-area-inset-top));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 .app-card {
-  background: rgba(12, 17, 34, 0.82);
-  border: 1px solid rgba(201, 168, 76, 0.18);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  background: #11182B;
+  border: 1px solid rgba(214, 168, 75, 0.17);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .app-card-soft {
-  background: rgba(255, 255, 255, 0.05);
+  background: #171F34;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px);
 }
 
 .hero-grid {
@@ -265,12 +265,42 @@
 
 :lang(hi),
 [data-lang="hi"] {
-  font-family: 'Noto Sans Devanagari', var(--font-sans), system-ui, sans-serif !important;
+  font-family: var(--font-devanagari), var(--font-sans), system-ui, sans-serif !important;
 }
 
 :lang(hi) h1, :lang(hi) h2, :lang(hi) h3,
 [data-lang="hi"] h1, [data-lang="hi"] h2, [data-lang="hi"] h3 {
-  font-family: 'Noto Sans Devanagari', Georgia, serif !important;
+  font-family: var(--font-devanagari), Georgia, serif !important;
+}
+
+.font-heritage {
+  font-family: var(--font-literata), Georgia, serif;
+}
+
+.screen-gutter {
+  padding-inline: 20px;
+}
+
+.section-title {
+  font-family: var(--font-literata), Georgia, serif;
+  color: #F6F1E8;
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.5rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(99, 199, 186, 0.25);
+  border-radius: 999px;
+  background: rgba(99, 199, 186, 0.08);
+  padding: 4px 9px;
+  color: #8DE0D6;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 @keyframes yatrik-float {

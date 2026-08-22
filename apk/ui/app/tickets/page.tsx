@@ -11,6 +11,7 @@ import {
   CircleHelp,
   Minus,
   Plus,
+  Landmark,
   Search,
   ShieldCheck,
   Sparkles,
@@ -379,25 +380,20 @@ export default function TicketsPage() {
 
   return (
     <AppShell>
-      <div className="px-4 py-4">
-        <section className="relative overflow-hidden rounded-[28px] border border-[#C9A84C]/20 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.22),transparent_42%),linear-gradient(145deg,#17142a,#0b1020)] p-5">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#F7D88C]">
-              <Ticket className="h-4 w-4" />
-              {hi ? 'स्मारक टिकट' : 'Monument tickets'}
-            </div>
-            <h1 className="mt-3 max-w-[280px] text-3xl font-semibold leading-tight text-[#F5E6D3]">
-              {hi ? 'भारत की विरासत, एक ही जगह' : "India's heritage, one checkout"}
-            </h1>
-            <p className="mt-2 max-w-[310px] text-sm leading-6 text-[#C4A882]">
-              {hi ? '25 लोकप्रिय स्मारकों की वास्तविक प्रवेश दरें देखें और यात्रा आरक्षित करें।' : 'Compare current entry rates and reserve visits across 25 popular monuments.'}
-            </p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#7EE4D4]/20 bg-[#4B9B8E]/10 px-3 py-2 text-xs font-semibold text-[#A9EADD]">
-              <Sparkles className="h-4 w-4" />
-              {hi ? 'पहली बुकिंग पर 1 टिकट मुफ़्त · FIRSTFREE' : '1st booking: 1 ticket free · FIRSTFREE'}
-            </div>
+      <div className="screen-gutter py-5">
+        <section>
+          <div className="flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-[#D6A84B]" />
+            <h1 className="font-heritage text-[28px] font-bold text-[#F6F1E8]">{hi ? 'यात्राएं' : 'Trips'}</h1>
           </div>
-          <div className="pointer-events-none absolute -bottom-5 -right-2 text-[92px] opacity-20">🏛️</div>
+          <div className="mt-4 grid grid-cols-2 rounded-xl bg-[#11182B] p-1" role="tablist" aria-label="Trips">
+            <button type="button" className="min-h-10 rounded-lg bg-[#D6A84B] text-sm font-bold text-[#171004]" role="tab" aria-selected="true">{hi ? 'टिकट' : 'Tickets'}</button>
+            <Link href="/itinerary" className="grid min-h-10 place-items-center rounded-lg text-sm font-bold text-[#AEB6C8]" role="tab">{hi ? 'मेरी योजनाएं' : 'My plans'}</Link>
+          </div>
+          <div className="mt-3 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[#63C7BA]/18 bg-[#63C7BA]/[0.06] px-4 text-xs">
+            <span className="font-semibold text-[#8DE0D6]">{hi ? 'पहली बुकिंग पर 1 टिकट मुफ़्त' : 'First booking: 1 ticket free'}</span>
+            <code className="rounded-md bg-black/20 px-2 py-1 font-bold text-[#F3DFC0]">FIRSTFREE</code>
+          </div>
         </section>
 
         <div className="mt-4">
@@ -458,8 +454,8 @@ export default function TicketsPage() {
             return (
               <article key={monument.id} className="app-card rounded-[24px] p-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-[linear-gradient(145deg,rgba(201,168,76,0.16),rgba(83,74,183,0.12))] text-2xl">
-                    {monument.emoji}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6A84B]/15 bg-[#D6A84B]/8 text-[#D6A84B]">
+                    <Landmark className="h-6 w-6" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">

@@ -202,7 +202,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const { availableProfiles, user, profile, setProfile, refreshProfile, signOut } = useAuth()
   const { lang, t } = useLang()
-  const { userType, setUserType, userConfig } = useUser()
+  const { userType, setUserType } = useUser()
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
   const [leavingProfile, setLeavingProfile] = useState(false)
@@ -309,12 +309,15 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-5xl space-y-4 px-4 pb-8">
+      <div className="mx-auto max-w-[420px] space-y-4 px-5 py-5 pb-8">
+        <div className="flex items-center justify-between">
+          <h1 className="font-heritage text-[28px] font-bold text-[#F6F1E8]">Profile</h1>
+        </div>
         <AppCard className="overflow-hidden p-0">
-          <div className="bg-[radial-gradient(circle_at_top_left,rgba(201,168,76,0.2),transparent_34%),linear-gradient(135deg,rgba(28,22,56,0.98),rgba(9,13,25,0.98))] p-5 lg:p-7">
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+          <div className="bg-[#11182B] p-4">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[24px] border border-[#C9A84C]/30 bg-[#C9A84C]/10 text-xl font-semibold text-[#F7D88C]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6A84B]/25 bg-[#D6A84B]/10 text-lg font-bold text-[#F3DFC0]">
                   {initials}
                 </div>
                 <div className="min-w-0">
@@ -354,9 +357,9 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="mt-1 flex items-center gap-2">
-                      <h1 className="truncate text-2xl font-semibold text-[#F5E6D3]">
+                      <h2 className="break-all text-lg font-bold leading-6 text-[#F6F1E8]">
                         {safeProfile.full_name || t('explorer')}
-                      </h1>
+                      </h2>
                       <button
                         type="button"
                         onClick={beginNameEdit}
@@ -367,23 +370,17 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   )}
-                  <p className="mt-1 text-sm text-[#C4A882]">
-                    {userConfig?.subtitle || t('profile_subtitle')}
-                  </p>
+                  <p className="mt-1 text-xs text-[#AEB6C8]">Culture Guardian</p>
                 </div>
-              </div>
-
-              <div className="flex gap-2">
-                <span className="rounded-full border border-[#C9A84C]/25 bg-[#C9A84C]/12 px-3 py-1.5 text-xs font-semibold text-[#F7D88C]">
-                  ⚡ {safeProfile.total_xp.toLocaleString()} XP
-                </span>
-                <span className="rounded-full border border-[#4B9B8E]/25 bg-[#4B9B8E]/12 px-3 py-1.5 text-xs font-semibold text-[#7ECDC0]">
-                  Rank #{rank}
-                </span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mt-4 flex gap-2">
+              <span className="rounded-lg border border-[#D6A84B]/20 bg-[#D6A84B]/10 px-3 py-1.5 text-xs font-bold text-[#F3DFC0]">{safeProfile.total_xp.toLocaleString()} XP</span>
+              <span className="rounded-lg border border-[#63C7BA]/20 bg-[#63C7BA]/10 px-3 py-1.5 text-xs font-bold text-[#8DE0D6]">Rank #{rank}</span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
               {[
                 {
                   label: t('visited_label'),
@@ -408,13 +405,13 @@ export default function ProfilePage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-[18px] border border-white/10 bg-white/5 p-3"
+                  className="min-h-[88px] rounded-xl border border-white/8 bg-[#171F34] p-3"
                 >
                   <item.icon className="h-4 w-4 text-[#F7D88C]" />
                   <p className="mt-2 text-[10px] uppercase tracking-[0.15em] text-[#8C7B63]">
                     {item.label}
                   </p>
-                  <p className="mt-1 text-xl font-semibold text-[#F5E6D3]">
+                  <p className="mt-1 text-xl font-bold text-[#F6F1E8]">
                     {item.value}
                   </p>
                 </div>
