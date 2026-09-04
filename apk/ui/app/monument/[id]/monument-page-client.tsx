@@ -303,10 +303,10 @@ export default function MonumentPage() {
 
   if (!monument) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#080D1D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 style={{ color: '#1A1035' }}>Monument not found</h1>
-          <button onClick={() => router.back()} style={{ padding: '10px 20px', background: '#534AB7', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+          <h1 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif' }}>Monument not found</h1>
+          <button onClick={() => router.back()} style={{ marginTop: 16, padding: '10px 20px', background: '#D6A84B', color: '#171004', fontWeight: 700, border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
             Go Back
           </button>
         </div>
@@ -380,7 +380,7 @@ export default function MonumentPage() {
           </div>
 
           {/* 360° Viewer or placeholder */}
-          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#0F0B1E' }}>
+          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#080D1D' }}>
             {hasPanorama ? (
               <iframe
                 title="Panoramic time travel"
@@ -392,7 +392,7 @@ export default function MonumentPage() {
 <head>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0F0B1E; overflow:hidden; }
+  body { background:#080D1D; overflow:hidden; }
   canvas { width:100%; height:420px; display:block; cursor:grab; }
   canvas:active { cursor:grabbing; }
   #era-badge {
@@ -400,7 +400,7 @@ export default function MonumentPage() {
     background:rgba(0,0,0,0.65); color:#E8C97A;
     font-family:sans-serif; font-size:13px; font-weight:600;
     padding:7px 18px; border-radius:999px;
-    border:1px solid rgba(201,168,76,0.5);
+    border:1px solid rgba(214,168,75,0.5);
     pointer-events:none; white-space:nowrap;
   }
   #hint {
@@ -408,7 +408,7 @@ export default function MonumentPage() {
     background:rgba(0,0,0,0.55); color:#E8C97A;
     font-family:sans-serif; font-size:12px;
     padding:6px 16px; border-radius:999px;
-    border:1px solid rgba(201,168,76,0.3);
+    border:1px solid rgba(214,168,75,0.3);
     pointer-events:none; transition:opacity 1.5s ease;
   }
 </style>
@@ -485,7 +485,7 @@ export default function MonumentPage() {
                   justifyContent: 'center',
                   gap: 10,
                   background:
-                    'radial-gradient(circle at top, rgba(250, 250, 250, 0.1), transparent 60%), #0F0B1E',
+                    'radial-gradient(circle at top, rgba(250, 250, 250, 0.1), transparent 60%), #080D1D',
                 }}
               >
                 <div style={{ fontSize: 40 }}>
@@ -494,18 +494,18 @@ export default function MonumentPage() {
                 <div style={{ color: '#E8C97A', fontWeight: 800, fontSize: 16 }}>
                   {ERA_LABELS[activeEra].en}
                 </div>
-                <div style={{ color: '#E5E7EB', fontSize: 13, textAlign: 'center', maxWidth: 360 }}>
+                <div style={{ color: '#C7CDDA', fontSize: 13, textAlign: 'center', maxWidth: 360 }}>
                   {ERA_DESCRIPTIONS[activeEra]}
                 </div>
                 <div
                   style={{
                     marginTop: 8,
-                    color: '#FCD34D',
+                    color: '#E8C97A',
                     fontSize: 12,
                     backgroundColor: 'rgba(0,0,0,0.4)',
                     padding: '6px 12px',
                     borderRadius: 999,
-                    border: '1px solid rgba(201,168,76,0.3)',
+                    border: '1px solid rgba(214,168,75,0.3)',
                   }}
                 >
                   📁 360° panorama coming soon for this era
@@ -517,11 +517,11 @@ export default function MonumentPage() {
           {/* Era description card */}
           <div
             style={{
-              backgroundColor: 'rgba(26, 16, 53, 0.8)',
+              backgroundColor: 'rgba(17, 24, 43, 0.85)',
               borderRadius: 12,
-              border: '1px solid rgba(201, 168, 76, 0.3)',
+              border: '1px solid rgba(214, 168, 75, 0.3)',
               padding: 16,
-              color: '#E5E7EB',
+              color: '#C7CDDA',
               fontSize: 14,
             }}
           >

@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { UserRound } from 'lucide-react'
+import { Globe, UserRound } from 'lucide-react'
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
-import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { SUPPORTED_LANGUAGES } from '@/lib/languages'
 
 export function TopBar() {
@@ -47,27 +47,27 @@ export function TopBar() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <label
-            data-no-translate
-            className={cn(
-              'relative inline-flex h-9 items-center rounded-full border px-3 text-[11px] font-bold transition-colors',
-              'border-[#D6A84B]/20 bg-[#D6A84B]/8 text-[#F3DFC0]'
-            )}
-          >
-            <span className="sr-only">Select language</span>
-            <select
+          <Select value={lang} onValueChange={(value) => setLang(value as typeof lang)}>
+            <SelectTrigger
+              data-no-translate
               aria-label="Select site and narration language"
-              value={lang}
-              onChange={(event) => setLang(event.target.value as typeof lang)}
-              className="w-7 cursor-pointer appearance-none bg-transparent text-[#F3DFC0] outline-none"
+              className="h-9 gap-1.5 rounded-full border-[#D6A84B]/20 bg-[#D6A84B]/8 px-3 text-[11px] font-bold text-[#F3DFC0] hover:bg-[#D6A84B]/12 focus-visible:ring-[#D6A84B]/40 [&_svg]:text-[#F3DFC0] [&_svg]:opacity-100 [&_svg]:size-3"
             >
+              <Globe className="size-3.5 shrink-0" />
+              {lang.toUpperCase()}
+            </SelectTrigger>
+            <SelectContent className="max-h-72 border-[#D6A84B]/20 bg-[#171F34] text-[#F6F1E8]" align="end">
               {SUPPORTED_LANGUAGES.map((language) => (
-                <option key={language.id} value={language.id} className="bg-[#13131a] text-[#F5E6D3]">
+                <SelectItem
+                  key={language.id}
+                  value={language.id}
+                  className="text-sm focus:bg-[#D6A84B]/12 focus:text-[#F6F1E8]"
+                >
                   {language.id.toUpperCase()} · {language.nativeName}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </label>
+            </SelectContent>
+          </Select>
 
           <Link
             href="/profile"

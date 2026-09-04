@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { ChevronDown } from 'lucide-react'
 import { useLang } from '@/lib/languageContext'
+import { cn } from '@/lib/utils'
 
 interface Festival {
   name: string; month: number; day: number; location: string; state: string;
@@ -40,17 +41,17 @@ function daysUntil(month: number, day: number): number {
 }
 
 function daysBadgeColor(days: number) {
-  if (days === 0) return { bg: 'rgba(220,38,38,0.2)', border: 'rgba(220,38,38,0.6)', color: '#F87171', label: '🔴 Today!' }
-  if (days <= 7) return { bg: 'rgba(245,158,11,0.2)', border: 'rgba(245,158,11,0.6)', color: '#FBBF24', label: `🟠 ${days} days` }
-  if (days <= 30) return { bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.4)', color: '#FDE047', label: `🟡 ${days} days` }
-  return { bg: 'rgba(107,114,128,0.15)', border: 'rgba(107,114,128,0.4)', color: '#9CA3AF', label: `${days} days` }
+  if (days === 0) return { className: 'border-[#DC2626]/50 bg-[#DC2626]/15 text-[#F87171]', label: 'Today' }
+  if (days <= 7) return { className: 'border-[#D6A84B]/50 bg-[#D6A84B]/15 text-[#E8BE69]', label: `${days} days` }
+  if (days <= 30) return { className: 'border-[#D6A84B]/25 bg-[#D6A84B]/8 text-[#D6A84B]', label: `${days} days` }
+  return { className: 'border-white/10 bg-white/[0.04] text-[#8891A6]', label: `${days} days` }
 }
 
 function typeColor(t: string) {
   const map: Record<string, string> = {
-    'National': '#4B9B8E', 'Religious': '#C9A84C', 'Cultural': '#D4893F', 'Religious & Cultural': '#C9A84C', 'Cultural & Trade': '#8E6B4B'
+    'National': '#63C7BA', 'Religious': '#D6A84B', 'Cultural': '#C66B4E', 'Religious & Cultural': '#D6A84B', 'Cultural & Trade': '#AE8A5E'
   }
-  return map[t] || '#8A7560'
+  return map[t] || '#AEB6C8'
 }
 
 export default function FestivalsPage() {
@@ -67,122 +68,87 @@ export default function FestivalsPage() {
 
   return (
     <AppShell>
-      <div className="p-4 lg:p-8 animate-fade-in">
-        <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#C9A84C] mb-2">
-          {t('festival_header')}
-        </h1>
-        <p style={{ color: '#C4A882', fontSize: 15, marginBottom: 20 }}>
-          {FESTIVALS.length} cultural events at India&apos;s most iconic monuments
-        </p>
+      <div className="screen-gutter flex flex-col gap-5 py-5 animate-fade-in">
+        <section>
+          <h1 className="font-heritage text-2xl font-bold text-[#F6F1E8]">{t('festival_header')}</h1>
+          <p className="mt-1 text-sm text-[#AEB6C8]">{FESTIVALS.length} cultural events at India&apos;s most iconic monuments</p>
+        </section>
 
-        {/* Info banner */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(27,16,64,0.8), rgba(196,91,58,0.06))',
-          border: '1px solid rgba(201,168,76,0.25)', borderRadius: 16, padding: '16px 22px', marginBottom: 24
-        }}>
-          <div style={{ color: '#E8C97A', fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 600 }}>
-            {t('festival_subtitle')}
-          </div>
-          <div style={{ color: '#C4A882', fontSize: 13, marginTop: 4 }}>
-            30+ festivals with historical context, visitor tips, and monument connections
-          </div>
-        </div>
+        <section className="rounded-2xl border border-[#D6A84B]/22 bg-[#D6A84B]/[0.06] p-4">
+          <p className="font-heritage text-sm font-semibold text-[#E8BE69]">{t('festival_subtitle')}</p>
+          <p className="mt-1 text-xs text-[#AEB6C8]">30+ festivals with historical context, visitor tips, and monument connections</p>
+        </section>
 
-        {/* Filter buttons */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div className="app-scroll-row -mx-5 flex gap-2 overflow-x-auto px-5" role="tablist" aria-label="Filter by festival type">
           {allTypes.map(type => (
-            <button key={type} onClick={() => setFilter(type)} style={{
-              padding: '6px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              background: filter === type ? 'rgba(201,168,76,0.2)' : 'transparent',
-              border: filter === type ? '1px solid #C9A84C' : '1px solid rgba(201,168,76,0.2)',
-              color: filter === type ? '#C9A84C' : '#8A7560',
-              transition: 'all 0.2s ease'
-            }}>
+            <button
+              key={type}
+              onClick={() => setFilter(type)}
+              role="tab"
+              aria-selected={filter === type}
+              className={cn(
+                'shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors',
+                filter === type ? 'border-[#D6A84B] bg-[#D6A84B]/15 text-[#D6A84B]' : 'border-white/10 text-[#8891A6]',
+              )}
+            >
               {type}
             </button>
           ))}
         </div>
 
-        <p style={{ color: '#8A7560', fontSize: 13, marginBottom: 16 }}>
-          Showing {filtered.length} festivals — sorted by next occurrence
-        </p>
+        <p className="text-xs text-[#8891A6]">Showing {filtered.length} festivals — sorted by next occurrence</p>
 
-        {/* Festival cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-2.5" aria-label="Festival list">
           {filtered.map(fest => {
             const badge = daysBadgeColor(fest.days)
             const isExpanded = expanded === fest.name
 
             return (
-              <div key={fest.name} style={{
-                background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.2)',
-                borderRadius: 14, overflow: 'hidden', transition: 'all 0.2s ease'
-              }}>
-                {/* Card header */}
-                <button onClick={() => setExpanded(isExpanded ? null : fest.name)} style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '14px 18px', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left'
-                }}>
-                  <span style={{ fontSize: 28 }}>{fest.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ color: '#F5E6D3', fontWeight: 700, fontSize: 15 }}>{fest.name}</span>
-                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: `${typeColor(fest.type)}20`, color: typeColor(fest.type), fontWeight: 600 }}>
+              <div key={fest.name} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#11182B]">
+                <button
+                  onClick={() => setExpanded(isExpanded ? null : fest.name)}
+                  aria-expanded={isExpanded}
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+                >
+                  <span className="text-2xl" aria-hidden>{fest.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-bold text-[#F6F1E8]">{fest.name}</span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ background: `${typeColor(fest.type)}20`, color: typeColor(fest.type) }}
+                      >
                         {fest.type}
                       </span>
                     </div>
-                    <div style={{ color: '#8A7560', fontSize: 12, marginTop: 3 }}>
-                      {fest.location} · {MONTH_NAMES[fest.month]} {fest.day} · {fest.duration}
-                    </div>
+                    <p className="mt-0.5 text-xs text-[#8891A6]">{fest.location} · {MONTH_NAMES[fest.month]} {fest.day} · {fest.duration}</p>
                   </div>
-                  <span style={{
-                    padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                    background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color, whiteSpace: 'nowrap'
-                  }}>
+                  <span className={cn('shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold whitespace-nowrap', badge.className)}>
                     {badge.label}
                   </span>
-                  <ChevronDown style={{
-                    width: 18, height: 18, color: '#8A7560',
-                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease'
-                  }} />
+                  <ChevronDown className={cn('h-4 w-4 shrink-0 text-[#8891A6] transition-transform', isExpanded && 'rotate-180')} />
                 </button>
 
-                {/* Expanded content */}
                 {isExpanded && (
-                  <div style={{ padding: '0 18px 18px 18px', borderTop: '1px solid rgba(201,168,76,0.1)' }}>
-                    <p style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600, margin: '14px 0 10px' }}>
-                      {fest.significance}
-                    </p>
-                    {/* Historical context */}
-                    <div style={{
-                      background: 'rgba(27,16,64,0.5)', borderLeft: '2px solid rgba(201,168,76,0.4)',
-                      padding: '10px 14px', borderRadius: '0 8px 8px 0', margin: '10px 0'
-                    }}>
-                      <div style={{ fontSize: 10, color: '#7A6E5C', fontFamily: 'monospace', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase' }}>
-                        {t('historical_context')}
-                      </div>
-                      <div style={{ color: '#C4A882', fontSize: 13, lineHeight: 1.6 }}>
-                        {fest.historical_context}
-                      </div>
+                  <div className="border-t border-white/[0.05] px-4 pb-4">
+                    <p className="mt-3.5 text-sm font-semibold leading-6 text-[#E8BE69]">{fest.significance}</p>
+
+                    <div className="mt-2.5 rounded-r-lg border-l-2 border-[#D6A84B]/40 bg-white/[0.02] py-2.5 pl-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#8891A6]">{t('historical_context')}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#AEB6C8]">{fest.historical_context}</p>
                     </div>
-                    {/* Visitor tip */}
-                    <div style={{
-                      background: 'rgba(75,142,110,0.08)', border: '1px solid rgba(75,142,110,0.3)',
-                      borderRadius: 10, padding: '10px 14px', margin: '10px 0'
-                    }}>
-                      <span style={{ color: '#7ECDA0', fontWeight: 700, fontSize: 12 }}>{t('visitor_tip')} </span>
-                      <span style={{ color: '#C4A882', fontSize: 13 }}>{fest.visitor_tip}</span>
+
+                    <div className="mt-2.5 rounded-lg border border-[#63C7BA]/25 bg-[#63C7BA]/[0.06] px-3.5 py-2.5">
+                      <span className="text-xs font-bold text-[#8DE0D6]">{t('visitor_tip')} </span>
+                      <span className="text-xs text-[#AEB6C8]">{fest.visitor_tip}</span>
                     </div>
-                    {/* Monument tags */}
+
                     {fest.monuments.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {fest.monuments.map(m => (
-                          <span key={m} style={{
-                            padding: '3px 10px', borderRadius: 999, fontSize: 11,
-                            background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
-                            color: '#E8C97A', fontWeight: 600
-                          }}>🏛️ {m}</span>
+                          <span key={m} className="rounded-full border border-[#D6A84B]/25 bg-[#D6A84B]/[0.08] px-2.5 py-1 text-[10px] font-semibold text-[#E8BE69]">
+                            {m}
+                          </span>
                         ))}
                       </div>
                     )}

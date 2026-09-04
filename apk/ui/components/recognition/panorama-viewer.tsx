@@ -19,7 +19,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
 <head>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0F0B1E; overflow:hidden; font-family:sans-serif; }
+  body { background:#080D1D; overflow:hidden; font-family:sans-serif; }
   #viewer { width:100%; height:100vh; display:block; cursor:grab; }
   #viewer:active { cursor:grabbing; }
   #overlay {
@@ -48,7 +48,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
   #loading {
     position:absolute; inset:0;
     display:flex; align-items:center; justify-content:center;
-    background:#0F0B1E;
+    background:#080D1D;
     z-index:10;
     transition:opacity 0.5s ease;
   }
@@ -189,7 +189,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
       borderRadius: 14,
       overflow: 'hidden',
       border: `1px solid ${accentColor}44`,
-      background: '#0F0B1E'
+      background: '#080D1D'
     }}>
       <iframe
         ref={iframeRef}
@@ -210,7 +210,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#0F0B1E'
+          background: '#080D1D'
         }}>
           <div style={{
             width: 36, height: 36,

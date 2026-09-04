@@ -109,7 +109,7 @@ function LoadingSpinner() {
   return (
     <div className="flex justify-center items-center p-10">
       <div className="w-10 h-10 border-4 rounded-full animate-spin"
-        style={{ borderColor: 'rgba(201,168,76,0.2)', borderTopColor: '#C9A84C' }} />
+        style={{ borderColor: 'rgba(201,168,76,0.2)', borderTopColor: '#D6A84B' }} />
     </div>
   )
 }
@@ -403,13 +403,13 @@ export default function RecognitionPage() {
         {activeTab === 'camera' && (
           <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
             <video ref={videoRef} autoPlay playsInline
-              style={{ width: '100%', maxHeight: 380, objectFit: 'cover', background: '#1C1638', display: 'block' }}
+              style={{ width: '100%', maxHeight: 380, objectFit: 'cover', background: '#171F34', display: 'block' }}
             />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: 12, background: 'rgba(15,11,30,0.9)' }}>
               <button onClick={capturePhoto} style={{
                 padding: '12px 32px', borderRadius: 999,
-                background: 'linear-gradient(135deg, #D4893F, #C9A84C)',
+                background: 'linear-gradient(135deg, #C66B4E, #D6A84B)',
                 color: 'white', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700
               }}><Camera size={18} style={{ display: 'inline', marginRight: 8 }} />Capture</button>
               <button onClick={() => { stopCamera(); setActiveTab('upload') }} style={{
@@ -429,7 +429,7 @@ export default function RecognitionPage() {
         {/* Loading */}
         {loading && (
           <div className="mt-8">
-            <p className="text-center text-[#C4A882] mb-4">{t('identifying')}</p>
+            <p className="text-center text-[#AEB6C8] mb-4">{t('identifying')}</p>
             <LoadingSpinner />
           </div>
         )}

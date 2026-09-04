@@ -39,27 +39,27 @@ export function UploadZone({ onFileSelect }: UploadZoneProps) {
         }}
       />
       <div
-        className="border-2 border-dashed border-[#C9A84C]/50 rounded-2xl p-12 text-center transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#C9A84C]/5 cursor-pointer"
+        className="border-2 border-dashed border-[#D6A84B]/50 rounded-2xl p-12 text-center transition-all duration-300 hover:border-[#D6A84B] hover:bg-[#D6A84B]/5 cursor-pointer"
         onClick={() => inputRef.current?.click()}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 rounded-full bg-[#C9A84C]/20 flex items-center justify-center">
-            <Upload className="w-8 h-8 text-[#C9A84C]" />
+          <div className="w-16 h-16 rounded-full bg-[#D6A84B]/20 flex items-center justify-center">
+            <Upload className="w-8 h-8 text-[#D6A84B]" />
           </div>
         </div>
 
-        <h3 className="font-semibold text-[#F5E6D3] text-lg mb-2">
+        <h3 className="font-semibold text-[#F6F1E8] text-lg mb-2">
           Drag and drop file here
         </h3>
 
-        <p className="text-[#C4A882] text-sm mb-4">
+        <p className="text-[#AEB6C8] text-sm mb-4">
           JPG, JPEG, PNG accepted
         </p>
 
         <button
-          className="px-6 py-2 gold-gradient text-[#0F0B1E] font-semibold rounded-lg transition-all duration-300 hover:scale-105"
+          className="px-6 py-2 gold-gradient text-[#080D1D] font-semibold rounded-lg transition-all duration-300 hover:scale-105"
           onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
         >
           Browse files

@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { AppShell } from "@/components/app-shell"
-import { Send, GraduationCap, Building } from "lucide-react"
+import { Send, GraduationCap, Compass, Landmark, Mic, MicOff } from "lucide-react"
 import api from "@/lib/apiClient"
 import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
 import { saveChatExchange } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
+import { useUser } from "@/lib/userContext"
+import { cn } from "@/lib/utils"
 import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache'
 import { recordingToWavBase64 } from '@/lib/audio'
 import { isMonumentQuestion, monumentOnlyRefusal, offlineHeritageAnswer } from '@/lib/offlineHeritage'
@@ -31,6 +33,7 @@ export default function ChatPage() {
   const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { toast, showToast, hideToast } = useToast()
   const { user, profile } = useAuth()
+  const { userType } = useUser()
 
   // ── Robust Browser TTS ─────────────────────────────────
   const speakText = useCallback((text: string) => {
@@ -259,40 +262,59 @@ export default function ChatPage() {
     }
   }, [])
 
+  const modeCopy = userType === 'student' ? t('student_mode') : t('mode_title')
+  const ModeIcon = userType === 'student' ? GraduationCap : Compass
+
   return (
     <AppShell>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}} @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}`}</style>
-      <div className="flex flex-col h-[calc(100vh-96px)] lg:h-screen">
-        <div className="flex items-center justify-between p-4 border-b border-[#C9A84C]/20 flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#C9A84C]/20 flex items-center justify-center"><Building className="w-5 h-5 text-[#C9A84C]" /></div>
-            <h1 className="font-serif text-xl font-bold text-[#C9A84C]">{t('ai_chatbot')}</h1>
+      <style>{`@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}`}</style>
+      <div className="flex h-[calc(100dvh-64px-72px)] flex-col">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D6A84B]/15 px-4 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#D6A84B]/12 text-[#D6A84B]">
+              <Landmark className="h-4.5 w-4.5" />
+            </span>
+            <h1 className="font-heritage text-lg font-bold text-[#F6F1E8]">{t('ai_chatbot')}</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-2 px-3 py-1 bg-[#534AB7]/20 text-[#534AB7] text-sm rounded-full"><GraduationCap className="w-4 h-4" />{t('student_mode')}</span>
-          </div>
+          <span className="flex items-center gap-1.5 rounded-full bg-[#7C3AED]/15 px-2.5 py-1 text-xs font-semibold text-[#B9A2F5]">
+            <ModeIcon className="h-3.5 w-3.5" />{modeCopy}
+          </span>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}>
-              <div className={`max-w-[80%] p-4 rounded-xl ${message.role === "user" ? "bg-[#D4893F]/20 border-l-4 border-[#D4893F] text-[#F5E6D3]" : "glass-card border-l-4 border-[#4B9B8E] text-[#F5E6D3]"}`}>
-                {message.role === "assistant" && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">🏛️</span>
-                    <span className="text-sm text-[#4B9B8E] font-medium">{t('heritage_guide')}</span>
+            <div key={message.id} className={cn('flex animate-fade-in', message.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div
+                className={cn(
+                  'max-w-[80%] rounded-2xl border-l-4 p-3.5 text-sm leading-relaxed text-[#F6F1E8]',
+                  message.role === 'user'
+                    ? 'border-[#C66B4E] bg-[#C66B4E]/12'
+                    : 'border-[#63C7BA] bg-[#11182B]',
+                )}
+              >
+                {message.role === 'assistant' && (
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <Landmark className="h-3.5 w-3.5 text-[#63C7BA]" />
+                    <span className="text-xs font-semibold text-[#63C7BA]">{t('heritage_guide')}</span>
                   </div>
                 )}
-                <p className="leading-relaxed">{message.content}</p>
+                <p>{message.content}</p>
               </div>
             </div>
           ))}
           {loading && (
             <div className="flex justify-start animate-fade-in">
-              <div className="glass-card border-l-4 border-[#4B9B8E] text-[#F5E6D3] p-4 rounded-xl">
-                <div className="flex items-center gap-2 mb-2"><span className="text-lg">🏛️</span><span className="text-sm text-[#4B9B8E] font-medium">{t('heritage_guide')}</span></div>
-                <div className="flex gap-1 items-center h-5">{[0,1,2].map(i => (<div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#4B9B8E', animation: 'bounce 1.2s infinite', animationDelay: `${i * 0.2}s` }} />))}</div>
+              <div className="rounded-2xl border-l-4 border-[#63C7BA] bg-[#11182B] p-3.5 text-[#F6F1E8]">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <Landmark className="h-3.5 w-3.5 text-[#63C7BA]" />
+                  <span className="text-xs font-semibold text-[#63C7BA]">{t('heritage_guide')}</span>
+                </div>
+                <div className="flex h-5 items-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-2 w-2 rounded-full bg-[#63C7BA]" style={{ animation: 'bounce 1.2s infinite', animationDelay: `${i * 0.2}s` }} />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -300,20 +322,48 @@ export default function ChatPage() {
         </div>
 
         {/* Suggested questions */}
-        <div className="px-4 py-2 flex gap-2 overflow-x-auto">
+        <div className="app-scroll-row flex gap-2 overflow-x-auto px-4 py-2">
           {suggestedQuestions.map((question) => (
-            <button key={question} onClick={() => { setInput(question); sendMessage(question) }} className="flex-shrink-0 px-3 py-1 glass-card rounded-full text-sm text-[#C4A882] hover:text-[#C9A84C] hover:border-[#C9A84C] transition-colors">{question}</button>
+            <button
+              key={question}
+              onClick={() => { setInput(question); sendMessage(question) }}
+              className="shrink-0 rounded-full border border-[#D6A84B]/20 bg-[#11182B] px-3 py-1.5 text-xs font-medium text-[#AEB6C8] transition-colors hover:border-[#D6A84B]/50 hover:text-[#D6A84B]"
+            >
+              {question}
+            </button>
           ))}
         </div>
 
         {/* Input bar */}
-        <div className="p-4 border-t border-[#C9A84C]/20">
+        <div className="border-t border-[#D6A84B]/15 p-3.5">
           <div className="flex items-center gap-2">
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder={t('ask_placeholder')} className="flex-1 bg-[#1C1638] border border-[#C9A84C]/30 rounded-xl px-4 py-3 text-[#F5E6D3] placeholder:text-[#C4A882] focus:outline-none focus:border-[#C9A84C] transition-colors" />
-            <button onClick={startVoice} className={`px-3 py-3 rounded-xl transition-all duration-300 hover:scale-105 flex items-center gap-1.5 text-sm font-medium ${listening ? 'bg-[#4B9B8E] text-white animate-pulse' : 'purple-gradient text-white'}`}>
-              {listening ? '🎙️' : '🎤'}<span className="hidden sm:inline">{listening ? t('listening') : t('ask_by_voice')}</span>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder={t('ask_placeholder')}
+              className="h-11 flex-1 rounded-xl border border-[#D6A84B]/25 bg-[#171F34] px-4 text-sm text-[#F6F1E8] outline-none placeholder:text-[#8891A6] focus:border-[#D6A84B]"
+            />
+            <button
+              onClick={startVoice}
+              aria-label={listening ? t('listening') : t('ask_by_voice')}
+              aria-pressed={listening}
+              className={cn(
+                'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white transition-transform active:scale-95',
+                listening ? 'animate-pulse bg-[#63C7BA]' : 'bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]',
+              )}
+            >
+              {listening ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
             </button>
-            <button onClick={handleSend} disabled={loading} className="p-3 gold-gradient rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50"><Send className="w-5 h-5 text-[#0F0B1E]" /></button>
+            <button
+              onClick={handleSend}
+              disabled={loading}
+              aria-label="Send message"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#D6A84B] text-[#171004] transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Send className="h-4.5 w-4.5" />
+            </button>
           </div>
         </div>
       </div>

@@ -222,7 +222,7 @@ export function ExploreARHud({
             </div>
             <div className="text-right">
               <p className="font-serif text-xl font-bold leading-none text-[#efc566]">{state.distanceMeters}m</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-[#8f816b]">{Math.round(bearing)}° bearing</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-[#8891A6]">{Math.round(bearing)}° bearing</p>
             </div>
           </div>
         </div>

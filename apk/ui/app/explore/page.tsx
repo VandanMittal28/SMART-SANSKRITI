@@ -769,7 +769,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     // Path line connecting zones
     const pathCoords = zones.map(z => [z.lat, z.lng])
     const polyline = L.polyline(pathCoords, {
-      color: '#C9A84C', weight: 2, dashArray: '8 6', opacity: 0.6
+      color: '#D6A84B', weight: 2, dashArray: '8 6', opacity: 0.6
     }).addTo(map)
     newMarkers.push(polyline)
 
@@ -781,8 +781,8 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
 
       const marker = L.circleMarker([zone.lat, zone.lng], {
         radius: isActive ? 14 : 10,
-        fillColor: isComplete ? '#4B9B8E' : isActive ? '#C9A84C' : '#555',
-        color: isComplete ? '#4B9B8E' : isActive ? '#C9A84C' : '#777',
+        fillColor: isComplete ? '#63C7BA' : isActive ? '#D6A84B' : '#555',
+        color: isComplete ? '#63C7BA' : isActive ? '#D6A84B' : '#777',
         fillOpacity: isActive ? 0.9 : 0.7,
         weight: isActive ? 3 : 1,
         className: isActive ? 'pulse-marker' : ''
@@ -804,7 +804,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
 
     // User marker
     const userMarker = L.circleMarker([userPos.lat, userPos.lng], {
-      radius: 8, fillColor: '#fff', color: '#C9A84C',
+      radius: 8, fillColor: '#fff', color: '#D6A84B',
       fillOpacity: 1, weight: 3
     }).addTo(map)
     userMarker.bindPopup('<b style="color:#333">📍 You</b>')
@@ -813,7 +813,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     const youLabel = L.marker([userPos.lat, userPos.lng], {
       icon: L.divIcon({
         className: '',
-        html: '<div style="font-size:11px;color:#C9A84C;font-weight:700;text-align:center;margin-top:8px">You</div>',
+        html: '<div style="font-size:11px;color:#D6A84B;font-weight:700;text-align:center;margin-top:8px">You</div>',
         iconSize: [40, 20],
       })
     }).addTo(map)
@@ -1419,29 +1419,29 @@ export default function ExplorePage() {
         <style>{`@keyframes confetti { 0% { transform: translateY(-20px) scale(0.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }`}</style>
         <div style={{ textAlign: 'center', padding: '40px 20px', animation: 'confetti 0.6s ease' }}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏛️</div>
-          <h1 style={{ color: '#C9A84C', fontFamily: 'Georgia,serif', fontSize: '32px', marginBottom: '8px' }}>
+          <h1 style={{ color: '#D6A84B', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '32px', marginBottom: '8px' }}>
             Explorer Complete!
           </h1>
-          <p style={{ color: '#F5E6D3', fontSize: '16px', marginBottom: '24px' }}>
+          <p style={{ color: '#F6F1E8', fontSize: '16px', marginBottom: '24px' }}>
             You have explored all {activeZones.length} historic zones of the {MONUMENT_NAMES[exploreMonumentId] || 'Monument'}
           </p>
-          <div style={{ fontSize: '48px', fontWeight: '700', color: '#C9A84C', marginBottom: '8px' }}>
+          <div style={{ fontSize: '48px', fontWeight: '700', color: '#D6A84B', marginBottom: '8px' }}>
             +{totalXP} XP
           </div>
-          <p style={{ color: '#C4A882', marginBottom: '32px' }}>Total XP earned this exploration</p>
+          <p style={{ color: '#AEB6C8', marginBottom: '32px' }}>Total XP earned this exploration</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '32px' }}>
             {activeZones.map(z => (
               <div key={z.id} style={{
                 background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)',
-                borderRadius: '20px', padding: '8px 16px', color: '#C9A84C', fontSize: '14px'
+                borderRadius: '20px', padding: '8px 16px', color: '#D6A84B', fontSize: '14px'
               }}>
                 ✅ {z.emoji} {z.name}
               </div>
             ))}
           </div>
           <button onClick={() => router.push('/')} style={{
-            background: 'linear-gradient(135deg,#C9A84C,#D4893F)', borderRadius: '16px',
-            padding: '14px 32px', color: '#0F0B1E', fontWeight: '700', fontSize: '16px',
+            background: 'linear-gradient(135deg,#D6A84B,#C66B4E)', borderRadius: '16px',
+            padding: '14px 32px', color: '#080D1D', fontWeight: '700', fontSize: '16px',
             border: 'none', cursor: 'pointer'
           }}>
             🏠 Back to Home
@@ -1456,7 +1456,7 @@ export default function ExplorePage() {
     return (
       <AppShell>
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-          <p style={{ color: '#C4A882', fontSize: '13px' }}>Loading explorer...</p>
+          <p style={{ color: '#AEB6C8', fontSize: '13px' }}>Loading explorer...</p>
         </div>
       </AppShell>
     )

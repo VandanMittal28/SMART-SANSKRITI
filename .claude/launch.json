@@ -4,7 +4,7 @@
     {
       "name": "smart-sanskriti-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "web-ui", "run", "dev"],
+      "runtimeArgs": ["--prefix", "apk/ui", "run", "dev"],
       "port": 3000
     }
   ]

@@ -117,38 +117,38 @@ export default function TicketsPage() {
       <AppShell>
         <div className="px-4 py-8">
           <section className="app-card overflow-hidden rounded-[28px] p-6 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#4B9B8E]/15 text-[#7EE4D4]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#63C7BA]/15 text-[#7EE4D4]">
               <BadgeCheck className="h-8 w-8" />
             </div>
             <p className="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-[#7EE4D4]">
               {hi ? 'बुकिंग तैयार है' : 'Booking ready'}
             </p>
-            <h1 className="mt-2 text-2xl font-semibold text-[#F5E6D3]">
+            <h1 className="mt-2 text-2xl font-semibold text-[#F6F1E8]">
               {hi ? 'आपका टिकट आरक्षित है' : 'Your ticket is reserved'}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-[#C4A882]">
+            <p className="mt-2 text-sm leading-6 text-[#AEB6C8]">
               {hi
                 ? 'अंतिम सरकारी ई-टिकट के लिए आधिकारिक पोर्टल पर विवरण पूरा करें।'
                 : 'Complete the details on the official portal to receive the final government e-ticket.'}
             </p>
 
-            <div className="mt-6 rounded-[22px] border border-dashed border-[#C9A84C]/35 bg-[#C9A84C]/8 p-5 text-left">
+            <div className="mt-6 rounded-[22px] border border-dashed border-[#D6A84B]/35 bg-[#D6A84B]/8 p-5 text-left">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{selected.emoji}</span>
                 <div>
-                  <p className="font-semibold text-[#F5E6D3]">{hi ? selected.nameHi : selected.name}</p>
-                  <p className="text-xs text-[#A89A7D]">{selected.city} · {visitDate}</p>
+                  <p className="font-semibold text-[#F6F1E8]">{hi ? selected.nameHi : selected.name}</p>
+                  <p className="text-xs text-[#8891A6]">{selected.city} · {visitDate}</p>
                 </div>
               </div>
               <div className="my-4 h-px bg-white/8" />
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-[#8C7B63]">{hi ? 'बुकिंग आईडी' : 'Booking ID'}</p>
+                  <p className="text-xs text-[#8891A6]">{hi ? 'बुकिंग आईडी' : 'Booking ID'}</p>
                   <p className="mt-1 font-semibold text-[#F7D88C]">{bookingId}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#8C7B63]">{hi ? 'कुल' : 'Total'}</p>
-                  <p className="mt-1 font-semibold text-[#F5E6D3]">₹{total.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-[#8891A6]">{hi ? 'कुल' : 'Total'}</p>
+                  <p className="mt-1 font-semibold text-[#F6F1E8]">₹{total.toLocaleString('en-IN')}</p>
                 </div>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function TicketsPage() {
               href={selected.officialUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9A84C] px-4 py-3.5 font-bold text-[#0E0916]"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D6A84B] px-4 py-3.5 font-bold text-[#0E0916]"
             >
               {hi ? 'आधिकारिक बुकिंग पूरी करें' : 'Complete official booking'}
               <ChevronRight className="h-4 w-4" />
@@ -189,30 +189,30 @@ export default function TicketsPage() {
           </button>
 
           <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#C9A84C]">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D6A84B]">
               {hi ? 'सुरक्षित चेकआउट' : 'Secure checkout'}
             </p>
-            <h1 className="mt-1 text-2xl font-semibold text-[#F5E6D3]">
+            <h1 className="mt-1 text-2xl font-semibold text-[#F6F1E8]">
               {hi ? 'अपनी यात्रा पूरी करें' : 'Complete your visit'}
             </h1>
           </div>
 
           <section className="app-card rounded-[24px] p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#C9A84C]/12 text-2xl">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#D6A84B]/12 text-2xl">
                 {selected.emoji}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-[#F5E6D3]">{hi ? selected.nameHi : selected.name}</h2>
-                <p className="text-xs text-[#A89A7D]">{selected.city}, {selected.state}</p>
+                <h2 className="font-semibold text-[#F6F1E8]">{hi ? selected.nameHi : selected.name}</h2>
+                <p className="text-xs text-[#8891A6]">{selected.city}, {selected.state}</p>
               </div>
-              <span className="rounded-full border border-[#C9A84C]/20 bg-[#C9A84C]/10 px-2 py-1 text-[10px] font-bold text-[#F7D88C]">
+              <span className="rounded-full border border-[#D6A84B]/20 bg-[#D6A84B]/10 px-2 py-1 text-[10px] font-bold text-[#F7D88C]">
                 {selected.category}
               </span>
             </div>
 
             {selected.note && (
-              <div className="mt-4 flex gap-2 rounded-2xl bg-white/5 p-3 text-xs leading-5 text-[#C4A882]">
+              <div className="mt-4 flex gap-2 rounded-2xl bg-white/5 p-3 text-xs leading-5 text-[#AEB6C8]">
                 <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-[#F7D88C]" />
                 <span>{hi ? selected.noteHi : selected.note}</span>
               </div>
@@ -221,7 +221,7 @@ export default function TicketsPage() {
 
           <section className="app-card mt-3 space-y-5 rounded-[24px] p-4">
             <div>
-              <label htmlFor="visit-date" className="flex items-center gap-2 text-sm font-semibold text-[#F5E6D3]">
+              <label htmlFor="visit-date" className="flex items-center gap-2 text-sm font-semibold text-[#F6F1E8]">
                 <CalendarDays className="h-4 w-4 text-[#F7D88C]" />
                 {hi ? 'यात्रा की तारीख' : 'Visit date'}
               </label>
@@ -231,12 +231,12 @@ export default function TicketsPage() {
                 min={today()}
                 value={visitDate}
                 onChange={(event) => setVisitDate(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-[#0B1020] px-4 py-3 text-sm text-[#F5E6D3] [color-scheme:dark]"
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-[#0B1020] px-4 py-3 text-sm text-[#F6F1E8] [color-scheme:dark]"
               />
             </div>
 
             <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-[#F5E6D3]">
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#F6F1E8]">
                 <UsersRound className="h-4 w-4 text-[#F7D88C]" />
                 {hi ? 'पर्यटक श्रेणी' : 'Visitor category'}
               </p>
@@ -252,12 +252,12 @@ export default function TicketsPage() {
                     }}
                     className={`rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition-colors ${
                       visitorType === type
-                        ? 'border-[#C9A84C]/50 bg-[#C9A84C]/15 text-[#F7D88C]'
-                        : 'border-white/8 bg-white/4 text-[#C4A882]'
+                        ? 'border-[#D6A84B]/50 bg-[#D6A84B]/15 text-[#F7D88C]'
+                        : 'border-white/8 bg-white/4 text-[#AEB6C8]'
                     }`}
                   >
                     {visitorLabels[type][hi ? 'hi' : 'en']}
-                    <span className="mt-1 block text-sm text-[#F5E6D3]">
+                    <span className="mt-1 block text-sm text-[#F6F1E8]">
                       {selected.prices[type] === 0 ? (hi ? 'मुफ़्त' : 'Free') : `₹${selected.prices[type]}`}
                     </span>
                   </button>
@@ -267,8 +267,8 @@ export default function TicketsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-[#F5E6D3]">{hi ? 'टिकट' : 'Tickets'}</p>
-                <p className="text-xs text-[#8C7B63]">{hi ? 'अधिकतम 10 टिकट' : 'Up to 10 tickets'}</p>
+                <p className="text-sm font-semibold text-[#F6F1E8]">{hi ? 'टिकट' : 'Tickets'}</p>
+                <p className="text-xs text-[#8891A6]">{hi ? 'अधिकतम 10 टिकट' : 'Up to 10 tickets'}</p>
               </div>
               <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0B1020] p-1">
                 <button
@@ -280,7 +280,7 @@ export default function TicketsPage() {
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="min-w-5 text-center font-bold text-[#F5E6D3]">{quantity}</span>
+                <span className="min-w-5 text-center font-bold text-[#F6F1E8]">{quantity}</span>
                 <button
                   type="button"
                   aria-label={hi ? 'एक टिकट जोड़ें' : 'Add one ticket'}
@@ -294,9 +294,9 @@ export default function TicketsPage() {
             </div>
           </section>
 
-          <section className="mt-3 overflow-hidden rounded-[24px] border border-[#7EE4D4]/20 bg-[#4B9B8E]/10 p-4">
+          <section className="mt-3 overflow-hidden rounded-[24px] border border-[#7EE4D4]/20 bg-[#63C7BA]/10 p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#4B9B8E]/15 text-[#7EE4D4]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#63C7BA]/15 text-[#7EE4D4]">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
@@ -340,9 +340,9 @@ export default function TicketsPage() {
           </section>
 
           <section className="app-card mt-3 rounded-[24px] p-4">
-            <h2 className="font-semibold text-[#F5E6D3]">{hi ? 'भुगतान सारांश' : 'Payment summary'}</h2>
+            <h2 className="font-semibold text-[#F6F1E8]">{hi ? 'भुगतान सारांश' : 'Payment summary'}</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between text-[#C4A882]">
+              <div className="flex justify-between text-[#AEB6C8]">
                 <span>{hi ? `${quantity} × प्रवेश टिकट` : `${quantity} × entry ticket`}</span>
                 <span>₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
@@ -354,7 +354,7 @@ export default function TicketsPage() {
               )}
               <div className="h-px bg-white/8" />
               <div className="flex items-end justify-between">
-                <span className="font-semibold text-[#F5E6D3]">{hi ? 'कुल भुगतान' : 'Total payable'}</span>
+                <span className="font-semibold text-[#F6F1E8]">{hi ? 'कुल भुगतान' : 'Total payable'}</span>
                 <span className="text-2xl font-bold text-[#F7D88C]">₹{total.toLocaleString('en-IN')}</span>
               </div>
             </div>
@@ -363,12 +363,12 @@ export default function TicketsPage() {
           <button
             type="button"
             onClick={confirmBooking}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9A84C] px-4 py-4 font-bold text-[#0E0916] shadow-[0_14px_32px_rgba(201,168,76,0.18)]"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D6A84B] px-4 py-4 font-bold text-[#0E0916] shadow-[0_14px_32px_rgba(201,168,76,0.18)]"
           >
             <ShieldCheck className="h-5 w-5" />
             {total === 0 ? (hi ? 'मुफ़्त टिकट आरक्षित करें' : 'Reserve free ticket') : (hi ? 'बुकिंग जारी रखें' : 'Continue booking')}
           </button>
-          <p className="mt-3 px-3 text-center text-[11px] leading-5 text-[#8C7B63]">
+          <p className="mt-3 px-3 text-center text-[11px] leading-5 text-[#8891A6]">
             {hi
               ? 'अंतिम कीमत और उपलब्धता आधिकारिक पोर्टल पर सत्यापित होगी।'
               : 'Final price and availability are verified on the official booking portal.'}
@@ -398,19 +398,19 @@ export default function TicketsPage() {
 
         <div className="mt-4">
           <div className="relative">
-            <Search className="absolute left-4 top-3.5 h-4 w-4 text-[#8C7B63]" />
+            <Search className="absolute left-4 top-3.5 h-4 w-4 text-[#8891A6]" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={hi ? 'स्मारक या शहर खोजें' : 'Search monument or city'}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-11 text-sm text-[#F5E6D3] outline-none placeholder:text-[#7A6E5C] focus:border-[#C9A84C]/40"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-11 text-sm text-[#F6F1E8] outline-none placeholder:text-[#7A6E5C] focus:border-[#D6A84B]/40"
             />
             {query && (
               <button
                 type="button"
                 aria-label={hi ? 'खोज साफ़ करें' : 'Clear search'}
                 onClick={() => setQuery('')}
-                className="absolute right-3 top-2.5 flex h-8 w-8 items-center justify-center rounded-full text-[#A89A7D]"
+                className="absolute right-3 top-2.5 flex h-8 w-8 items-center justify-center rounded-full text-[#8891A6]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -425,8 +425,8 @@ export default function TicketsPage() {
                 onClick={() => setCity(item)}
                 className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold ${
                   city === item
-                    ? 'border-[#C9A84C]/45 bg-[#C9A84C]/15 text-[#F7D88C]'
-                    : 'border-white/8 bg-white/4 text-[#A89A7D]'
+                    ? 'border-[#D6A84B]/45 bg-[#D6A84B]/15 text-[#F7D88C]'
+                    : 'border-white/8 bg-white/4 text-[#8891A6]'
                 }`}
               >
                 {item === 'All' ? (hi ? 'सभी' : 'All') : item}
@@ -437,12 +437,12 @@ export default function TicketsPage() {
 
         <div className="mt-5 flex items-end justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[#8C7B63]">{hi ? 'खोजें' : 'Explore'}</p>
-            <h2 className="mt-1 text-lg font-semibold text-[#F5E6D3]">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#8891A6]">{hi ? 'खोजें' : 'Explore'}</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#F6F1E8]">
               {hi ? `${filtered.length} स्मारक` : `${filtered.length} monuments`}
             </h2>
           </div>
-          <span className="flex items-center gap-1 text-[11px] text-[#8C7B63]">
+          <span className="flex items-center gap-1 text-[11px] text-[#8891A6]">
             <ShieldCheck className="h-3.5 w-3.5" />
             {hi ? 'आधिकारिक दरें' : 'Official rates'}
           </span>
@@ -460,17 +460,17 @@ export default function TicketsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold leading-tight text-[#F5E6D3]">
+                        <h3 className="font-semibold leading-tight text-[#F6F1E8]">
                           {hi ? monument.nameHi : monument.name}
                         </h3>
-                        <p className="mt-1 text-xs text-[#A89A7D]">{monument.city}, {monument.state}</p>
+                        <p className="mt-1 text-xs text-[#8891A6]">{monument.city}, {monument.state}</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-white/5 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#8C7B63]">
+                      <span className="shrink-0 rounded-full bg-white/5 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#8891A6]">
                         {monument.category}
                       </span>
                     </div>
                     {monument.note && (
-                      <p className="mt-2 line-clamp-1 text-[11px] text-[#8C7B63]">
+                      <p className="mt-2 line-clamp-1 text-[11px] text-[#8891A6]">
                         {hi ? monument.noteHi : monument.note}
                       </p>
                     )}
@@ -483,7 +483,7 @@ export default function TicketsPage() {
                       aria-label={hi ? 'पर्यटक श्रेणी' : 'Visitor category'}
                       value={visitorType}
                       onChange={(event) => setVisitorType(event.target.value as VisitorType)}
-                      className="max-w-[160px] bg-transparent text-[11px] font-semibold text-[#A89A7D] outline-none [color-scheme:dark]"
+                      className="max-w-[160px] bg-transparent text-[11px] font-semibold text-[#8891A6] outline-none [color-scheme:dark]"
                     >
                       {(Object.keys(visitorLabels) as VisitorType[]).map((type) => (
                         <option key={type} value={type}>{visitorLabels[type][hi ? 'hi' : 'en']}</option>
@@ -497,7 +497,7 @@ export default function TicketsPage() {
                   <button
                     type="button"
                     onClick={() => startCheckout(monument)}
-                    className="flex items-center gap-2 rounded-2xl bg-[#C9A84C] px-4 py-3 text-xs font-bold text-[#0E0916]"
+                    className="flex items-center gap-2 rounded-2xl bg-[#D6A84B] px-4 py-3 text-xs font-bold text-[#0E0916]"
                   >
                     {price === 0 ? (hi ? 'देखें' : 'View') : (hi ? 'टिकट लें' : 'Get tickets')}
                     <ChevronRight className="h-4 w-4" />
@@ -509,8 +509,8 @@ export default function TicketsPage() {
 
           {filtered.length === 0 && (
             <div className="app-card rounded-[24px] px-5 py-10 text-center">
-              <Search className="mx-auto h-6 w-6 text-[#8C7B63]" />
-              <p className="mt-3 font-semibold text-[#F5E6D3]">{hi ? 'कोई स्मारक नहीं मिला' : 'No monument found'}</p>
+              <Search className="mx-auto h-6 w-6 text-[#8891A6]" />
+              <p className="mt-3 font-semibold text-[#F6F1E8]">{hi ? 'कोई स्मारक नहीं मिला' : 'No monument found'}</p>
               <button type="button" onClick={() => { setQuery(''); setCity('All') }} className="mt-3 text-sm font-semibold text-[#F7D88C]">
                 {hi ? 'सभी स्मारक देखें' : 'Show all monuments'}
               </button>
@@ -522,8 +522,8 @@ export default function TicketsPage() {
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#7EE4D4]" />
             <div>
-              <p className="text-sm font-semibold text-[#F5E6D3]">{hi ? 'कीमत संबंधी जानकारी' : 'About these prices'}</p>
-              <p className="mt-1 text-xs leading-5 text-[#8C7B63]">
+              <p className="text-sm font-semibold text-[#F6F1E8]">{hi ? 'कीमत संबंधी जानकारी' : 'About these prices'}</p>
+              <p className="mt-1 text-xs leading-5 text-[#8891A6]">
                 {hi
                   ? 'दरें सरकारी स्रोतों के अनुसार अपडेट की गई हैं। तारीख, विशेष शो और ऑन-साइट शुल्क के कारण अंतिम राशि बदल सकती है।'
                   : 'Rates are updated from government sources. Date, special shows, and on-site charges may change the final amount.'}

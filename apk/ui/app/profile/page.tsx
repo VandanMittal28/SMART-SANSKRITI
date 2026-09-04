@@ -105,10 +105,10 @@ const ACTIVITY_META: Record<
   ProfileActivity['type'],
   { icon: string; color: string }
 > = {
-  scan: { icon: '🏛️', color: '#4B9B8E' },
+  scan: { icon: '🏛️', color: '#63C7BA' },
   quiz: { icon: '🧠', color: '#534AB7' },
-  hunt: { icon: '🏆', color: '#D4893F' },
-  explore: { icon: '🗺️', color: '#C9A84C' },
+  hunt: { icon: '🏆', color: '#C66B4E' },
+  explore: { icon: '🗺️', color: '#D6A84B' },
   chat: { icon: '💬', color: '#7ECDC0' },
 }
 
@@ -253,7 +253,7 @@ export default function ProfilePage() {
       label: 'Monuments',
       value: safeProfile.monuments_visited.length,
       icon: MapPinned,
-      color: '#4B9B8E',
+      color: '#63C7BA',
     },
     {
       label: 'Correct answers',
@@ -265,7 +265,7 @@ export default function ProfilePage() {
       label: 'AI questions',
       value: questionsAsked,
       icon: MessageCircle,
-      color: '#D4893F',
+      color: '#C66B4E',
     },
   ]
   const activityMaximum = Math.max(1, ...activityCounts.map((item) => item.value))
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                   {initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#8C7B63]">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#8891A6]">
                     {level.title}
                   </p>
                   {editingName ? (
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                         }}
                         autoFocus
                         maxLength={50}
-                        className="min-w-0 rounded-xl border border-[#C9A84C]/35 bg-black/25 px-3 py-2 text-lg font-semibold text-[#F5E6D3] outline-none focus:border-[#C9A84C]"
+                        className="min-w-0 rounded-xl border border-[#D6A84B]/35 bg-black/25 px-3 py-2 text-lg font-semibold text-[#F6F1E8] outline-none focus:border-[#D6A84B]"
                         aria-label="Profile name"
                       />
                       <button
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={() => setEditingName(false)}
                         aria-label="Cancel editing"
-                        className="rounded-lg p-2 text-[#C4A882] hover:bg-white/5"
+                        className="rounded-lg p-2 text-[#AEB6C8] hover:bg-white/5"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -364,13 +364,13 @@ export default function ProfilePage() {
                         type="button"
                         onClick={beginNameEdit}
                         aria-label="Edit profile name"
-                        className="rounded-lg p-2 text-[#8C7B63] transition hover:bg-white/5 hover:text-[#F7D88C]"
+                        className="rounded-lg p-2 text-[#8891A6] transition hover:bg-white/5 hover:text-[#F7D88C]"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
                     </div>
                   )}
-                  <p className="mt-1 text-xs text-[#AEB6C8]">Culture Guardian</p>
+                  <p data-no-translate className="mt-1 text-xs text-[#AEB6C8]">@{safeProfile.username || 'explorer'}</p>
                 </div>
               </div>
             </div>
@@ -408,7 +408,7 @@ export default function ProfilePage() {
                   className="min-h-[88px] rounded-xl border border-white/8 bg-[#171F34] p-3"
                 >
                   <item.icon className="h-4 w-4 text-[#F7D88C]" />
-                  <p className="mt-2 text-[10px] uppercase tracking-[0.15em] text-[#8C7B63]">
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.15em] text-[#8891A6]">
                     {item.label}
                   </p>
                   <p className="mt-1 text-xl font-bold text-[#F6F1E8]">
@@ -424,25 +424,25 @@ export default function ProfilePage() {
           <AppCard>
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#8C7B63]">
+                <p className="text-xs uppercase tracking-[0.18em] text-[#8891A6]">
                   {t('current_level')}
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-[#F5E6D3]">
+                <h2 className="mt-1 text-lg font-semibold text-[#F6F1E8]">
                   {level.title}
                 </h2>
-                <p className="mt-1 text-sm text-[#C4A882]">
+                <p className="mt-1 text-sm text-[#AEB6C8]">
                   {level.next
                     ? `${xpToNext} XP until your next level`
                     : 'You reached the highest heritage level'}
                 </p>
               </div>
-              <div className="rounded-full border border-[#C9A84C]/20 bg-[#C9A84C]/12 px-3 py-1 text-sm font-semibold text-[#F7D88C]">
+              <div className="rounded-full border border-[#D6A84B]/20 bg-[#D6A84B]/12 px-3 py-1 text-sm font-semibold text-[#F7D88C]">
                 {progress}%
               </div>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-white/8">
               <div
-                className="h-full rounded-full bg-[linear-gradient(135deg,#C9A84C,#D4893F)] transition-all duration-500"
+                className="h-full rounded-full bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -450,12 +450,12 @@ export default function ProfilePage() {
 
           <AppCard>
             <div className="flex items-center gap-3">
-              <Flame className="h-5 w-5 text-[#D4893F]" />
+              <Flame className="h-5 w-5 text-[#C66B4E]" />
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#8C7B63]">
+                <p className="text-xs uppercase tracking-[0.18em] text-[#8891A6]">
                   Journey signal
                 </p>
-                <p className="mt-1 text-sm font-semibold text-[#F5E6D3]">
+                <p className="mt-1 text-sm font-semibold text-[#F6F1E8]">
                   {recentActivity.length > 0
                     ? `${recentActivity.length} recent learning moments`
                     : 'Ready for your first discovery'}
@@ -465,27 +465,27 @@ export default function ProfilePage() {
           </AppCard>
         </div>
 
-        <AppCard className="border-[#C9A84C]/25 bg-[linear-gradient(135deg,rgba(201,168,76,0.11),rgba(75,155,142,0.08))]">
+        <AppCard className="border-[#D6A84B]/25 bg-[linear-gradient(135deg,rgba(201,168,76,0.11),rgba(75,155,142,0.08))]">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-2xl">
                 {nextStep.icon}
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#C9A84C]">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#D6A84B]">
                   {nextStep.eyebrow}
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-[#F5E6D3]">
+                <h2 className="mt-1 text-lg font-semibold text-[#F6F1E8]">
                   {nextStep.title}
                 </h2>
-                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#C4A882]">
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#AEB6C8]">
                   {nextStep.description}
                 </p>
               </div>
             </div>
             <Button
               asChild
-              className="shrink-0 rounded-xl bg-[#C9A84C] text-[#0E0916]"
+              className="shrink-0 rounded-xl bg-[#D6A84B] text-[#0E0916]"
             >
               <a href={nextStep.href}>{nextStep.action}</a>
             </Button>
@@ -497,8 +497,8 @@ export default function ProfilePage() {
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-[#F7D88C]" />
               <div>
-                <h2 className="font-semibold text-[#F5E6D3]">Learning pattern</h2>
-                <p className="text-xs text-[#8C7B63]">
+                <h2 className="font-semibold text-[#F6F1E8]">Learning pattern</h2>
+                <p className="text-xs text-[#8891A6]">
                   Calculated from your real app activity
                 </p>
               </div>
@@ -507,11 +507,11 @@ export default function ProfilePage() {
               {activityCounts.map((item) => (
                 <div key={item.label}>
                   <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-[#C4A882]">
+                    <span className="flex items-center gap-2 text-[#AEB6C8]">
                       <item.icon className="h-4 w-4" style={{ color: item.color }} />
                       {item.label}
                     </span>
-                    <span className="font-semibold text-[#F5E6D3]">{item.value}</span>
+                    <span className="font-semibold text-[#F6F1E8]">{item.value}</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/8">
                     <div
@@ -532,8 +532,8 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <Compass className="h-5 w-5 text-[#7ECDC0]" />
                 <div>
-                  <h2 className="font-semibold text-[#F5E6D3]">Recent journey</h2>
-                  <p className="text-xs text-[#8C7B63]">Your latest discoveries</p>
+                  <h2 className="font-semibold text-[#F6F1E8]">Recent journey</h2>
+                  <p className="text-xs text-[#8891A6]">Your latest discoveries</p>
                 </div>
               </div>
             </div>
@@ -553,17 +553,17 @@ export default function ProfilePage() {
                         {meta.icon}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#F5E6D3]">
+                        <p className="truncate text-sm font-semibold text-[#F6F1E8]">
                           {item.title}
                         </p>
                         {!!item.detail && (
-                          <p className="truncate text-xs text-[#8C7B63]">
+                          <p className="truncate text-xs text-[#8891A6]">
                             {item.detail}
                           </p>
                         )}
                       </div>
                       {!!item.xp && (
-                        <span className="shrink-0 text-xs font-semibold text-[#C9A84C]">
+                        <span className="shrink-0 text-xs font-semibold text-[#D6A84B]">
                           +{item.xp} XP
                         </span>
                       )}
@@ -574,10 +574,10 @@ export default function ProfilePage() {
             ) : (
               <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
                 <p className="text-2xl">🏛️</p>
-                <p className="mt-2 text-sm font-semibold text-[#F5E6D3]">
+                <p className="mt-2 text-sm font-semibold text-[#F6F1E8]">
                   Your journey starts here
                 </p>
-                <p className="mt-1 text-xs text-[#8C7B63]">
+                <p className="mt-1 text-xs text-[#8891A6]">
                   Scans, quizzes, hunts, and questions will appear here.
                 </p>
               </div>
@@ -588,16 +588,16 @@ export default function ProfilePage() {
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-[#F5E6D3]">
+              <h2 className="text-lg font-semibold text-[#F6F1E8]">
                 Badge progress
               </h2>
-              <p className="text-xs text-[#8C7B63]">
+              <p className="text-xs text-[#8891A6]">
                 Every badge reflects your actual journey
               </p>
             </div>
             <a
               href="/badges"
-              className="text-xs font-semibold text-[#C9A84C] hover:text-[#F7D88C]"
+              className="text-xs font-semibold text-[#D6A84B] hover:text-[#F7D88C]"
             >
               View all
             </a>
@@ -610,25 +610,25 @@ export default function ProfilePage() {
                 <div
                   key={badge.id}
                   className={`app-card rounded-[20px] p-4 ${
-                    earned ? 'border-[#C9A84C]/30 bg-[#C9A84C]/10' : ''
+                    earned ? 'border-[#D6A84B]/30 bg-[#D6A84B]/10' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{earned ? badge.icon : '🔒'}</div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-[#F5E6D3]">{badge.title}</p>
-                        <span className="text-xs text-[#8C7B63]">
+                        <p className="font-semibold text-[#F6F1E8]">{badge.title}</p>
+                        <span className="text-xs text-[#8891A6]">
                           {Math.min(badge.current(safeProfile), badge.target)}/{badge.target}
                         </span>
                       </div>
-                      <p className="text-sm text-[#C4A882]">{badge.desc}</p>
+                      <p className="text-sm text-[#AEB6C8]">{badge.desc}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-[#8C7B63]" />
+                    <ChevronRight className="h-4 w-4 text-[#8891A6]" />
                   </div>
                   <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
                     <div
-                      className="h-full rounded-full bg-[#C9A84C] transition-all duration-500"
+                      className="h-full rounded-full bg-[#D6A84B] transition-all duration-500"
                       style={{ width: `${badgeProgress * 100}%` }}
                     />
                   </div>
@@ -645,10 +645,10 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <Globe className="h-5 w-5 text-[#F7D88C]" />
               <div>
-                <p className="text-sm font-semibold text-[#F5E6D3]">
+                <p className="text-sm font-semibold text-[#F6F1E8]">
                   {t('language_label')}
                 </p>
-                <p data-no-translate className="text-xs text-[#C4A882]">
+                <p data-no-translate className="text-xs text-[#AEB6C8]">
                   {getLanguageConfig(lang).nativeName}
                 </p>
               </div>
@@ -665,15 +665,15 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <Target className="h-5 w-5 text-[#7ECDC0]" />
               <div>
-                <p className="text-sm font-semibold text-[#F5E6D3]">
+                <p className="text-sm font-semibold text-[#F6F1E8]">
                   {t('mode_title')}
                 </p>
-                <p className="text-xs text-[#C4A882]">
+                <p className="text-xs text-[#AEB6C8]">
                   {userType === 'student' ? 'Student mode' : 'Tourist mode'}
                 </p>
               </div>
             </div>
-            <span className="text-xs font-semibold text-[#C9A84C]">
+            <span className="text-xs font-semibold text-[#D6A84B]">
               {t('mode_switch')}
             </span>
           </button>
@@ -685,7 +685,7 @@ export default function ProfilePage() {
               <UserRoundPlus className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[#F5E6D3]">Profiles on this device</p>
+              <p className="font-semibold text-[#F6F1E8]">Profiles on this device</p>
               <p className="mt-1 text-sm text-[#9CBAB4]">
                 {availableProfiles.length} profile{availableProfiles.length === 1 ? '' : 's'} saved. Each profile keeps separate XP, badges, chats, and journey history.
               </p>
@@ -718,10 +718,10 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <Trophy className="h-5 w-5 text-[#F7D88C]" />
             <div className="flex-1">
-              <p className="font-semibold text-[#F5E6D3]">
+              <p className="font-semibold text-[#F6F1E8]">
                 Your progress belongs to you
               </p>
-              <p className="text-sm text-[#C4A882]">
+              <p className="text-sm text-[#AEB6C8]">
                 XP and activity update automatically as you use recognition,
                 quizzes, hunts, exploration, and chat.
               </p>

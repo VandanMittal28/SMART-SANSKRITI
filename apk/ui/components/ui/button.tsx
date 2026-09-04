@@ -5,19 +5,19 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#F2CA50]/40",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-[#241A00] hover:opacity-80 active:scale-95 shadow-[0_12px_30px_rgba(242,202,80,0.18)]',
+        default: 'bg-primary text-primary-foreground hover:opacity-90 active:scale-95 shadow-[0_12px_30px_rgba(214,168,75,0.18)]',
         destructive:
-          'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
+          'bg-destructive text-destructive-foreground hover:opacity-90 focus-visible:ring-destructive/40',
         outline:
-          'border border-white/5 bg-[rgba(31,31,38,0.45)] text-[#F5E6D3] backdrop-blur-xl hover:opacity-80',
+          'border border-border bg-card/60 text-foreground backdrop-blur-xl hover:bg-card',
         secondary:
-          'bg-[rgba(42,41,49,0.9)] text-[#F5E6D3] hover:opacity-80',
+          'bg-secondary text-secondary-foreground hover:opacity-90',
         ghost:
-          'text-[#D0C5AF] hover:bg-white/5 hover:text-[#F5E6D3]',
+          'text-muted-foreground hover:bg-white/5 hover:text-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
