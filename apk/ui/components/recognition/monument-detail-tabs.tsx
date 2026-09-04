@@ -232,13 +232,15 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
   return (
     <div style={{ marginTop: 20 }}>
       {/* Tab Bar */}
-      <div style={{
+      <div role="tablist" aria-label="Monument details" style={{
         display: 'flex', gap: 4, overflowX: 'auto', background: '#11182B', padding: 4, borderRadius: 12,
         marginBottom: 12, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
       }}>
         {TAB_ITEMS.map(tab => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
               minHeight: 42, padding: '9px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer',

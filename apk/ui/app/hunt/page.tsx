@@ -961,7 +961,7 @@ export default function HuntPage() {
                   <div className="fixed md:static bottom-0 left-0 w-full md:w-auto max-h-[50vh] md:max-h-none overflow-y-auto z-50 bg-[#171F34] md:bg-[#171F34]/90 border-t md:border border-[#D6A84B]/20 md:rounded-xl rounded-t-2xl p-4 md:p-3 animate-slide-up md:mt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:shadow-none">
                     <div className="flex md:hidden justify-between items-center mb-4">
                       <span className="text-[#D6A84B] font-bold text-lg">🏆 Scoreboard</span>
-                      <button onClick={() => setShowLeaderboard(false)} className="text-[#AEB6C8] text-2xl p-2 min-h-[44px] leading-none">&times;</button>
+                      <button onClick={() => setShowLeaderboard(false)} aria-label="Close scoreboard" className="text-[#AEB6C8] text-2xl p-2 min-h-[44px] leading-none">&times;</button>
                     </div>
                     {leaderboard.map((p, i) => (
                       <div key={i} className={`flex items-center justify-between p-2 md:p-2 rounded-lg mb-1 ${p.isUser ? 'bg-[#D6A84B]/10 border border-[#D6A84B]/30' : 'bg-transparent border border-transparent'}`}>
@@ -1025,8 +1025,7 @@ export default function HuntPage() {
                 <button
                   onClick={verifyClueLocation}
                   disabled={checkingGeo}
-                  className={`w-full p-3 md:p-4 min-h-[48px] rounded-xl flex items-center justify-center gap-2 text-white text-sm md:text-base font-bold transition-all duration-300 border-none ${checkingGeo ? 'bg-[#7C3AED]/30 cursor-not-allowed' : 'gold-gradient cursor-pointer'}`}
-                  style={{ background: checkingGeo ? 'rgba(83,74,183,0.3)' : 'linear-gradient(135deg, #7C3AED, #7C3AED)' }}
+                  className={`w-full p-3 md:p-4 min-h-[48px] rounded-xl flex items-center justify-center gap-2 text-[#080D1D] text-sm md:text-base font-bold transition-all duration-300 border-none ${checkingGeo ? 'bg-[#7C3AED]/30 cursor-not-allowed text-white' : 'gold-gradient cursor-pointer'}`}
                 >
                   {checkingGeo ? (
                     <>📍 Verifying location...</>
