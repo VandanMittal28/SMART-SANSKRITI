@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
+import { Check, Home, Trophy, Zap } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
+import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
 import { useLang } from "@/lib/languageContext"
@@ -1416,35 +1418,35 @@ export default function ExplorePage() {
     const totalXP = activeZones.reduce((sum, z) => sum + z.xp, 0)
     return (
       <AppShell>
-        <style>{`@keyframes confetti { 0% { transform: translateY(-20px) scale(0.8); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }`}</style>
-        <div style={{ textAlign: 'center', padding: '40px 20px', animation: 'confetti 0.6s ease' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏛️</div>
-          <h1 style={{ color: '#D6A84B', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '32px', marginBottom: '8px' }}>
-            Explorer Complete!
-          </h1>
-          <p style={{ color: '#F6F1E8', fontSize: '16px', marginBottom: '24px' }}>
-            You have explored all {activeZones.length} historic zones of the {MONUMENT_NAMES[exploreMonumentId] || 'Monument'}
+        <div className="screen-gutter flex flex-col items-center py-10 text-center animate-slide-up">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#D6A84B]/12 text-[#D6A84B]">
+            <Trophy className="h-8 w-8" />
+          </span>
+          <h1 className="mt-4 font-heritage text-2xl font-bold text-[#F6F1E8]">Explorer Complete!</h1>
+          <p className="mt-2 max-w-[300px] text-sm leading-6 text-[#AEB6C8]">
+            You explored all {activeZones.length} historic zones of the {MONUMENT_NAMES[exploreMonumentId] || 'Monument'}
           </p>
-          <div style={{ fontSize: '48px', fontWeight: '700', color: '#D6A84B', marginBottom: '8px' }}>
-            +{totalXP} XP
+          <div className="mt-6 flex items-center gap-1.5 text-4xl font-bold text-[#D6A84B]">
+            <Zap className="h-7 w-7 fill-[#D6A84B]" />+{totalXP}
           </div>
-          <p style={{ color: '#AEB6C8', marginBottom: '32px' }}>Total XP earned this exploration</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '32px' }}>
+          <p className="mt-1 text-xs text-[#8891A6]">Total XP earned this exploration</p>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {activeZones.map(z => (
-              <div key={z.id} style={{
-                background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)',
-                borderRadius: '20px', padding: '8px 16px', color: '#D6A84B', fontSize: '14px'
-              }}>
-                ✅ {z.emoji} {z.name}
-              </div>
+              <span
+                key={z.id}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#D6A84B]/25 bg-[#D6A84B]/10 px-3 py-1.5 text-xs font-semibold text-[#D6A84B]"
+              >
+                <Check className="h-3 w-3" /> {z.emoji} {z.name}
+              </span>
             ))}
           </div>
-          <button onClick={() => router.push('/')} style={{
-            background: 'linear-gradient(135deg,#D6A84B,#C66B4E)', borderRadius: '16px',
-            padding: '14px 32px', color: '#080D1D', fontWeight: '700', fontSize: '16px',
-            border: 'none', cursor: 'pointer'
-          }}>
-            🏠 Back to Home
+
+          <button
+            onClick={() => router.push('/')}
+            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] px-8 py-3.5 text-sm font-bold text-[#080D1D] transition-transform active:scale-95"
+          >
+            <Home className="h-4 w-4" /> Back to Home
           </button>
         </div>
       </AppShell>
@@ -1455,8 +1457,9 @@ export default function ExplorePage() {
   if (!hasMounted) {
     return (
       <AppShell>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-          <p style={{ color: '#AEB6C8', fontSize: '13px' }}>Loading explorer...</p>
+        <div className="flex items-center justify-center gap-2.5 py-16">
+          <Spinner className="size-5 text-[#D6A84B]" />
+          <p className="text-sm text-[#AEB6C8]">Loading explorer…</p>
         </div>
       </AppShell>
     )

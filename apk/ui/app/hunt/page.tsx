@@ -1,14 +1,16 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
-import { MapPin, Trophy, ChevronDown, Eye, EyeOff, Crosshair, Lightbulb, Volume2 } from "lucide-react"
+import { MapPin, Trophy, ChevronDown, Eye, EyeOff, Crosshair, Lightbulb, Volume2, Share2, Compass, Medal } from "lucide-react"
 import api from "@/lib/apiClient"
 import { Toast, useToast } from "@/components/Toast"
 import { useLang } from "@/lib/languageContext"
 import { getMonument, saveMonument, clearMonument } from "@/lib/monumentStore"
 import { useAuth } from "@/lib/authContext"
 import { addXP, computeAndSaveBadges } from "@/lib/authClient"
+import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
 
 // ─── Haversine distance (meters) ───
@@ -465,9 +467,28 @@ function LoadingSpinner({ text }: { text?: string }) {
 // ═══════════════════════════════════════════
 export default function HuntPage() {
   const lastMonument = getMonument()
+  const router = useRouter()
   const { user, profile, setProfile } = useAuth()
   const { toast, showToast, hideToast } = useToast()
   const { t } = useLang()
+
+  const shareAchievement = useCallback(async (monumentLabel: string, totalXp: number) => {
+    const text = `I just completed the ${monumentLabel} Treasure Hunt on Sanskriti AI and earned ${totalXp} XP! 🏆`
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ text, title: 'Sanskriti AI — Heritage Hunter' })
+        return
+      } catch {
+        // User cancelled the native share sheet — fall through to clipboard.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      showToast('Copied to clipboard!')
+    } catch {
+      showToast('Could not share right now')
+    }
+  }, [showToast])
 
   // ─── Selection state ───
   const monumentSelected = true // always start directly into hunt (no blocking gate)
@@ -817,47 +838,65 @@ export default function HuntPage() {
   // RENDER: Hunt Completed
   // ═══════════════
   if (huntCompleted) {
+    const totalXp = 500 + xpEarned
     return (
       <AppShell>
-        <div className="p-4 lg:p-8 animate-fade-in">
+        <div className="screen-gutter flex flex-col items-center py-8 text-center animate-fade-in">
           {demoMode && (
-            <div style={{ background: 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(212,137,63,0.15))', border: '1px solid rgba(201,168,76,0.5)', borderRadius: 10, padding: '8px 16px', marginBottom: 16, textAlign: 'center', color: '#E8BE69', fontSize: 13, fontWeight: 700 }}>
-              🎮 DEMO MODE — Geo-fence bypassed | Synthetic players active
+            <div className="mb-4 w-full rounded-xl border border-[#D6A84B]/40 bg-[linear-gradient(135deg,rgba(214,168,75,0.16),rgba(198,107,78,0.12))] px-4 py-2 text-xs font-bold text-[#E8BE69]">
+              DEMO MODE — Geo-fence bypassed · Synthetic players active
             </div>
           )}
-          <div className="glass-card rounded-xl p-8 text-center animate-fade-in">
-            <div className="text-6xl mb-4">🏆</div>
-            <h2 className="font-serif text-2xl font-bold text-[#D6A84B] mb-2">{t('heritage_hunter')}</h2>
-            <p className="text-[#AEB6C8] mb-4">You completed the Taj Mahal Treasure Hunt!</p>
-            <div className="inline-block px-4 py-2 bg-[#7C3AED]/20 rounded-full mb-6 animate-xp-pulse">
-              <span className="text-[#7C3AED] font-bold">⚡ +500 XP Bonus + {xpEarned} XP Total</span>
-            </div>
-            <div className="glass-card rounded-lg p-4 inline-block mb-6">
-              <Trophy className="w-12 h-12 text-[#D6A84B] mx-auto mb-2" />
-              <p className="text-[#D6A84B] font-semibold">Heritage Hunter Badge Unlocked</p>
-            </div>
-            {/* Final leaderboard */}
-            <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 14, padding: 16, marginTop: 16, maxWidth: 400, margin: '16px auto', textAlign: 'left' }}>
-              <h3 style={{ color: '#D6A84B', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 16, marginBottom: 12, textAlign: 'center' }}>🏆 Final Standings</h3>
+
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#D6A84B]/12 text-[#D6A84B]">
+            <Trophy className="h-8 w-8" />
+          </span>
+          <h1 className="mt-4 font-heritage text-2xl font-bold text-[#F6F1E8]">{t('heritage_hunter')}</h1>
+          <p className="mt-1.5 text-sm text-[#AEB6C8]">You completed the {monumentName} Treasure Hunt!</p>
+
+          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#7C3AED]/15 px-4 py-1.5 text-sm font-bold text-[#B9A2F5] animate-xp-pulse">
+            +500 XP Bonus · {totalXp} XP Total
+          </span>
+
+          <div className="app-card mt-6 flex flex-col items-center gap-1 rounded-2xl px-6 py-5">
+            <Medal className="h-9 w-9 text-[#D6A84B]" />
+            <p className="text-sm font-semibold text-[#D6A84B]">Heritage Hunter Badge Unlocked</p>
+          </div>
+
+          <div className="app-card mt-4 w-full rounded-2xl p-4 text-left">
+            <h2 className="mb-3 text-center font-heritage text-sm font-bold text-[#D6A84B]">Final Standings</h2>
+            <div className="flex flex-col gap-1">
               {leaderboard.map((p, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px',
-                  borderRadius: 10, marginBottom: 4,
-                  background: p.isUser ? 'rgba(201,168,76,0.12)' : 'transparent',
-                  border: p.isUser ? '1px solid rgba(201,168,76,0.4)' : '1px solid transparent',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 14, width: 24 }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}</span>
-                    <span style={{ color: p.isUser ? '#D6A84B' : '#F6F1E8', fontSize: 14, fontWeight: p.isUser ? 700 : 500 }}>{p.avatar} {p.name}</span>
+                <div
+                  key={i}
+                  className={cn(
+                    'flex items-center justify-between rounded-lg px-3 py-2',
+                    p.isUser ? 'border border-[#D6A84B]/40 bg-[#D6A84B]/12' : 'border border-transparent',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 text-sm">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
+                    <span className={cn('text-sm', p.isUser ? 'font-bold text-[#D6A84B]' : 'font-medium text-[#F6F1E8]')}>{p.avatar} {p.name}</span>
                   </div>
-                  <div style={{ color: '#9B92F0', fontSize: 13, fontWeight: 700 }}>⚡ {p.xp} XP</div>
+                  <span className="text-xs font-bold text-[#B9A2F5]">{p.xp} XP</span>
                 </div>
               ))}
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-              <button className="px-6 py-3 border border-[#D6A84B]/50 text-[#D6A84B] font-semibold rounded-xl transition-all duration-300 hover:bg-[#D6A84B]/10">{t('share_achievement')}</button>
-              <button className="px-6 py-3 gold-gradient text-[#080D1D] font-semibold rounded-xl transition-all duration-300 hover:scale-105">{t('explore_more')}</button>
-            </div>
+          </div>
+
+          <div className="mt-6 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <button
+              onClick={() => void shareAchievement(monumentName, totalXp)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D6A84B]/50 px-6 py-3 text-sm font-semibold text-[#D6A84B] transition-colors hover:bg-[#D6A84B]/10"
+            >
+              <Share2 className="h-4 w-4" /> {t('share_achievement')}
+            </button>
+            <button
+              onClick={() => router.push('/explore')}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] px-6 py-3 text-sm font-semibold text-[#080D1D] transition-transform active:scale-95"
+            >
+              <Compass className="h-4 w-4" /> {t('explore_more')}
+            </button>
           </div>
         </div>
         {toast && <Toast message={toast} onDone={hideToast} />}
