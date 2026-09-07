@@ -1,3 +1,5 @@
+import { MONUMENTS } from '@/lib/monumentData'
+
 const TAJ_FACTS = {
   built: 'The Taj Mahal was commissioned by Shah Jahan in 1632 and the main mausoleum was completed in 1648.',
   builder: 'Mughal emperor Shah Jahan commissioned the Taj Mahal in memory of Mumtaz Mahal.',
@@ -21,20 +23,46 @@ export function monumentOnlyRefusal(language = 'en') {
     : 'I only answer questions about monuments and heritage sites.'
 }
 
-export function offlineHeritageAnswer(question: string, monumentId = 'taj-mahal', language = 'en') {
+// Extra short forms for monuments whose catalog name carries a city suffix
+// or an alternate common spelling, so a name mentioned in free text is still
+// recognised even without an explicit monumentId (e.g. the general chat).
+const MONUMENT_NAME_ALIASES: Record<string, string[]> = {
+  'golden-temple': ['golden temple'],
+  'qutub-minar': ['qutb minar'],
+  'meenakshi': ['meenakshi temple'],
+}
+
+function detectMonumentId(question: string): string | undefined {
+  const normalized = question.toLowerCase()
+  for (const [id, data] of Object.entries(MONUMENTS)) {
+    const names = [data.name.toLowerCase(), ...(MONUMENT_NAME_ALIASES[id] ?? [])]
+    if (names.some(name => normalized.includes(name))) return id
+  }
+  return undefined
+}
+
+export function offlineHeritageAnswer(question: string, monumentId = '', language = 'en') {
   const normalized = question.toLowerCase()
   let answer: string
 
-  if (monumentId === 'taj-mahal' && /when|built|year|बना|निर्माण/.test(normalized)) answer = TAJ_FACTS.built
-  else if (monumentId === 'taj-mahal' && /who|builder|commission|किसने/.test(normalized)) answer = TAJ_FACTS.builder
-  else if (monumentId === 'taj-mahal' && /legend|story|कहानी|किंवदंती/.test(normalized)) answer = TAJ_FACTS.legend
+  const resolvedId = monumentId || detectMonumentId(question)
+  const monument = resolvedId ? MONUMENTS[resolvedId] : undefined
+
+  if (resolvedId === 'taj-mahal' && /when|built|year|बना|निर्माण/.test(normalized)) answer = TAJ_FACTS.built
+  else if (resolvedId === 'taj-mahal' && /who|builder|commission|किसने/.test(normalized)) answer = TAJ_FACTS.builder
+  else if (resolvedId === 'taj-mahal' && /legend|story|कहानी|किंवदंती/.test(normalized)) answer = TAJ_FACTS.legend
+  else if (monument && /when|built|year|who|builder|commission|बना|निर्माण|किसने/.test(normalized)) answer = monument.timePeriods.construction
   else if (/best time|visit|crowd|कब|समय/.test(normalized)) answer = TAJ_FACTS.visit
   else if (/ticket|entry|fee|price|टिकट|शुल्क/.test(normalized)) answer = TAJ_FACTS.ticket
   else if (/sustain|responsible|environment|eco|पर्यावरण/.test(normalized)) {
     answer = 'Carry a reusable bottle, use marked bins, avoid touching historic surfaces, follow photography rules, choose local guides and crafts, and use public transport where practical.'
-  } else {
+  } else if (monument) {
+    answer = `${monument.description}. ${monument.timePeriods.modern}`
+  } else if (monumentId) {
     const monumentName = monumentId.replace(/-/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
     answer = `${monumentName} is part of India’s living heritage. The offline guide has essential facts available; connect the future Sanskriti AI service for a detailed answer to this specific question.`
+  } else {
+    answer = 'I could not reach the AI guide right now, and I need to know which monument you mean to answer offline. Try naming it directly, like "who built the Red Fort?"'
   }
 
   if (language === 'hi') {
@@ -42,6 +70,7 @@ export function offlineHeritageAnswer(question: string, monumentId = 'taj-mahal'
     if (answer === TAJ_FACTS.builder) return 'मुग़ल सम्राट शाहजहाँ ने मुमताज़ महल की याद में ताजमहल बनवाया था।'
     if (answer === TAJ_FACTS.visit) return 'कम भीड़ और मुलायम रोशनी के लिए खुलने के समय या सूर्योदय के आसपास जाएँ। ताजमहल आम तौर पर शुक्रवार को सामान्य दर्शकों के लिए बंद रहता है।'
     if (answer === TAJ_FACTS.ticket) return 'टिकट की कीमत और प्रवेश नियम बदल सकते हैं, इसलिए जाने से पहले भारतीय पुरातत्व सर्वेक्षण के आधिकारिक टिकट पोर्टल पर जाँच करें।'
+    if (!resolvedId) return 'अभी AI गाइड से जवाब नहीं मिल सका, और ऑफ़लाइन जवाब देने के लिए मुझे पता होना चाहिए आप किस स्मारक की बात कर रहे हैं। सीधे नाम लेकर पूछें, जैसे "लाल किला किसने बनवाया?"'
   }
 
   return answer

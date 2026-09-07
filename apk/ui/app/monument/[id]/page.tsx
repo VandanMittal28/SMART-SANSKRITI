@@ -2,6 +2,7 @@ import MonumentPageClient from './monument-page-client'
 
 const MONUMENT_IDS = [
   'taj-mahal',
+  'agra-fort',
   'red-fort',
   'qutub-minar',
   'gateway-india',

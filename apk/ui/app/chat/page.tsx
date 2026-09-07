@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { AppShell } from "@/components/app-shell"
-import { Send, GraduationCap, Compass, Landmark, Mic, MicOff } from "lucide-react"
+import { Send, GraduationCap, Compass, Landmark, Mic, MicOff, Volume2 } from "lucide-react"
 import api from "@/lib/apiClient"
 import { Toast, useToast } from "@/components/Toast"
 import { useAuth } from "@/lib/authContext"
@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils"
 import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache'
 import { recordingToWavBase64 } from '@/lib/audio'
 import { isMonumentQuestion, monumentOnlyRefusal, offlineHeritageAnswer } from '@/lib/offlineHeritage'
-import { hasNativeNvidia, recordPhoneMicrophone, transcribeAudioNative } from '@/lib/nativeNvidia'
+import { hasNativeNvidia, recordPhoneMicrophone, transcribeAudioNative, synthesizeNarrationNative } from '@/lib/nativeNvidia'
+import { getNvidiaNarrationVoice } from '@/lib/narrationProfiles'
 
 interface Message { id: string | number; role: "assistant" | "user"; content: string }
 
@@ -24,22 +25,27 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const monumentId = "taj-mahal"
+  // No monument is preselected here — this is the general Ask AI chat reachable
+  // from anywhere in the app, so the assistant infers the monument from each
+  // question instead of assuming one.
+  const monumentId = ""
   const [listening, setListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastWasVoiceRef = useRef(false)
   const voiceRecorderRef = useRef<MediaRecorder | null>(null)
   const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const voiceAudioRef = useRef<HTMLAudioElement | null>(null)
+  const voiceAudioUrlRef = useRef<string | null>(null)
   const { toast, showToast, hideToast } = useToast()
   const { user, profile } = useAuth()
   const { userType } = useUser()
 
-  // ── Robust Browser TTS ─────────────────────────────────
-  const speakText = useCallback((text: string) => {
-    if (!window.speechSynthesis) return
+  // ── Browser TTS fallback (used when the native NVIDIA voice is unavailable,
+  // e.g. running in a plain browser instead of the bundled Android app) ────
+  const speakWithBrowserTts = useCallback((text: string) => {
+    if (!window.speechSynthesis) { setIsSpeaking(false); return }
     window.speechSynthesis.cancel()
-    setIsSpeaking(true)
 
     const doSpeak = () => {
       const voices = window.speechSynthesis.getVoices()
@@ -76,6 +82,56 @@ export default function ChatPage() {
       doSpeak()
     }
   }, [lang])
+
+  const stopSpeaking = useCallback(() => {
+    window.speechSynthesis?.cancel()
+    if (voiceAudioRef.current) {
+      voiceAudioRef.current.pause()
+      voiceAudioRef.current.src = ''
+      voiceAudioRef.current = null
+    }
+    if (voiceAudioUrlRef.current) {
+      URL.revokeObjectURL(voiceAudioUrlRef.current)
+      voiceAudioUrlRef.current = null
+    }
+  }, [])
+
+  // ── Voice reply: the real device speaks answers through the same native
+  // NVIDIA voice used everywhere else in the app (e.g. Yatrik's greeting).
+  // Browser speechSynthesis is only a fallback for non-bundled environments,
+  // since Android WebView usually has no usable built-in TTS voices.
+  const speakText = useCallback(async (text: string) => {
+    stopSpeaking()
+    setIsSpeaking(true)
+    const voice = getNvidiaNarrationVoice(monumentId || 'yatrik-guide', lang)
+
+    if (hasNativeNvidia() && voice) {
+      try {
+        const audioBase64 = await synthesizeNarrationNative(text, voice.language, voice.voice)
+        const binary = window.atob(audioBase64)
+        const bytes = new Uint8Array(binary.length)
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+        const audioUrl = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+        const audio = new Audio(audioUrl)
+        voiceAudioRef.current = audio
+        voiceAudioUrlRef.current = audioUrl
+        await new Promise<void>((resolve, reject) => {
+          audio.onended = () => resolve()
+          audio.onerror = () => reject(new Error('Native voice reply could not be played.'))
+          audio.play().catch(reject)
+        })
+        voiceAudioRef.current = null
+        URL.revokeObjectURL(audioUrl)
+        voiceAudioUrlRef.current = null
+        setIsSpeaking(false)
+        return
+      } catch (error) {
+        console.warn('Native voice reply failed; using the device voice instead:', error)
+      }
+    }
+
+    speakWithBrowserTts(text)
+  }, [lang, monumentId, speakWithBrowserTts, stopSpeaking])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, loading])
 
@@ -126,13 +182,12 @@ export default function ChatPage() {
     const cachedAnswer = getCache(cacheKey, CACHE_DURATION.chat)
     
     if (cachedAnswer) {
-      // ✨ Voice in → voice out ONLY (no text bubble)
+      // Voice or text in, the reply always gets a text bubble so the visitor
+      // can confirm what was heard/answered; voice questions are also spoken.
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: cachedAnswer + ' ⚡' }])
       if (lastWasVoiceRef.current) {
-        speakText(cachedAnswer)
+        void speakText(cachedAnswer)
         lastWasVoiceRef.current = false
-      } else {
-        // Text in → text out only + lightning bolt for cached result
-        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: cachedAnswer + ' ⚡' }])
       }
       await persistExchange(trimmed, cachedAnswer)
       setLoading(false)
@@ -146,29 +201,35 @@ export default function ChatPage() {
       // Cache the response
       setCache(cacheKey, aiAnswer)
 
-      // ✨ Voice in → voice out ONLY (no text bubble)
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: aiAnswer }])
       if (lastWasVoiceRef.current) {
-        speakText(aiAnswer)
+        void speakText(aiAnswer)
         lastWasVoiceRef.current = false
-      } else {
-        // Text in → text out only
-        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: aiAnswer }])
       }
 
       await persistExchange(trimmed, aiAnswer)
     } catch {
       const fallbackAnswer = offlineHeritageAnswer(trimmed, monumentId, lang)
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: fallbackAnswer }])
       if (lastWasVoiceRef.current) {
-        speakText(fallbackAnswer)
+        void speakText(fallbackAnswer)
         lastWasVoiceRef.current = false
-      } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: fallbackAnswer }])
       }
       await persistExchange(trimmed, fallbackAnswer)
     } finally { setLoading(false) }
   }
 
   const handleSend = () => sendMessage(input.trim())
+
+  const voiceErrorToast = (error: unknown) => {
+    const message = error instanceof Error ? error.message : ''
+    if (/permission/i.test(message)) {
+      return lang === 'hi'
+        ? 'माइक्रोफ़ोन की अनुमति नहीं मिली। कृपया सेटिंग्स में जाकर माइक्रोफ़ोन एक्सेस चालू करें।'
+        : 'Microphone access was not granted. Enable it for this app in Settings to use voice.'
+    }
+    return lang === 'hi' ? 'आवाज़ समझ नहीं आई।' : 'Could not understand the recording.'
+  }
 
   // ── Voice Input (NVIDIA speech model) ─────────────────
   const startVoice = async () => {
@@ -189,7 +250,7 @@ export default function ChatPage() {
         await sendMessage(spokenText)
       } catch (error) {
         console.error('Voice transcription failed:', error)
-        showToast(lang === 'hi' ? 'आवाज़ समझ नहीं आई।' : 'Could not understand the recording.')
+        showToast(voiceErrorToast(error))
       } finally {
         setListening(false)
       }
@@ -242,7 +303,7 @@ export default function ChatPage() {
           await sendMessage(spokenText)
         } catch (error) {
           console.error('Voice transcription failed:', error)
-          showToast(lang === 'hi' ? 'आवाज़ समझ नहीं आई।' : 'Could not understand the recording.')
+          showToast(voiceErrorToast(error))
         }
       }
 
@@ -256,11 +317,11 @@ export default function ChatPage() {
   // Cleanup TTS on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis?.cancel()
+      stopSpeaking()
       if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current)
       if (voiceRecorderRef.current?.state === 'recording') voiceRecorderRef.current.stop()
     }
-  }, [])
+  }, [stopSpeaking])
 
   const modeCopy = userType === 'student' ? t('student_mode') : t('mode_title')
   const ModeIcon = userType === 'student' ? GraduationCap : Compass
@@ -276,9 +337,20 @@ export default function ChatPage() {
             </span>
             <h1 className="font-heritage text-lg font-bold text-[#F6F1E8]">{t('ai_chatbot')}</h1>
           </div>
-          <span className="flex items-center gap-1.5 rounded-full bg-[#7C3AED]/15 px-2.5 py-1 text-xs font-semibold text-[#B9A2F5]">
-            <ModeIcon className="h-3.5 w-3.5" />{modeCopy}
-          </span>
+          <div className="flex items-center gap-2">
+            {isSpeaking && (
+              <button
+                type="button"
+                onClick={stopSpeaking}
+                className="flex items-center gap-1.5 rounded-full bg-[#63C7BA]/15 px-2.5 py-1 text-xs font-semibold text-[#63C7BA]"
+              >
+                <Volume2 className="h-3.5 w-3.5 animate-pulse" />{t('speaking')}
+              </button>
+            )}
+            <span className="flex items-center gap-1.5 rounded-full bg-[#7C3AED]/15 px-2.5 py-1 text-xs font-semibold text-[#B9A2F5]">
+              <ModeIcon className="h-3.5 w-3.5" />{modeCopy}
+            </span>
+          </div>
         </div>
 
         {/* Messages */}
@@ -347,10 +419,11 @@ export default function ChatPage() {
             />
             <button
               onClick={startVoice}
+              disabled={isSpeaking}
               aria-label={listening ? t('listening') : t('ask_by_voice')}
               aria-pressed={listening}
               className={cn(
-                'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white transition-transform active:scale-95',
+                'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white transition-transform active:scale-95 disabled:opacity-50',
                 listening ? 'animate-pulse bg-[#63C7BA]' : 'bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]',
               )}
             >

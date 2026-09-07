@@ -30,7 +30,7 @@ export const api = {
   askChat: (question: string, monumentId = '', lang?: SupportedLanguage) =>
     hasNativeNvidia()
       ? askNativeHeritageChat(question, monumentId, lang).then(answer => ({ data: { answer, response: answer } }))
-      : axios.post('/api/chat', { question, monument_id: monumentId, lang }),
+      : apiClient.post('/chat/ask', { question, monument_id: monumentId, lang }),
 
   // Recognition
   recognize: (imageB64: string, filename = 'image.jpg', options?: Record<string, unknown>) =>

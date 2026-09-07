@@ -96,6 +96,7 @@ export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
   ask_placeholder: { en: 'Ask about a monument or heritage site...', hi: 'किसी स्मारक या विरासत स्थल के बारे में पूछें...' },
   send: { en: 'Send', hi: 'भेजें' }, ask_by_voice: { en: 'Voice', hi: 'आवाज़' },
   listening: { en: 'Listening...', hi: 'सुन रहे हैं...' },
+  speaking: { en: 'Speaking...', hi: 'बोल रहे हैं...' },
   heritage_guide: { en: 'SANSKRITI BOT', hi: 'SANSKRITI BOT' },
   student_mode: { en: 'Student Mode', hi: 'छात्र मोड' },
   tourist_mode: { en: 'Tourist Mode', hi: 'पर्यटक मोड' },

@@ -74,6 +74,7 @@ public final class MainActivity extends Activity {
     private static final int WEB_PERMISSION_REQUEST = 1002;
     private static final int GEOLOCATION_REQUEST = 1003;
     private static final int AR_NAVIGATION_PERMISSION_REQUEST = 1004;
+    private static final int MICROPHONE_REQUEST = 1005;
     private static final long PAGE_LOAD_TIMEOUT_MS = 15_000L;
     private static final long PAGE_HEALTH_CHECK_DELAY_MS = 6_000L;
     private static final String ERROR_PAGE_URL = "https://sanskriti.local/error";
@@ -89,6 +90,8 @@ public final class MainActivity extends Activity {
     private PermissionRequest pendingWebPermission;
     private GeolocationPermissions.Callback pendingGeoCallback;
     private String pendingGeoOrigin;
+    private String pendingMicrophoneRequestId;
+    private int pendingMicrophoneDurationMs;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean mainPageFinished;
     private boolean showingConnectionError;
@@ -478,14 +481,17 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface
         public void recordMicrophone(String requestId, int durationMs) {
+            int clampedDurationMs = Math.max(1_000, Math.min(durationMs, 8_000));
             if (!hasPermission(Manifest.permission.RECORD_AUDIO)) {
-                emitMicrophoneResult(requestId, "", "Microphone permission is required.");
+                pendingMicrophoneRequestId = requestId;
+                pendingMicrophoneDurationMs = clampedDurationMs;
+                mainHandler.post(() -> requestPermissions(
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        MICROPHONE_REQUEST
+                ));
                 return;
             }
-            networkExecutor.execute(() -> recordPhoneMicrophone(
-                    requestId,
-                    Math.max(1_000, Math.min(durationMs, 8_000))
-            ));
+            networkExecutor.execute(() -> recordPhoneMicrophone(requestId, clampedDurationMs));
         }
 
         /**
@@ -1086,6 +1092,15 @@ public final class MainActivity extends Activity {
         } else if (requestCode == AR_NAVIGATION_PERMISSION_REQUEST
                 && arNavigationController != null) {
             arNavigationController.onPermissionResult();
+        } else if (requestCode == MICROPHONE_REQUEST && pendingMicrophoneRequestId != null) {
+            String requestId = pendingMicrophoneRequestId;
+            int durationMs = pendingMicrophoneDurationMs;
+            pendingMicrophoneRequestId = null;
+            if (hasPermission(Manifest.permission.RECORD_AUDIO)) {
+                networkExecutor.execute(() -> recordPhoneMicrophone(requestId, durationMs));
+            } else {
+                emitMicrophoneResult(requestId, "", "Microphone permission was not granted.");
+            }
         }
     }
 
