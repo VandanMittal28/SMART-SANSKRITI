@@ -5,7 +5,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export function isBundledAndroidApp() {
   return typeof window !== 'undefined'
-    && window.location.hostname === 'appassets.androidplatform.net'
+    && (window.location.hostname === 'appassets.androidplatform.net'
+      || window.location.hostname === '127.0.0.1'
+      || window.location.hostname === 'localhost'
+      || window.location.protocol === 'file:'
+      || window.location.protocol === 'sanskriti:')
 }
 
 function createSanskritiClient() {

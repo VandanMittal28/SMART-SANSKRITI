@@ -9,7 +9,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const focused = pathname.startsWith('/explore') || pathname.startsWith('/hunt')
 
   return (
-    <div className="mobile-shell text-[#F6F1E8]">
+    <div className="mobile-shell text-foreground">
       <div className={cn('mobile-scroll', focused ? 'pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]' : 'app-safe-padding')}>
         <main className="mx-auto w-full max-w-[420px] min-h-[100dvh]">
           {children}

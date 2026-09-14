@@ -2,17 +2,17 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Globe, UserRound } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { SUPPORTED_LANGUAGES } from '@/lib/languages'
+import { LanguageSelect } from '@/components/language-select'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function TopBar() {
   const { profile } = useAuth()
-  const { lang, setLang } = useLang()
+  const { lang } = useLang()
   const pathname = usePathname()
   const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
 
@@ -47,27 +47,8 @@ export function TopBar() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <Select value={lang} onValueChange={(value) => setLang(value as typeof lang)}>
-            <SelectTrigger
-              data-no-translate
-              aria-label="Select site and narration language"
-              className="h-9 gap-1.5 rounded-full border-[#D6A84B]/20 bg-[#D6A84B]/8 px-3 text-[11px] font-bold text-[#F3DFC0] hover:bg-[#D6A84B]/12 focus-visible:ring-[#D6A84B]/40 [&_svg]:text-[#F3DFC0] [&_svg]:opacity-100 [&_svg]:size-3"
-            >
-              <Globe className="size-3.5 shrink-0" />
-              {lang.toUpperCase()}
-            </SelectTrigger>
-            <SelectContent className="max-h-72 border-[#D6A84B]/20 bg-[#171F34] text-[#F6F1E8]" align="end">
-              {SUPPORTED_LANGUAGES.map((language) => (
-                <SelectItem
-                  key={language.id}
-                  value={language.id}
-                  className="text-sm focus:bg-[#D6A84B]/12 focus:text-[#F6F1E8]"
-                >
-                  {language.id.toUpperCase()} · {language.nativeName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <LanguageSelect />
+          <ThemeToggle />
 
           <Link
             href="/profile"

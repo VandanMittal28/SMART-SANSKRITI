@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Camera, CheckCircle2, Clock3, Compass, Download, MapPin, Route, Ticket, Trophy } from 'lucide-react'
+import { ArrowRight, Camera, CheckCircle2, Clock3, Compass, Download, MapPin, Route, ShoppingBag, Ticket, Trophy } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
@@ -55,6 +55,12 @@ export default function HomePage() {
             </Link>
           ))}
         </section>
+
+        <Link href="/marketplace" className="flex min-h-[104px] items-center gap-4 rounded-2xl border border-[#63C7BA]/22 bg-[#63C7BA]/[0.06] p-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#63C7BA]/14 text-[#8DE0D6]"><ShoppingBag className="h-5 w-5" /></span>
+          <span className="min-w-0 flex-1"><span className="block font-heritage text-base font-bold text-[#F6F1E8]">Local art near monuments</span><span className="mt-1 block text-xs leading-5 text-[#AEB6C8]">Reserve handmade crafts and meet verified artisans</span></span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-[#63C7BA]" />
+        </Link>
 
         <section>
           <div className="mb-3 flex items-center justify-between">

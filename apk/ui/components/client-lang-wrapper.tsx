@@ -2,11 +2,15 @@
 import { useEffect } from 'react'
 import { useLang } from '@/lib/languageContext'
 import { getLanguageConfig } from '@/lib/languages'
-import { hasNativeNvidia, translateTextsNative } from '@/lib/nativeNvidia'
+import { getCachedTranslation, translateTexts } from '@/lib/translationClient'
 
-const CACHE_VERSION = 'v4'
 const TRANSLATABLE_ATTRIBUTES = ['placeholder', 'title', 'aria-label'] as const
-const TRANSLATION_BATCH_SIZE = 10
+const TRANSLATION_BATCH_SIZE = 32
+// NVIDIA Riva Translate covers 20 of the 23 menu languages. Keep the three
+// general-model fallbacks in smaller batches so long pages do not exceed the
+// model response window and can paint progressively.
+const GENERAL_MODEL_BATCH_SIZE = 10
+const GENERAL_MODEL_LANGUAGES = new Set(['he', 'ms', 'sw'])
 
 function shouldSkip(element: Element | null) {
   return !element
@@ -34,17 +38,11 @@ export function ClientLangWrapper() {
     let timer: ReturnType<typeof setTimeout> | undefined
     let translating = false
     let rerunRequested = false
+    let retryDelay = 2_000
     const originalText = new Map<Text, string>()
     const originalAttributes = new Map<Element, Map<string, string>>()
-    const storageKey = `sanskriti-site-translation-${CACHE_VERSION}:${lang}`
-    let cache: Record<string, string> = {}
-
-    try {
-      cache = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<string, string>
-    } catch {
-      cache = {}
-    }
-
+    const appliedText = new WeakMap<Text, string>()
+    const appliedAttributes = new WeakMap<Element, Map<string, string>>()
     const restore = () => {
       originalText.forEach((source, node) => {
         if (node.isConnected) node.nodeValue = source
@@ -69,7 +67,7 @@ export function ClientLangWrapper() {
           const normalized = source.trim()
           if (!shouldTranslate(normalized)) return
           const setters = targets.get(normalized) || []
-          setters.push(() => apply(cache[normalized] || normalized))
+          setters.push(() => apply(getCachedTranslation(normalized, lang) || normalized))
           targets.set(normalized, setters)
         }
 
@@ -79,12 +77,17 @@ export function ClientLangWrapper() {
           const node = current as Text
           const parent = node.parentElement
           if (!shouldSkip(parent)) {
-            const source = originalText.get(node) || node.nodeValue || ''
-            if (!originalText.has(node)) originalText.set(node, source)
+            const currentValue = node.nodeValue || ''
+            const lastApplied = appliedText.get(node)
+            const source = lastApplied === currentValue
+              ? (originalText.get(node) || currentValue)
+              : currentValue
+            if (lastApplied !== currentValue || !originalText.has(node)) originalText.set(node, source)
             register(source, (translated) => {
               const leading = source.match(/^\s*/)?.[0] || ''
               const trailing = source.match(/\s*$/)?.[0] || ''
               const nextValue = `${leading}${translated}${trailing}`
+              appliedText.set(node, nextValue)
               if (node.nodeValue !== nextValue) node.nodeValue = nextValue
             })
           }
@@ -101,9 +104,19 @@ export function ClientLangWrapper() {
               originals = new Map()
               originalAttributes.set(element, originals)
             }
-            const source = originals.get(attribute) || currentValue
-            if (!originals.has(attribute)) originals.set(attribute, source)
+            let applied = appliedAttributes.get(element)
+            if (!applied) {
+              applied = new Map()
+              appliedAttributes.set(element, applied)
+            }
+            const source = applied.get(attribute) === currentValue
+              ? (originals.get(attribute) || currentValue)
+              : currentValue
+            if (applied.get(attribute) !== currentValue || !originals.has(attribute)) {
+              originals.set(attribute, source)
+            }
             register(source, (translated) => {
+              applied?.set(attribute, translated)
               if (element.getAttribute(attribute) !== translated) {
                 element.setAttribute(attribute, translated)
               }
@@ -115,38 +128,31 @@ export function ClientLangWrapper() {
         // not briefly switch the app back to English.
         targets.forEach((setters) => setters.forEach((apply) => apply()))
 
-        const missing = [...targets.keys()].filter((text) => !cache[text])
-        for (let offset = 0; offset < missing.length && !cancelled; offset += TRANSLATION_BATCH_SIZE) {
-          const batch = missing.slice(offset, offset + TRANSLATION_BATCH_SIZE)
+        const missing = [...targets.keys()].filter((text) => !getCachedTranslation(text, lang))
+        const batchSize = GENERAL_MODEL_LANGUAGES.has(lang)
+          ? GENERAL_MODEL_BATCH_SIZE
+          : TRANSLATION_BATCH_SIZE
+        for (let offset = 0; offset < missing.length && !cancelled; offset += batchSize) {
+          const batch = missing.slice(offset, offset + batchSize)
           try {
-            let translatedBatch: unknown[]
-            if (hasNativeNvidia()) {
-              translatedBatch = await translateTextsNative(batch, lang)
-            } else {
-              const response = await fetch('/api/site-translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ language: lang, texts: batch }),
-              })
-              if (!response.ok) continue
-              const data = await response.json() as { translations?: unknown }
-              if (!Array.isArray(data.translations) || data.translations.length !== batch.length) continue
-              translatedBatch = data.translations
-            }
+            const translatedBatch = await translateTexts(batch, lang)
+            if (cancelled) return
+            retryDelay = 2_000
             batch.forEach((source, index) => {
               const translated = translatedBatch[index]
               if (typeof translated === 'string' && translated.trim()) {
-                cache[source] = translated.trim()
                 targets.get(source)?.forEach((apply) => apply())
               }
             })
-            try {
-              localStorage.setItem(storageKey, JSON.stringify(cache))
-            } catch {
-              // In-memory translation still works when storage is unavailable.
-            }
           } catch {
-            // Keep the original copy when translation is temporarily unavailable.
+            // Trial endpoints can be temporarily busy. Keep the source copy on
+            // screen and retry with backoff instead of leaving the page stuck in
+            // English until the visitor navigates again.
+            if (!cancelled) {
+              scheduleTranslation(retryDelay)
+              retryDelay = Math.min(retryDelay * 2, 30_000)
+            }
+            return
           }
         }
       } finally {
@@ -158,12 +164,12 @@ export function ClientLangWrapper() {
       }
     }
 
-    const scheduleTranslation = () => {
+    const scheduleTranslation = (delay = 120) => {
       if (timer) clearTimeout(timer)
-      timer = setTimeout(() => void translatePage(), 120)
+      timer = setTimeout(() => void translatePage(), delay)
     }
 
-    const observer = new MutationObserver(scheduleTranslation)
+    const observer = new MutationObserver(() => scheduleTranslation())
     observer.observe(document.body, { childList: true, characterData: true, subtree: true })
     scheduleTranslation()
 

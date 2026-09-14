@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+<key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+<key>CFBundleDisplayName</key><string>Sanskriti AI</string>
+<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>1.1</string>
+<key>CFBundleVersion</key><string>2</string>
+<key>UIRequiresFullScreen</key><true/>
+<key>UISupportedInterfaceOrientations</key>
+<array><string>UIInterfaceOrientationPortrait</string></array>
+<key>NSCameraUsageDescription</key><string>Sanskriti uses the camera to recognize monuments and guide your heritage walk.</string>
+<key>NSMicrophoneUsageDescription</key><string>Sanskriti uses the microphone for voice questions to Yatrik.</string>
+<key>NSLocationWhenInUseUsageDescription</key><string>Sanskriti uses your location to show nearby monuments and guide your walk.</string>
+<key>NSPhotoLibraryUsageDescription</key><string>Choose a monument photo for recognition.</string>
+<key>NSAppTransportSecurity</key>
+<dict><key>NSAllowsLocalNetworking</key><true/><key>NSAllowsArbitraryLoads</key><true/></dict>
+</dict></plist>

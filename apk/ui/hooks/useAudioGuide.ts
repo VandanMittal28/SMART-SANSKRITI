@@ -4,6 +4,8 @@ import { recordingToWavBase64 } from '@/lib/audio'
 import { offlineHeritageAnswer } from '@/lib/offlineHeritage'
 import { hasNativeNvidia, recordPhoneMicrophone, synthesizeNarrationNative, transcribeAudioNative } from '@/lib/nativeNvidia'
 import { getNvidiaNarrationVoice } from '@/lib/narrationProfiles'
+import { getLanguageConfig, type SupportedLanguage } from '@/lib/languages'
+import { useLang } from '@/lib/languageContext'
 
 export interface Message {
   role: 'user' | 'assistant' | 'zone'
@@ -40,8 +42,7 @@ export interface UseAudioGuideReturn {
   announceZone: (zoneName: string, narration: string) => void
   
   // Settings
-  lang: 'en' | 'hi'
-  setLang: (lang: 'en' | 'hi') => void
+  lang: SupportedLanguage
   volume: number
   setVolume: (v: number) => void
   isMuted: boolean
@@ -59,7 +60,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
   const [lastAnswer, setLastAnswer] = useState('')
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
   const [currentZone, setCurrentZone] = useState<string | null>(null)
-  const [lang, setLang] = useState<'en' | 'hi'>('en')
+  const { lang, translate } = useLang()
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
 
@@ -77,7 +78,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
   }, [currentZone])
 
   // ── TEXT TO SPEECH ─────────────────────────────────────
-  const speak = useCallback((text: string) => {
+  const speakRaw = useCallback((text: string) => {
     if (isMuted) return
     if (!window.speechSynthesis) return
 
@@ -91,29 +92,19 @@ export function useAudioGuide(): UseAudioGuideReturn {
     
     const doSpeak = () => {
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-US'
+      const language = getLanguageConfig(lang)
+      utterance.lang = language.locale
       utterance.rate = lang === 'hi' ? 0.85 : 0.88
       utterance.pitch = 1.0
       utterance.volume = isMuted ? 0 : volume
 
       const voices = window.speechSynthesis.getVoices()
       
-      if (lang === 'hi') {
-        const hindiVoice = voices.find(v => 
-          v.lang.includes('hi') || 
-          v.name.toLowerCase().includes('hindi')
-        )
-        if (hindiVoice) utterance.voice = hindiVoice
-      } else {
-        const englishVoice = voices.find(v =>
-          v.lang.includes('en-US') ||
-          v.lang.includes('en-GB') ||
-          v.name.includes('Google') ||
-          v.name.includes('Samantha') ||
-          v.name.includes('Daniel')
-        )
-        if (englishVoice) utterance.voice = englishVoice
-      }
+      const locale = language.locale.toLowerCase()
+      const baseLanguage = locale.split('-')[0]
+      const matchingVoice = voices.find(v => v.lang.toLowerCase() === locale)
+        || voices.find(v => v.lang.toLowerCase().startsWith(baseLanguage))
+      if (matchingVoice) utterance.voice = matchingVoice
 
       utterance.onstart = () => setIsSpeaking(true)
       utterance.onend = () => setIsSpeaking(false)
@@ -185,6 +176,14 @@ export function useAudioGuide(): UseAudioGuideReturn {
       doSpeak()
     }
   }, [lang, volume, isMuted])
+
+  const speak = useCallback((text: string) => {
+    if (lang === 'en') {
+      speakRaw(text)
+      return
+    }
+    void translate(text).then(speakRaw).catch(() => speakRaw(text))
+  }, [lang, speakRaw, translate])
 
   const stopSpeaking = useCallback(() => {
     narrationAudioRef.current?.pause()
@@ -271,7 +270,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
           if (hasNativeNvidia()) {
             spokenText = await transcribeAudioNative(audioBase64, lang)
           } else {
-            const response = await fetch('/api/transcribe', {
+            const response = await fetch('/api/transcribe/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
@@ -338,14 +337,14 @@ export function useAudioGuide(): UseAudioGuideReturn {
 
     try {
       const response = await fetch(
-        '/api/chat',
+        '/api/chat/',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             question,
             monument_id: monumentId,
-            lang: lang === 'hi' ? 'hi' : 'en'
+            lang
           })
         }
       )
@@ -366,7 +365,15 @@ export function useAudioGuide(): UseAudioGuideReturn {
       speak(answer)
 
     } catch {
-      const fallback = offlineHeritageAnswer(question, monumentId, lang)
+      const englishFallback = offlineHeritageAnswer(question, monumentId, 'en')
+      let fallback = englishFallback
+      if (lang !== 'en') {
+        try {
+          fallback = await translate(englishFallback)
+        } catch {
+          // English remains available when translation is unavailable offline.
+        }
+      }
       setLastAnswer(fallback)
       setIsThinking(false)
       setConversationHistory(prev => [...prev, {
@@ -376,7 +383,7 @@ export function useAudioGuide(): UseAudioGuideReturn {
       }])
       speak(fallback)
     }
-  }, [lang, speak, stopSpeaking])
+  }, [lang, speak, stopSpeaking, translate])
 
   useEffect(() => {
     askQuestionRef.current = askQuestion
@@ -425,6 +432,6 @@ export function useAudioGuide(): UseAudioGuideReturn {
     isThinking, lastQuestion, lastAnswer, conversationHistory,
     currentZone, setCurrentZone,
     askQuestion, announceZone,
-    lang, setLang, volume, setVolume, isMuted, toggleMute
+    lang, volume, setVolume, isMuted, toggleMute
   }
 }

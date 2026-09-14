@@ -1075,7 +1075,7 @@ export default function ExplorePage() {
       if (hasNativeNvidia()) {
         translation = await translateExploreGuideNative(source, lang)
       } else {
-        const response = await fetch('/api/explore-translate', {
+        const response = await fetch('/api/explore-translate/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ language: lang, monumentId, ...source }),

@@ -7,7 +7,7 @@ import { YatrikWelcome } from '@/components/yatrik/yatrik-welcome'
 import { useAuth } from '@/lib/authContext'
 import { useLang } from '@/lib/languageContext'
 import { markMascotIntroSeen } from '@/lib/authClient'
-import { hasNativeNvidia, synthesizeNarrationNative, translateTextsNative } from '@/lib/nativeNvidia'
+import { hasNativeNvidia, synthesizeNarrationNative } from '@/lib/nativeNvidia'
 import { getYatrikNarrationVoice } from '@/lib/narrationProfiles'
 import { subscribeToYatrikEvents } from '@/lib/yatrik/events'
 import type { YatrikAssetManifest, YatrikEvent, YatrikState } from '@/lib/yatrik/types'
@@ -16,6 +16,7 @@ const MUTE_STORAGE_KEY = 'sanskriti-yatrik-muted-v1'
 const WELCOME_STORAGE_PREFIX = 'sanskriti-yatrik-welcome-v2:'
 const HIDDEN_PATHS = new Set(['/login', '/auth', '/chat'])
 const SHOW_WELCOME_OVERLAY = true
+const WELCOME_TASK_TIMEOUT_MS = 8_000
 
 type WelcomePhase = 'idle' | 'fly-in' | 'landing' | 'ready' | 'talking' | 'complete'
 
@@ -46,6 +47,20 @@ function speakWithDeviceVoice(text: string, language: string): Promise<void> {
   })
 }
 
+async function waitForWelcomeTask<T>(task: Promise<T>, fallback: T): Promise<T> {
+  let timer: number | undefined
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((resolve) => {
+        timer = window.setTimeout(() => resolve(fallback), WELCOME_TASK_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timer !== undefined) window.clearTimeout(timer)
+  }
+}
+
 function hasLocalWelcome(userId: string): boolean {
   try {
     return localStorage.getItem(`${WELCOME_STORAGE_PREFIX}${userId}`) === 'true'
@@ -67,7 +82,7 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
   const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
   const router = useRouter()
   const { profile, setProfile, user } = useAuth()
-  const { lang } = useLang()
+  const { lang, translate } = useLang()
   const [manifest, setManifest] = useState<YatrikAssetManifest | null>(null)
   const [muted, setMuted] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
@@ -149,9 +164,9 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
         const source = activeEvent.narration ?? activeEvent.caption
         void (async () => {
           let narration = source
-          if (lang !== 'en' && hasNativeNvidia()) {
+          if (lang !== 'en') {
             try {
-              ;[narration] = await translateTextsNative([source], lang)
+              narration = await translate(source)
             } catch {
               // The original narration remains a usable offline fallback.
             }
@@ -170,7 +185,7 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
       })
     }, activeEvent.durationMs ?? 6500)
     return () => window.clearTimeout(timer)
-  }, [activeEvent, lang, muted])
+  }, [activeEvent, lang, muted, translate])
 
   useEffect(() => {
     if (!preferencesLoaded || !user || !profile || welcomePhase !== 'idle') return
@@ -257,11 +272,11 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
 
     let seenAt = new Date().toISOString()
     try {
-      if (lang !== 'en' && hasNativeNvidia()) {
-        ;[greeting] = await translateTextsNative([greeting], lang)
+      if (lang !== 'en') {
+        greeting = await waitForWelcomeTask(translate(greeting), greeting)
       }
-      await playWelcomeGreeting(greeting)
-      seenAt = await markMascotIntroSeen(user.id)
+      await waitForWelcomeTask(playWelcomeGreeting(greeting), undefined)
+      seenAt = await waitForWelcomeTask(markMascotIntroSeen(user.id), seenAt)
     } catch {
       // The deployed database may not have the optional welcome column yet,
       // or the phone may be offline. Device-local persistence keeps this
@@ -273,7 +288,7 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
       setWelcomePhase('complete')
       setSavingWelcome(false)
     }
-  }, [lang, playWelcomeGreeting, savingWelcome, setProfile, stopWelcomeSpeech, user])
+  }, [lang, playWelcomeGreeting, savingWelcome, setProfile, stopWelcomeSpeech, translate, user])
 
   const welcomeVisible = ['fly-in', 'landing', 'ready', 'talking'].includes(welcomePhase)
   const welcomeState: YatrikState = welcomePhase === 'fly-in'

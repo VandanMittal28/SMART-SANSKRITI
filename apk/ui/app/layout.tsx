@@ -8,6 +8,7 @@ import { LanguageProvider } from '@/lib/languageContext'
 import { ClientLangWrapper } from '@/components/client-lang-wrapper'
 import { BackendPrewarmer } from '@/components/BackendPrewarmer'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AppThemeSync } from '@/components/theme-toggle'
 import { TopBar } from '@/components/TopBar'
 import { Literata, Manrope, Noto_Sans_Devanagari } from 'next/font/google'
 
@@ -34,9 +35,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`dark ${manrope.variable} ${literata.variable} ${devanagari.variable}`} suppressHydrationWarning>
-      <body className="font-sans antialiased overflow-x-hidden bg-[#050816] text-[#F6F1E8]">
+    <html lang="en" className={`${manrope.variable} ${literata.variable} ${devanagari.variable}`} suppressHydrationWarning>
+      <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          <AppThemeSync />
           <BackendPrewarmer />
           <AuthProvider>
             <AuthGuard>

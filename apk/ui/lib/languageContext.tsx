@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useState, useEffect, ReactNode } from 'react'
 import {
   DEFAULT_LANGUAGE,
   isSupportedLanguage,
@@ -7,13 +7,14 @@ import {
 } from '@/lib/languages'
 import { useAuth } from '@/lib/authContext'
 import { updateUserProfile } from '@/lib/authClient'
+import { getCachedTranslation, translateText } from '@/lib/translationClient'
 
 export type Lang = SupportedLanguage
 
 export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
   // Navigation
   nav_home: { en: 'Home', hi: 'होम' }, nav_map: { en: 'Map', hi: 'नक्शा' },
-  nav_recognition: { en: 'Recognition', hi: 'पहचान' }, nav_chatbot: { en: 'SANSKRITI BOT', hi: 'SANSKRITI BOT' },
+  nav_recognition: { en: 'Recognition', hi: 'पहचान' }, nav_chatbot: { en: 'Yatrik', hi: 'यात्रिक' },
   nav_quiz: { en: 'Quiz', hi: 'क्विज़' }, nav_hunt: { en: 'Hunt', hi: 'खोज' },
   nav_explore: { en: 'Explore', hi: 'खोजें' },
   nav_achievements: { en: 'Achievements', hi: 'उपलब्धियाँ' }, nav_festivals: { en: 'Festivals', hi: 'उत्सव' },
@@ -40,7 +41,7 @@ export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
   view_map: { en: 'View Map', hi: 'नक्शा देखें' },
   smart_recognition: { en: 'Smart Recognition', hi: 'स्मार्ट पहचान' },
   smart_recognition_d: { en: 'Upload a photo, get instant AI identification of any Indian monument with detailed historical context.', hi: 'फ़ोटो अपलोड करें, किसी भी भारतीय स्मारक की विस्तृत ऐतिहासिक संदर्भ के साथ तुरंत AI पहचान पाएं।' },
-  heritage_chatbot: { en: 'SANSKRITI BOT', hi: 'SANSKRITI BOT' },
+  heritage_chatbot: { en: 'Yatrik', hi: 'यात्रिक' },
   heritage_chatbot_d: { en: 'Ask anything about monuments, their history, architecture, or cultural significance.', hi: 'स्मारकों, उनके इतिहास, वास्तुकला या सांस्कृतिक महत्व के बारे में कुछ भी पूछें।' },
   time_travel: { en: 'Time Travel', hi: 'टाइम ट्रेवल' },
   time_travel_d: { en: 'See monuments across 4 historical eras — from construction to modern day.', hi: '4 ऐतिहासिक कालों में स्मारक देखें — निर्माण से आधुनिक काल तक।' },
@@ -91,16 +92,16 @@ export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
   era_construction: { en: '🏗️ Construction', hi: '🏗️ निर्माण काल' }, era_peak: { en: '✨ Peak Glory', hi: '✨ स्वर्णिम काल' },
   era_colonial: { en: '🇬🇧 Colonial Era', hi: '🇬🇧 औपनिवेशिक काल' }, era_modern: { en: '📸 Modern Day', hi: '📸 आधुनिक काल' },
   // Chat page
-  ai_chatbot: { en: 'SANSKRITI BOT', hi: 'SANSKRITI BOT' },
+  ai_chatbot: { en: 'Yatrik', hi: 'यात्रिक' },
   chatting_about: { en: '🏛️ Chatting about', hi: '🏛️ बातचीत हो रही है' },
   ask_placeholder: { en: 'Ask about a monument or heritage site...', hi: 'किसी स्मारक या विरासत स्थल के बारे में पूछें...' },
   send: { en: 'Send', hi: 'भेजें' }, ask_by_voice: { en: 'Voice', hi: 'आवाज़' },
   listening: { en: 'Listening...', hi: 'सुन रहे हैं...' },
   speaking: { en: 'Speaking...', hi: 'बोल रहे हैं...' },
-  heritage_guide: { en: 'SANSKRITI BOT', hi: 'SANSKRITI BOT' },
+  heritage_guide: { en: 'Yatrik', hi: 'यात्रिक' },
   student_mode: { en: 'Student Mode', hi: 'छात्र मोड' },
   tourist_mode: { en: 'Tourist Mode', hi: 'पर्यटक मोड' },
-  namaste_greeting: { en: "Namaste! I am SANSKRITI BOT. I answer only monument and heritage-related questions. Ask me about their history, architecture, legends, or visitor information!", hi: 'नमस्ते! मैं SANSKRITI BOT हूँ। मैं केवल स्मारक और विरासत से जुड़े सवालों के जवाब देता हूँ। इनके इतिहास, वास्तुकला, किंवदंतियों या यात्रा जानकारी के बारे में पूछें!' },
+  namaste_greeting: { en: "Namaste! I am Yatrik. I answer only monument and heritage-related questions. Ask me about their history, architecture, legends, or visitor information!", hi: 'नमस्ते! मैं यात्रिक हूँ। मैं केवल स्मारक और विरासत से जुड़े सवालों के जवाब देता हूँ। इनके इतिहास, वास्तुकला, किंवदंतियों या यात्रा जानकारी के बारे में पूछें!' },
   sorry_trouble: { en: 'Sorry, I am having trouble connecting. Please try again.', hi: 'क्षमा करें, कनेक्ट करने में समस्या हो रही है। कृपया पुनः प्रयास करें।' },
   when_built: { en: 'When was it built?', hi: 'यह कब बना था?' }, who_built: { en: 'Who built it?', hi: 'इसे किसने बनाया?' },
   what_legend: { en: 'What is the legend?', hi: 'इसकी किंवदंती क्या है?' }, best_time_visit: { en: 'Best time to visit?', hi: 'दर्शन का सर्वोत्तम समय?' },
@@ -209,6 +210,8 @@ export const TRANSLATIONS: Record<string, { en: string; hi?: string }> = {
   rank_label: { en: 'Rank', hi: 'रैंक' },
   current_level: { en: 'Current level', hi: 'वर्तमान स्तर' },
   language_label: { en: 'Language', hi: 'भाषा' },
+  theme_switch_to_light: { en: 'Switch to light theme', hi: 'लाइट थीम पर जाएँ' },
+  theme_switch_to_dark: { en: 'Switch to dark theme', hi: 'डार्क थीम पर जाएँ' },
   mode_title: { en: 'Mode', hi: 'मोड' },
   mode_switch: { en: 'Switch', hi: 'बदलें' },
   mode_subtitle: { en: 'Toggle between learning and travel-focused guidance.', hi: 'सीखने और यात्रा-आधारित मार्गदर्शन के बीच टॉगल करें।' },
@@ -251,6 +254,7 @@ interface LangContextType {
   setLang: (l: LangUpdater) => void
   toggleLang: () => void
   t: (key: string) => string
+  translate: (text: string) => Promise<string>
 }
 
 const LangContext = createContext<LangContextType>({
@@ -258,11 +262,13 @@ const LangContext = createContext<LangContextType>({
   setLang: () => {},
   toggleLang: () => {},
   t: (k) => TRANSLATIONS[k]?.en || k,
+  translate: async (text) => text,
 })
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth()
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANGUAGE)
+  const [languageLoaded, setLanguageLoaded] = useState(false)
 
   useEffect(() => {
     let localLanguage: string | null = null
@@ -279,7 +285,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(saved)
     document.documentElement.lang = saved
     document.documentElement.setAttribute('data-lang', saved)
+    setLanguageLoaded(true)
   }, [profile?.language])
+
+  useEffect(() => {
+    if (!languageLoaded || !user || !profile || lang === profile.language) return
+    void updateUserProfile(user.id, { language: lang })
+  }, [lang, languageLoaded, profile, user])
 
   const setLang = (next: LangUpdater) => {
     const resolved = typeof next === 'function' ? next(lang) : next
@@ -292,9 +304,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       // Keep the selected language for the current session if storage is blocked.
     }
-    if (user && safeLang !== profile?.language) {
-      void updateUserProfile(user.id, { language: safeLang })
-    }
   }
 
   const toggleLang = () => {
@@ -304,10 +313,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const t = (key: string): string => {
     const entry = TRANSLATIONS[key]
     if (!entry) return key
-    return (lang === 'hi' ? entry.hi : entry.en) || entry.en || key
+    if (lang === 'en') return entry.en || key
+    if (lang === 'hi' && entry.hi) return entry.hi
+    return getCachedTranslation(entry.en, lang) || entry.en || key
   }
 
-  return <LangContext.Provider value={{ lang, setLang, toggleLang, t }}>{children}</LangContext.Provider>
+  const translate = useCallback((text: string) => translateText(text, lang), [lang])
+
+  return <LangContext.Provider value={{ lang, setLang, toggleLang, t, translate }}>{children}</LangContext.Provider>
 }
 
 export function useLang() { return useContext(LangContext) }

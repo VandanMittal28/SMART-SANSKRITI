@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
+import { TravelTabs } from '@/components/marketplace/travel-tabs'
 import { useLang } from '@/lib/languageContext'
 import {
   ticketMonuments,
@@ -386,10 +387,7 @@ export default function TicketsPage() {
             <Ticket className="h-5 w-5 text-[#D6A84B]" />
             <h1 className="font-heritage text-[28px] font-bold text-[#F6F1E8]">{hi ? 'यात्राएं' : 'Trips'}</h1>
           </div>
-          <div className="mt-4 grid grid-cols-2 rounded-xl bg-[#11182B] p-1" role="tablist" aria-label="Trips">
-            <button type="button" className="min-h-10 rounded-lg bg-[#D6A84B] text-sm font-bold text-[#171004]" role="tab" aria-selected="true">{hi ? 'टिकट' : 'Tickets'}</button>
-            <Link href="/itinerary" className="grid min-h-10 place-items-center rounded-lg text-sm font-bold text-[#AEB6C8]" role="tab">{hi ? 'मेरी योजनाएं' : 'My plans'}</Link>
-          </div>
+          <div className="mt-4"><TravelTabs active="tickets" /></div>
           <div className="mt-3 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-[#63C7BA]/18 bg-[#63C7BA]/[0.06] px-4 text-xs">
             <span className="font-semibold text-[#8DE0D6]">{hi ? 'पहली बुकिंग पर 1 टिकट मुफ़्त' : 'First booking: 1 ticket free'}</span>
             <code className="rounded-md bg-black/20 px-2 py-1 font-bold text-[#F3DFC0]">FIRSTFREE</code>

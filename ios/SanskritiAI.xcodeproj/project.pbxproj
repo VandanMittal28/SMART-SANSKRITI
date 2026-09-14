@@ -1,0 +1,238 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 71;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000010 /* SanskritiAI/SanskritiAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */; };
+		A00000000000000000000011 /* SanskritiAI/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* SanskritiAI/Models.swift */; };
+		A00000000000000000000012 /* SanskritiAI/Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* SanskritiAI/Services.swift */; };
+		A00000000000000000000013 /* SanskritiAI/DeviceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */; };
+		A00000000000000000000014 /* SanskritiAI/Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* SanskritiAI/Views.swift */; };
+		A00000000000000000000027 /* SanskritiAI/WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000026 /* SanskritiAI/WebView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000001 /* SanskritiAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = SanskritiAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/SanskritiAIApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000005 /* SanskritiAI/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Models.swift; sourceTree = "<group>"; };
+		A00000000000000000000006 /* SanskritiAI/Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Services.swift; sourceTree = "<group>"; };
+		A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/DeviceServices.swift; sourceTree = "<group>"; };
+		A00000000000000000000008 /* SanskritiAI/Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Views.swift; sourceTree = "<group>"; };
+		A00000000000000000000026 /* SanskritiAI/WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/WebView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000017 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A00000000000000000000028 /* Copy Android UI bundle */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../apk/app/src/main/assets/www");
+			name = "Copy Android UI bundle";
+			outputPaths = ("$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/www");
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nSOURCE=\"$SRCROOT/../apk/app/src/main/assets/www\"\nDEST=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/www\"\nif [ ! -d \"$SOURCE\" ]; then echo \"Missing Android UI bundle: $SOURCE\"; exit 1; fi\nrm -rf \"$DEST\"\nmkdir -p \"$DEST\"\ncp -R \"$SOURCE/\" \"$DEST/\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000003 /* SanskritiAI */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = SanskritiAI;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000009 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000001 /* SanskritiAI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000030 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000003 /* SanskritiAI */,
+				A00000000000000000000009 /* Products */,
+				DEF51B7330568E4100663AD8 /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		DEF51B7330568E4100663AD8 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */,
+				A00000000000000000000005 /* SanskritiAI/Models.swift */,
+				A00000000000000000000006 /* SanskritiAI/Services.swift */,
+				A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */,
+				A00000000000000000000008 /* SanskritiAI/Views.swift */,
+				A00000000000000000000026 /* SanskritiAI/WebView.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000018 /* SanskritiAI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000021 /* Build configuration list for PBXNativeTarget "SanskritiAI" */;
+			buildPhases = (
+				A00000000000000000000028 /* Copy Android UI bundle */,
+				A00000000000000000000015 /* Sources */,
+				A00000000000000000000017 /* Frameworks */,
+				A00000000000000000000016 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SanskritiAI;
+			productName = SanskritiAI;
+			productReference = A00000000000000000000001 /* SanskritiAI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000019 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2600;
+				ORGANIZATIONNAME = Sanskriti;
+				TargetAttributes = {
+					A00000000000000000000018 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000020 /* Build configuration list for PBXProject "SanskritiAI" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000030;
+			productRefGroup = A00000000000000000000009 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000018 /* SanskritiAI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000016 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000015 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000010 /* SanskritiAI/SanskritiAIApp.swift in Sources */,
+				A00000000000000000000011 /* SanskritiAI/Models.swift in Sources */,
+				A00000000000000000000012 /* SanskritiAI/Services.swift in Sources */,
+				A00000000000000000000013 /* SanskritiAI/DeviceServices.swift in Sources */,
+				A00000000000000000000014 /* SanskritiAI/Views.swift in Sources */,
+				A00000000000000000000027 /* SanskritiAI/WebView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000022 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000023 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000024 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 43WAD8RCVQ;
+				INFOPLIST_FILE = SanskritiAI/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sanskriti.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A00000000000000000000025 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 43WAD8RCVQ;
+				INFOPLIST_FILE = SanskritiAI/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sanskriti.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000020 /* Build configuration list for PBXProject "SanskritiAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000022 /* Debug */,
+				A00000000000000000000023 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000021 /* Build configuration list for PBXNativeTarget "SanskritiAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000024 /* Debug */,
+				A00000000000000000000025 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A00000000000000000000019 /* Project object */;
+}

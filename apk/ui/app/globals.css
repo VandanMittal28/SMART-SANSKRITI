@@ -37,6 +37,36 @@
   --sidebar-ring: #C9A84C;
 }
 
+html.light {
+  --background: #F7F1E5;
+  --foreground: #1D2638;
+  --card: #FFFDF8;
+  --card-foreground: #1D2638;
+  --popover: #FFFDF8;
+  --popover-foreground: #1D2638;
+  --primary: #93650A;
+  --primary-foreground: #FFFDF8;
+  --secondary: #147A70;
+  --secondary-foreground: #FFFFFF;
+  --muted: #EEE5D6;
+  --muted-foreground: #5F6878;
+  --accent: #A94F35;
+  --accent-foreground: #FFFFFF;
+  --border: rgba(112, 78, 18, 0.22);
+  --input: #FFFDF8;
+  --ring: #93650A;
+  --success: #147A70;
+  --success-foreground: #FFFFFF;
+  --sidebar: #FFF9EE;
+  --sidebar-foreground: #1D2638;
+  --sidebar-primary: #93650A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EEE5D6;
+  --sidebar-accent-foreground: #1D2638;
+  --sidebar-border: rgba(112, 78, 18, 0.2);
+  --sidebar-ring: #93650A;
+}
+
 @theme inline {
   --font-sans: var(--font-manrope), Avenir Next, Avenir, system-ui, sans-serif;
   --font-serif: var(--font-literata), Georgia, "Times New Roman", serif;
@@ -81,8 +111,11 @@
     @apply border-border outline-ring/50;
   }
   html {
-    background: #050816;
+    background: var(--background);
     color-scheme: dark;
+  }
+  html.light {
+    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;
@@ -179,7 +212,7 @@
   max-width: 420px;
   min-height: 100dvh;
   margin: 0 auto;
-  background: #080D1D;
+  background: var(--background);
   box-shadow: 0 0 0 1px rgba(214, 168, 75, 0.08), 0 24px 80px rgba(0, 0, 0, 0.32);
 }
 
@@ -211,14 +244,14 @@
 }
 
 .app-card {
-  background: #11182B;
-  border: 1px solid rgba(214, 168, 75, 0.17);
+  background: var(--card);
+  border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .app-card-soft {
-  background: #171F34;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--muted);
+  border: 1px solid var(--border);
 }
 
 .hero-grid {
@@ -226,6 +259,148 @@
     radial-gradient(circle at 20% 20%, rgba(201, 168, 76, 0.15), transparent 20%),
     radial-gradient(circle at 80% 0%, rgba(83, 74, 183, 0.18), transparent 24%),
     linear-gradient(180deg, rgba(7, 10, 22, 0.35), rgba(7, 10, 22, 0.8));
+}
+
+html.light .mobile-shell {
+  box-shadow: 0 0 0 1px rgba(112, 78, 18, 0.09), 0 24px 80px rgba(73, 52, 17, 0.14);
+}
+
+html.light .mobile-shell::before {
+  background: linear-gradient(180deg, rgba(147, 101, 10, 0.06), transparent 24%);
+}
+
+html.light .glass-card {
+  background: rgba(255, 253, 248, 0.94);
+  border-color: rgba(112, 78, 18, 0.2);
+}
+
+html.light .hero-grid {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(147, 101, 10, 0.11), transparent 20%),
+    radial-gradient(circle at 80% 0%, rgba(83, 74, 183, 0.09), transparent 24%),
+    linear-gradient(180deg, rgba(255, 253, 248, 0.18), rgba(247, 241, 229, 0.76));
+}
+
+/* Much of the mobile UI predates semantic color tokens. These mappings keep
+   every existing screen readable while it is incrementally migrated. */
+html.light [class*="bg-[#050816]"],
+html.light [class*="bg-[#050814]"],
+html.light [class*="bg-[#080D1D]"],
+html.light [class*="bg-[#08070f]"],
+html.light [class*="bg-[#07101c]"] {
+  background-color: var(--background) !important;
+}
+
+html.light [class*="bg-[#0B1122]"],
+html.light [class*="bg-[#0B1020]"],
+html.light [class*="bg-[#0D1426]"],
+html.light [class*="bg-[#101827]"],
+html.light [class*="bg-[#10172a]"],
+html.light [class*="bg-[#10162a]"],
+html.light [class*="bg-[#11162a]"],
+html.light [class*="bg-[#11182B]"] {
+  background-color: var(--card) !important;
+}
+
+html.light [class*="bg-[#171F34]"],
+html.light [class*="bg-[#1D2740]"],
+html.light [class*="bg-[#252d38]"],
+html.light [class*="bg-[#0A2526]"] {
+  background-color: var(--muted) !important;
+}
+
+html.light [class*="bg-black/"],
+html.light [class*="bg-white/[0.0"],
+html.light [class*="bg-white/5"],
+html.light [class*="bg-white/8"] {
+  background-color: rgba(255, 253, 248, 0.72) !important;
+}
+
+html.light [class*="text-[#F6F1E8]"],
+html.light [class*="text-[#F5E6D3]"],
+html.light [class*="text-[#F3DFC0]"],
+html.light [class*="text-[#fff0ce]"],
+html.light [class*="text-[#ffe7b0]"],
+html.light [class*="text-[#E9FFF9]"] {
+  color: var(--foreground) !important;
+}
+
+html.light [class*="text-[#AEB6C8]"],
+html.light [class*="text-[#8891A6]"],
+html.light [class*="text-[#C7CDDA]"],
+html.light [class*="text-[#D9C7AA]"],
+html.light [class*="text-[#667086]"],
+html.light [class*="text-[#5A6478]"] {
+  color: var(--muted-foreground) !important;
+}
+
+html.light [class*="text-[#D6A84B]"],
+html.light [class*="text-[#E8BE69]"],
+html.light [class*="text-[#E8C97A]"],
+html.light [class*="text-[#F7D88C]"],
+html.light [class*="text-[#efc566]"],
+html.light [class*="text-[#f2ca50]"] {
+  color: #805706 !important;
+}
+
+html.light [class*="text-[#63C7BA]"],
+html.light [class*="text-[#7EE4D4]"],
+html.light [class*="text-[#7ECDC0]"],
+html.light [class*="text-[#79dfd0]"],
+html.light [class*="text-[#8DE0D6]"] {
+  color: #126F67 !important;
+}
+
+html.light [class*="text-[#B9A2F5]"] {
+  color: #6843A4 !important;
+}
+
+html.light [class*="border-white/"] {
+  border-color: rgba(51, 65, 85, 0.16) !important;
+}
+
+html.light [class*="shadow-[0_-8px_24px_rgba(0,0,0"] {
+  box-shadow: 0 -8px 24px rgba(73, 52, 17, 0.12) !important;
+}
+
+html.light [style*="background: rgb(17, 24, 43)"],
+html.light [style*="background-color: rgb(17, 24, 43)"],
+html.light [style*="background: #11182B"],
+html.light [style*="background-color: #11182B"] {
+  background: var(--card) !important;
+  background-color: var(--card) !important;
+}
+
+html.light [style*="background: rgb(23, 31, 52)"],
+html.light [style*="background-color: rgb(23, 31, 52)"],
+html.light [style*="background: #171F34"],
+html.light [style*="background-color: #171F34"],
+html.light [style*="background: rgba(28, 22, 56"],
+html.light [style*="background: rgba(28,22,56"],
+html.light [style*="background: rgba(15, 11, 30"],
+html.light [style*="background: rgba(15,11,30"] {
+  background: var(--muted) !important;
+  background-color: var(--muted) !important;
+}
+
+html.light [style*="background: rgb(8, 13, 29)"],
+html.light [style*="background-color: rgb(8, 13, 29)"],
+html.light [style*="background: #080D1D"],
+html.light [style*="background-color: #080D1D"] {
+  background: var(--background) !important;
+  background-color: var(--background) !important;
+}
+
+html.light [style*="color: rgb(246, 241, 232)"],
+html.light [style*="color: #F6F1E8"] {
+  color: var(--foreground) !important;
+}
+
+html.light [style*="color: rgb(174, 182, 200)"],
+html.light [style*="color: rgb(136, 145, 166)"],
+html.light [style*="color: #AEB6C8"],
+html.light [style*="color: #8891A6"] {
+  color: var(--muted-foreground) !important;
 }
 
 .app-scroll-row {

@@ -1,4 +1,5 @@
 export { supabase } from '@/lib/supabase/client'
+import type { SupportedLanguage } from '@/lib/languages'
 
 export type UserProfile = {
   id: string
@@ -7,7 +8,7 @@ export type UserProfile = {
   full_name: string
   phone: string | null
   user_type: 'student' | 'tourist'
-  language: 'en' | 'hi'
+  language: SupportedLanguage
   total_xp: number
   monuments_visited: string[]
   quiz_scores: number[]

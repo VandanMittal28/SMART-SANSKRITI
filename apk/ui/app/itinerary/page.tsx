@@ -1,13 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { useLang } from '@/lib/languageContext'
-import { MapPin, Route } from 'lucide-react'
+import { CalendarCheck2, MapPin, Route, Store } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   generateLocalItinerary,
   type HeritageItinerary as Itinerary,
 } from '@/lib/itinerary'
+import { TravelTabs } from '@/components/marketplace/travel-tabs'
+import { getItineraryReservations, getLocalReservations } from '@/lib/marketplace/local-store'
+import type { MarketplaceReservation } from '@/lib/marketplace/types'
 
 const INDIA_CITIES = [
   { city: 'Agra', state: 'Uttar Pradesh', emoji: '🕌', highlights: 'Taj Mahal, Agra Fort, Fatehpur Sikri', monuments: ['taj-mahal', 'agra-fort', 'fatehpur-sikri'] },
@@ -88,6 +91,12 @@ export default function ItineraryPage() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null)
+  const [localArtStops, setLocalArtStops] = useState<MarketplaceReservation[]>([])
+
+  useEffect(() => {
+    const itineraryIds = new Set(getItineraryReservations())
+    setLocalArtStops(getLocalReservations().filter((reservation) => itineraryIds.has(reservation.id)))
+  }, [])
 
   const filteredCities = INDIA_CITIES.filter(c =>
     c.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -209,11 +218,15 @@ export default function ItineraryPage() {
             </h1>
           </div>
           <p style={{ color: '#AEB6C8', margin: '6px 0 0', fontSize: 14, lineHeight: '21px' }}>Build a heritage route around your time and interests.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#11182B', padding: 4, borderRadius: 12, marginTop: 16 }}>
-            <a href="/tickets" style={{ display: 'grid', minHeight: 40, placeItems: 'center', borderRadius: 9, color: '#AEB6C8', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Tickets</a>
-            <span style={{ display: 'grid', minHeight: 40, placeItems: 'center', borderRadius: 9, background: '#D6A84B', color: '#171004', fontSize: 13, fontWeight: 800 }}>My plans</span>
-          </div>
+          <div style={{ marginTop: 16 }}><TravelTabs active="itinerary" /></div>
         </div>
+
+        {localArtStops.length ? (
+          <section className="mb-5 rounded-2xl border border-[#63C7BA]/22 bg-[#63C7BA]/[0.06] p-4">
+            <div className="flex items-center justify-between gap-3"><div><p className="flex items-center gap-2 text-sm font-bold text-[#F6F1E8]"><Store className="h-4 w-4 text-[#63C7BA]" />{lang === 'hi' ? 'आरक्षित स्थानीय कला' : 'Reserved local art'}</p><p className="mt-1 text-[11px] text-[#A9E5DB]">{lang === 'hi' ? 'आपकी यात्रा में जोड़े गए पिकअप और कार्यशालाएं' : 'Pickups and workshops added to your trip'}</p></div><span className="rounded-full bg-[#63C7BA]/14 px-2.5 py-1 text-xs font-black text-[#8DE0D6]">{localArtStops.length}</span></div>
+            <div className="mt-3 space-y-2">{localArtStops.map((stop) => <div key={stop.id} className="flex items-start gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-3"><CalendarCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D6A84B]" /><div><p className="text-xs font-bold text-[#F6F1E8]">{stop.listingTitle}</p><p className="mt-1 text-[10px] leading-4 text-[#AEB6C8]">{new Intl.DateTimeFormat(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(stop.scheduledFor))} · {stop.artisanName}</p></div></div>)}</div>
+          </section>
+        ) : null}
 
         <div style={{ background: '#11182B', border: '1px solid rgba(214,168,75,0.17)', borderRadius: '16px', padding: '16px', marginBottom: '1.5rem' }}>
           {/* Days selector */}

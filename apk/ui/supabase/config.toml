@@ -1,0 +1,5 @@
+project_id = "sanskriti-ai"
+
+[functions.razorpay-webhook]
+verify_jwt = false
+

@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, AtSign, BadgeCheck, Cloud, Sparkles, UserRoundPlus, UsersRound } from 'lucide-react'
+import { ArrowRight, AtSign, BadgeCheck, Cloud, UserRoundPlus, UsersRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,8 @@ import SanskritiLogo from '@/components/SanskritiLogo'
 import { normalizeUsername } from '@/lib/authClient'
 import { useAuth } from '@/lib/authContext'
 import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { LanguageSelect } from '@/components/language-select'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -61,8 +63,9 @@ export default function LoginPage() {
               <p className="text-xs text-[#AEB6C8]">Mobile heritage guide</p>
             </div>
           </div>
-          <div className="grid size-10 place-items-center rounded-full border border-[#E8BE69]/20 bg-[#E8BE69]/10 text-[#E8BE69]">
-            <Sparkles className="size-4" />
+          <div className="flex items-center gap-2">
+            <LanguageSelect />
+            <ThemeToggle className="size-10" />
           </div>
         </div>
 

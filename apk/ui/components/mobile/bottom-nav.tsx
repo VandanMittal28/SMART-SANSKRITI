@@ -26,7 +26,7 @@ export function BottomNav() {
             return <ScanButton key={tab.href} />
           }
 
-          const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`) || (tab.href === '/tickets' && pathname.startsWith('/itinerary'))
+          const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`) || (tab.href === '/tickets' && (pathname.startsWith('/itinerary') || pathname.startsWith('/marketplace')))
           const Icon = tab.icon
 
           return (

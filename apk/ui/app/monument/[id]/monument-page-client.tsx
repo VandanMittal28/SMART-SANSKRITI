@@ -3,7 +3,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { useLang } from '@/lib/languageContext'
 import { AppShell } from '@/components/app-shell'
-import { ArrowLeft, Brain, Headphones, MapPin, Route, Send, Ticket } from 'lucide-react'
+import { ArrowLeft, Brain, Headphones, MapPin, Route, Send, ShoppingBag, Ticket } from 'lucide-react'
 import api from '@/lib/apiClient'
 import { offlineHeritageAnswer } from '@/lib/offlineHeritage'
 import { MONUMENTS, MONUMENT_FALLBACK } from '@/lib/monumentData'
@@ -131,10 +131,11 @@ export default function MonumentPage() {
           <p className="flex items-center gap-1.5 text-xs font-semibold text-[#AEB6C8]"><MapPin className="h-3.5 w-3.5" /> {monument.city}</p>
           <h1 className="mt-2 font-heritage text-[28px] font-bold leading-9 text-[#F6F1E8]">{monument.name}</h1>
           <p className="mt-2 text-sm leading-6 text-[#C7CDDA]">{monument.description}</p>
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-4 gap-2">
             <button type="button" onClick={() => router.push('/chat')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Headphones className="h-5 w-5 text-[#D6A84B]" /> Audio guide</button>
             <button type="button" onClick={() => router.push('/explore')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Route className="h-5 w-5 text-[#D6A84B]" /> Start tour</button>
             <button type="button" onClick={() => router.push('/tickets')} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-[11px] font-bold text-[#F3DFC0]"><Ticket className="h-5 w-5 text-[#D6A84B]" /> Tickets</button>
+            <button type="button" onClick={() => router.push(`/marketplace/?site=${id}`)} className="flex min-h-[70px] flex-col items-center justify-center gap-2 rounded-xl border border-white/8 bg-[#171F34] text-center text-[10px] font-bold leading-3 text-[#F3DFC0]"><ShoppingBag className="h-5 w-5 text-[#63C7BA]" /> Local art</button>
           </div>
         </section>
 

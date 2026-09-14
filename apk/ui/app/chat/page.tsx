@@ -12,14 +12,15 @@ import { useUser } from "@/lib/userContext"
 import { cn } from "@/lib/utils"
 import { getChatCacheKey, getCache, setCache, CACHE_DURATION } from '@/lib/cache'
 import { recordingToWavBase64 } from '@/lib/audio'
-import { isMonumentQuestion, monumentOnlyRefusal, offlineHeritageAnswer } from '@/lib/offlineHeritage'
+import { offlineHeritageAnswer } from '@/lib/offlineHeritage'
 import { hasNativeNvidia, recordPhoneMicrophone, transcribeAudioNative, synthesizeNarrationNative } from '@/lib/nativeNvidia'
 import { getNvidiaNarrationVoice } from '@/lib/narrationProfiles'
+import { getLanguageConfig } from '@/lib/languages'
 
 interface Message { id: string | number; role: "assistant" | "user"; content: string }
 
 export default function ChatPage() {
-  const { t, lang } = useLang()
+  const { t, lang, translate } = useLang()
   const suggestedQuestions = [t('when_built'), t('who_built'), t('what_legend'), t('best_time_visit'), t('entry_fee_q')]
 
   const [messages, setMessages] = useState<Message[]>([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
@@ -49,11 +50,13 @@ export default function ChatPage() {
 
     const doSpeak = () => {
       const voices = window.speechSynthesis.getVoices()
-      const targetLang = lang === 'hi' ? 'hi' : 'en'
+      const language = getLanguageConfig(lang)
+      const targetLang = language.locale.toLowerCase()
+      const baseLanguage = targetLang.split('-')[0]
       const voice = voices.find(v =>
-        v.lang.includes(targetLang) &&
-        (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.lang.includes(targetLang))
-      ) || voices.find(v => v.lang.includes(targetLang))
+        v.lang.toLowerCase() === targetLang &&
+        (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.lang.toLowerCase() === targetLang)
+      ) || voices.find(v => v.lang.toLowerCase().startsWith(baseLanguage))
 
       const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
       let idx = 0
@@ -61,7 +64,7 @@ export default function ChatPage() {
       const speakNext = () => {
         if (idx >= sentences.length) { setIsSpeaking(false); return }
         const utterance = new SpeechSynthesisUtterance(sentences[idx].trim())
-        utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-US'
+        utterance.lang = language.locale
         utterance.rate = 0.9
         utterance.pitch = 1.0
         if (voice) utterance.voice = voice
@@ -167,18 +170,8 @@ export default function ChatPage() {
     setInput("")
     setLoading(true)
 
-    if (!isMonumentQuestion(trimmed)) {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: monumentOnlyRefusal(lang),
-      }])
-      setLoading(false)
-      return
-    }
-
     // Check cache first
-    const cacheKey = getChatCacheKey(trimmed, monumentId)
+    const cacheKey = getChatCacheKey(trimmed, monumentId, lang)
     const cachedAnswer = getCache(cacheKey, CACHE_DURATION.chat)
     
     if (cachedAnswer) {
@@ -209,7 +202,15 @@ export default function ChatPage() {
 
       await persistExchange(trimmed, aiAnswer)
     } catch {
-      const fallbackAnswer = offlineHeritageAnswer(trimmed, monumentId, lang)
+      const englishFallback = offlineHeritageAnswer(trimmed, monumentId, 'en')
+      let fallbackAnswer = englishFallback
+      if (lang !== 'en') {
+        try {
+          fallbackAnswer = await translate(englishFallback)
+        } catch {
+          // English remains available if the device is fully offline.
+        }
+      }
       setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: fallbackAnswer }])
       if (lastWasVoiceRef.current) {
         void speakText(fallbackAnswer)
@@ -243,7 +244,7 @@ export default function ChatPage() {
       showToast(t('listening'))
       try {
         const audioBase64 = await recordPhoneMicrophone(5_000)
-        const spokenText = await transcribeAudioNative(audioBase64, lang === 'hi' ? 'hi' : 'en')
+        const spokenText = await transcribeAudioNative(audioBase64, lang)
         if (!spokenText) throw new Error('Transcription was empty')
         setInput(spokenText)
         lastWasVoiceRef.current = true
@@ -286,9 +287,9 @@ export default function ChatPage() {
           const audioBase64 = await recordingToWavBase64(audio)
           let spokenText = ''
           if (hasNativeNvidia()) {
-            spokenText = await transcribeAudioNative(audioBase64, lang === 'hi' ? 'hi' : 'en')
+            spokenText = await transcribeAudioNative(audioBase64, lang)
           } else {
-            const response = await fetch('/api/transcribe', {
+            const response = await fetch('/api/transcribe/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ audio_b64: audioBase64, language: lang }),
@@ -432,7 +433,7 @@ export default function ChatPage() {
             <button
               onClick={handleSend}
               disabled={loading}
-              aria-label="Send message"
+              aria-label={t('send')}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#D6A84B] text-[#171004] transition-transform active:scale-95 disabled:opacity-50"
             >
               <Send className="h-4.5 w-4.5" />

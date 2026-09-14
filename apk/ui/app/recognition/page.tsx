@@ -134,7 +134,7 @@ export default function RecognitionPage() {
     isSpeaking, speak, stopSpeaking,
     isListening, startListening, stopListening,
     isThinking, lastAnswer,
-    lang: audioLang, setLang: setAudioLang,
+    lang: audioLang,
     isMuted, toggleMute, setCurrentZone
   } = useAudioGuide()
 
@@ -520,7 +520,7 @@ export default function RecognitionPage() {
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#8891A6]">Listen and learn</p>
                     <h3 className="mt-1 font-heritage text-lg font-bold text-[#F6F1E8]">Your monument audio guide</h3>
-                    <p className="mt-1 text-xs text-[#AEB6C8]">Narration and questions in {audioLang === 'en' ? 'English' : 'Hindi'}</p>
+                    <p className="mt-1 text-xs text-[#AEB6C8]">Narration and questions use your selected app language</p>
                   </div>
                   <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute audio guide' : 'Mute audio guide'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/8 bg-[#171F34] text-[#D6A84B]">
                     {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -545,7 +545,7 @@ export default function RecognitionPage() {
 
                 <div className="mt-2 flex justify-between">
                   {isSpeaking ? <button type="button" onClick={stopSpeaking} className="inline-flex min-h-10 items-center gap-2 px-1 text-xs font-bold text-[#E8928B]"><RotateCcw className="h-3.5 w-3.5" /> Stop narration</button> : <span />}
-                  <button type="button" onClick={() => setAudioLang(audioLang === 'en' ? 'hi' : 'en')} className="inline-flex min-h-10 items-center gap-2 px-1 text-xs font-bold text-[#D6A84B]"><Languages className="h-3.5 w-3.5" /> {audioLang === 'en' ? 'हिंदी' : 'English'}</button>
+                  <span data-no-translate className="inline-flex min-h-10 items-center gap-2 px-1 text-xs font-bold text-[#D6A84B]"><Languages className="h-3.5 w-3.5" /> {audioLang.toUpperCase()}</span>
                 </div>
 
                 {isThinking && (

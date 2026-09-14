@@ -169,6 +169,38 @@ public final class MainActivity extends Activity {
         setContentView(root);
     }
 
+    private void applyAppTheme(boolean light) {
+        int background = Color.parseColor(light ? "#F7F1E5" : "#070A16");
+        if (webView != null) {
+            webView.setBackgroundColor(background);
+            webView.getRootView().setBackgroundColor(background);
+        }
+        getWindow().setStatusBarColor(background);
+        getWindow().setNavigationBarColor(background);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.view.WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                int mask = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                controller.setSystemBarsAppearance(light ? mask : 0, mask);
+            }
+        } else {
+            int flags = getWindow().getDecorView().getSystemUiVisibility();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags = light
+                        ? flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        : flags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags = light
+                        ? flags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                        : flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
+    }
+
     @SuppressWarnings("SetJavaScriptEnabled")
     private void configureWebView() {
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
@@ -394,6 +426,11 @@ public final class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void setTheme(String theme) {
+            mainHandler.post(() -> applyAppTheme("light".equals(theme)));
+        }
+
+        @JavascriptInterface
         public void speak(
                 String utteranceId,
                 String text,
@@ -423,6 +460,7 @@ public final class MainActivity extends Activity {
         public String getNvidiaModel(String task) {
             if ("vision".equals(task)) return BuildConfig.NVIDIA_VISION_MODEL;
             if ("speech".equals(task)) return BuildConfig.NVIDIA_SPEECH_MODEL;
+            if ("translation".equals(task)) return BuildConfig.NVIDIA_TRANSLATION_MODEL;
             return BuildConfig.NVIDIA_CHAT_MODEL;
         }
 
