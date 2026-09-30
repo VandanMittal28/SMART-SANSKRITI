@@ -4,7 +4,7 @@ This folder is the complete Sanskriti AI Android project. Its mobile UI source
 is kept internally in `ui/` and packaged as app assets during each APK build.
 
 The APK uses Android's WebView only as its internal rendering engine; it does
-not load the UI from Vercel or require a Mac development server. The native
+not load the UI from a hosted website or require a Mac development server. The native
 integration supports camera scans, microphone access, location, file uploads,
 downloads, persistent cookies/local storage, Android back navigation, and an
 offline/retry screen. Android-native text-to-speech is bridged into the UI for
