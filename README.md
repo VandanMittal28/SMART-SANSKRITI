@@ -54,6 +54,8 @@ npm run build:operations
 - [Product vision, current status and PRD (PDF)](docs/product/Sanskriti-Product-Vision-Status-and-PRD.pdf)
 - [Detailed implementation plan and iOS assessment](docs/product/implementation-plan.md)
 - [Architecture and delivery boundaries](docs/architecture.md)
+- [Crowd input pipeline and local simulation](docs/crowd-inputs.md)
+- [Implementation status and verified checks](docs/operations-status.md)
 - [Contribution and verification guide](CONTRIBUTING.md)
 
 Current milestone: a verified **local operations foundation**. Next: genuine

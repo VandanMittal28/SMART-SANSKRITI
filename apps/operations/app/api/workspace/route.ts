@@ -1,4 +1,5 @@
 import { store } from "../../../lib/store";
+import { publicSnapshot } from "../../../lib/crowd";
 import { assertLocal, failure, jsonBody } from "../../../lib/request";
 import {
   createSchema,
@@ -12,9 +13,12 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     assertLocal(request);
-    return Response.json(await store.transaction((data) => data, false), {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return Response.json(
+      await store.transaction((data) => publicSnapshot(data), false),
+      {
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
   } catch (error) {
     return failure(error);
   }

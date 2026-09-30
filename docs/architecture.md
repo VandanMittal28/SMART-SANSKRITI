@@ -19,6 +19,8 @@
 - `lib/store.ts`: local single-process storage adapter with serialized writes
   and atomic file replacement.
 - `lib/request.ts`: loopback/origin checks and request errors for the sandbox.
+- `lib/crowd.ts`: validated camera/presence input, ordering, independent session
+  expiry, consent withdrawal and aggregate-only dashboard projection.
 - `tests/`: workflow, freshness, persistence/concurrency and request-boundary checks.
 
 The server is authoritative for workflow transitions. Updates carry the record
@@ -37,6 +39,10 @@ camera-based zone estimates, consented/expiring app presence and site-wide
 entry/exit records. Uncovered or stale zones are unknown. Pilot calibration
 must establish camera overlap, counting error and alert thresholds before
 staff rely on it. All current sensor readings are labelled synthetic.
+
+The input pipeline is now testable through the local simulator. See
+[crowd input contract](crowd-inputs.md). This is not authenticated producer
+ingestion, a real consent UI, geographic zone detection or a camera stream.
 
 ## Documentation
 

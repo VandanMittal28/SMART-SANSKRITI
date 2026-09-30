@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CrowdInputs } from "./crowd.ts";
 
 export const statuses = [
   "reported",
@@ -104,6 +105,9 @@ export type Snapshot = {
   incidents: Incident[];
   signals: ZoneSignal[];
   sampledAt: string;
+  crowdInputs?: CrowdInputs;
+  crowdMode?: "sample" | "simulator";
+  crowdSummary?: { sessions: number; active: number; camerasReporting: number };
 };
 export const createSchema = z
   .object({

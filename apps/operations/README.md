@@ -22,6 +22,7 @@ Open http://127.0.0.1:3100. The server binds to loopback only. No credentials or
 - Local file persistence with serialized, atomic writes; failed reads never silently reset records.
 - Sample field-staff assignments and a complete case history attributed to the local operator.
 - Zone crowd view: calibrated sample camera counts and app-user samples shown separately. Offline, partial, invalid or stale camera readings are unknown, never zero. Samples expire after five minutes. Replay is explicitly a simulation.
+- Crowd input simulator and API: anonymous sessions move between zones, expire independently and withdraw consent; camera readings validate source, ordering and freshness. Exact retries do not inflate counts. Individual sessions are omitted from dashboard responses. See [input contract](../../docs/crowd-inputs.md).
 - Export a labelled JSON workspace report including histories and source timestamps.
 - Responsive interface, keyboard-operable native dialogs and visible error states.
 

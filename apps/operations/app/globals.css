@@ -1447,3 +1447,70 @@ dialog label {
     gap: 12px;
   }
 }
+
+.simulator-panel {
+  margin-top: 20px;
+}
+.simulator-body {
+  padding: 0 23px 23px;
+}
+.simulator-explanation {
+  padding: 13px 15px;
+  background: #f5f3ea;
+  color: #8b805d;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-bottom: 22px;
+}
+.simulator-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+.simulator-grid h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.simulator-grid p {
+  color: #81928f;
+  font-size: 11px;
+  margin: 12px 0 20px;
+}
+.simulator-grid small {
+  display: block;
+  margin-top: 14px;
+}
+.consent-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.6;
+}
+.consent-label input {
+  width: 15px;
+  margin: 0;
+  accent-color: #24766e;
+}
+.simulator-actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.simulator-body > .notice,
+.simulator-body > .error {
+  margin: 20px 0 0;
+}
+@media (max-width: 760px) {
+  .simulator-grid {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .simulator-body {
+    padding: 0 16px 20px;
+  }
+  .simulator-panel .panel-title {
+    flex-wrap: wrap;
+  }
+}

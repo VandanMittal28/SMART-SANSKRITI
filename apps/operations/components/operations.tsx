@@ -39,6 +39,7 @@ import {
   type Snapshot,
   type Status,
 } from "../lib/domain";
+import { CrowdSimulator } from "./crowd-simulator";
 
 const navigation = [
   { name: "Overview", icon: LayoutDashboard },
@@ -145,6 +146,13 @@ export function Operations() {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, [load]);
+  useEffect(() => {
+    if (view !== "Zone crowd" || data?.crowdMode !== "simulator") return;
+    const timer = setInterval(() => {
+      void load().catch((e) => setError(e.message));
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [view, data?.crowdMode, load]);
   const selected = data?.incidents.find((i) => i.id === selectedId);
   const open = data?.incidents.filter(isOpen) ?? [];
   const review = open.filter((i) =>
@@ -761,14 +769,26 @@ export function Operations() {
                       <div>
                         <h2>Zone conditions</h2>
                         <p>
-                          Sample captured {when(data.sampledAt)} IST ·
-                          illustrative capacities
+                          {data.crowdMode === "simulator"
+                            ? "Last simulated input"
+                            : "Sample captured"}{" "}
+                          {when(data.sampledAt)} IST · illustrative capacities
                         </p>
                       </div>
-                      <Badge value="unknown">Sample data</Badge>
+                      <Badge value="unknown">
+                        {data.crowdMode === "simulator"
+                          ? "Input simulation"
+                          : "Sample data"}
+                      </Badge>
                     </div>
                     {signals}
                   </section>
+                  <CrowdSimulator
+                    onUpdate={(snapshot) => {
+                      setData(snapshot);
+                      setNow(Date.now());
+                    }}
+                  />
                   <div className="note-grid">
                     <div className="panel padded">
                       <h3>Before live monitoring</h3>
