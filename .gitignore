@@ -46,3 +46,8 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Local service metadata and generated artifacts
+**/supabase/.temp/
+**/xcuserdata/
+/output/

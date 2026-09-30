@@ -1,0 +1,21 @@
+name: Operations checks
+on:
+  push:
+    paths: ['apps/operations/**', 'package.json', 'package-lock.json', '.github/workflows/operations.yml']
+  pull_request:
+    paths: ['apps/operations/**', 'package.json', 'package-lock.json', '.github/workflows/operations.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:operations
+      - run: npm run typecheck:operations
+      - run: npm run build:operations

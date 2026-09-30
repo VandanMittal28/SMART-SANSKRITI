@@ -1,0 +1,12 @@
+{
+  "name": "sanskriti-workspace",
+  "private": true,
+  "workspaces": ["apps/operations"],
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "dev:operations": "npm run dev --workspace sanskriti-operations",
+    "build:operations": "npm run build --workspace sanskriti-operations",
+    "test:operations": "npm run test --workspace sanskriti-operations",
+    "typecheck:operations": "npm run typecheck --workspace sanskriti-operations"
+  }
+}
