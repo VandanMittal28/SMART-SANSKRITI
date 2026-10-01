@@ -30,7 +30,7 @@ npm run dev:operations
 ```
 
 Open **http://127.0.0.1:3100**. The local sandbox includes a dashboard,
-incident review/assignment/resolution, field staff views, sample zone crowd
+incident review/assignment/resolution, a local guest-report dispatch demo, field staff views, sample zone crowd
 signals and a report export. Its synthetic records are saved locally.
 
 This is not a production staff login or a live camera system. See

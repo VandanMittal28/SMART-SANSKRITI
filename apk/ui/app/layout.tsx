@@ -10,6 +10,7 @@ import { BackendPrewarmer } from '@/components/BackendPrewarmer'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AppThemeSync } from '@/components/theme-toggle'
 import { TopBar } from '@/components/TopBar'
+import { ReportButton } from '@/components/report/report-button'
 import { Literata, Manrope, Noto_Sans_Devanagari } from 'next/font/google'
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' })
@@ -41,6 +42,7 @@ export default function RootLayout({
           <AppThemeSync />
           <BackendPrewarmer />
           <AuthProvider>
+            <ReportButton />
             <AuthGuard>
               <LanguageProvider>
                 <ClientLangWrapper />

@@ -14,7 +14,7 @@ import type { YatrikAssetManifest, YatrikEvent, YatrikState } from '@/lib/yatrik
 
 const MUTE_STORAGE_KEY = 'sanskriti-yatrik-muted-v1'
 const WELCOME_STORAGE_PREFIX = 'sanskriti-yatrik-welcome-v2:'
-const HIDDEN_PATHS = new Set(['/login', '/auth', '/chat'])
+const HIDDEN_PATHS = new Set(['/login', '/auth', '/chat', '/report'])
 const SHOW_WELCOME_OVERLAY = true
 const WELCOME_TASK_TIMEOUT_MS = 8_000
 

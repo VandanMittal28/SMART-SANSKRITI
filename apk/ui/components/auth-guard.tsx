@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
 import { isBundledAndroidApp } from '@/lib/supabase/client'
 
-const PUBLIC_PATHS = new Set(['/login', '/auth'])
+const PUBLIC_PATHS = new Set(['/login', '/auth', '/report'])
 
 function LoadingScreen() {
   return (
@@ -26,7 +26,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return
     if (!user && !isPublicPath) router.replace('/login')
-    if (user && isPublicPath) {
+    if (user && isPublicPath && normalizedPathname !== '/report') {
       if (isBundledAndroidApp()) {
         window.location.replace(new URL('/', window.location.href).toString())
       } else {
@@ -40,6 +40,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isPublicPath && !user) return <>{children}</>
   if (loading) return <LoadingScreen />
   if (!user && !isPublicPath) return <LoadingScreen />
-  if (user && isPublicPath) return <LoadingScreen />
+  if (user && isPublicPath && normalizedPathname !== '/report') return <LoadingScreen />
   return <>{children}</>
 }

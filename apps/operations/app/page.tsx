@@ -1,4 +1,2 @@
-import { Operations } from "../components/operations";
-export default function Page() {
-  return <Operations />;
-}
+import { DemoWorkspace } from '../components/demo-workspace';
+export default function Page() { return <DemoWorkspace/>; }

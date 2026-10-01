@@ -29,6 +29,7 @@ export function TopBar() {
   if (
     normalizedPathname === '/login' ||
     normalizedPathname === '/auth' ||
+    normalizedPathname === '/report' ||
     normalizedPathname.startsWith('/explore') ||
     normalizedPathname.startsWith('/hunt')
   ) return null

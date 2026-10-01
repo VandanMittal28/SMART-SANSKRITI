@@ -69,3 +69,14 @@ APK** wizard can do this without storing the password in source control.
 
 The mobile UI build reads `ui/.env.local`, while Android build settings can use
 the project-level `.env.local`. Private env files remain ignored by Git.
+
+## Visitor issue reports (debug demo)
+
+The report button is available from login and throughout the Android app. A
+visitor can report without a profile, attach a photo, add a note, and select the
+incident zone even when location permission is denied. Failed submissions remain
+on the phone for retry. Status uses a private receipt token.
+
+Start the local MMS server and run `adb reverse tcp:3100 tcp:3100` before testing
+on an Android device. See `apps/operations/README.md` for the full demonstration
+workflow. The report bridge is intentionally enabled only in debug APKs.

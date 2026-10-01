@@ -55,4 +55,46 @@ For a local production-build preview only: `OPS_LOCAL_DEMO=true npm run start --
 5. Integrate authorised ticket entry/exit records. Only then reconcile site occupancy and generate a real daily report.
 6. Validate sustained crowd thresholds, camera alerts and safe-route recommendations at a pilot site before calling them operational.
 
-Not implemented: production login, multi-site access, evidence upload, live notifications, automatic escalation, live cameras/location, NFC website, ticketing, production daily scheduling or cloud deployment.
+Not implemented: production login, multi-site access, production evidence storage or notifications, live cameras, NFC website, ticketing, production daily scheduling or cloud deployment. Visitor evidence, GPS assignment and alerts in this workspace are local demo features only.
+
+## Android visitor report demonstration
+
+Run the local MMS server on port 3100, then open it in a browser. The first screen
+lets you select **Admin** or **Ground staff** and a sample staff profile. These
+selectors are demonstration access only. Admins can review reports, duty zones,
+staff availability, evidence, NVIDIA AI triage and overdue alerts. Staff
+see their own duty area and assignments, and share GPS only while on duty and
+while the page is open.
+
+The Android debug build sends guest reports to the local MMS server using a
+localhost-only native bridge. Connect an Android device and forward its port:
+
+```sh
+adb reverse tcp:3100 tcp:3100
+npm run dev:operations
+```
+
+Install `apk/app/build/outputs/apk/debug/app-debug.apk`, then use **Report issue**
+from the login screen or any app screen. The phone and server must remain
+connected for submission and status refresh. A failed submission stays as a
+local draft with the same receipt token for safe retry. The Android build is a
+local demo; the server remains bound to loopback. If port 3100 is already in use,
+stop that server before starting this version.
+
+Set `NVIDIA_API_KEY` in `apps/operations/.env.local` before starting the MMS
+server. `NVIDIA_VISION_MODEL` can override the default
+`meta/llama-3.2-11b-vision-instruct` model. The server sends each
+new report's category, note and supported JPEG/PNG photo to NVIDIA for triage;
+the key stays server-side. Only a valid **relevant** model response can trigger
+automatic dispatch. Uncertain, irrelevant, failed or unconfigured assessments
+go to admin review. WebP photos are retained for admin review, but are not
+automatically dispatched because the configured model does not support them.
+Previously submitted reports keep their original assessment history.
+
+Assignment uses GPS updated in the last two minutes, then duty zones.
+An unaccepted assignment alerts after one minute; an unresolved report alerts
+five minutes after receipt. The local server checks deadlines every five seconds
+while running and persists alerts in `.data/report-demo.json`. Private photos are
+stored in `.data/report-evidence/` and served only through role-checked routes.
+AI triage is not a factual finding about a visitor or an operational safety
+system. Demo staff and the report store are local to this machine.

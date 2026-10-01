@@ -31,4 +31,6 @@ rm -rf "$ASSET_DIR"
 mkdir -p "$ASSET_DIR"
 rsync -a "$TEMP_DIR/mobile-ui/out/" "$ASSET_DIR/"
 
+python3 "$APK_DIR/../ios/scripts/ui-manifest.py" --write
+
 echo "Bundled mobile UI written to $ASSET_DIR"

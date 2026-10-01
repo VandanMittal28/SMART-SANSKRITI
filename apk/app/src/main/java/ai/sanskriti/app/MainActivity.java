@@ -71,6 +71,7 @@ import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int REPORT_CAMERA_PERMISSION_REQUEST = 1006;
     private static final int WEB_PERMISSION_REQUEST = 1002;
     private static final int GEOLOCATION_REQUEST = 1003;
     private static final int AR_NAVIGATION_PERMISSION_REQUEST = 1004;
@@ -86,6 +87,7 @@ public final class MainActivity extends Activity {
     private WebView webView;
     private ProgressBar progressBar;
     private ValueCallback<Uri[]> fileCallback;
+    private WebChromeClient.FileChooserParams pendingReportFileChooser;
     private Uri captureUri;
     private PermissionRequest pendingWebPermission;
     private GeolocationPermissions.Callback pendingGeoCallback;
@@ -420,6 +422,42 @@ public final class MainActivity extends Activity {
     }
 
     private final class SanskritiAndroidBridge {
+        // Debug-only localhost bridge for the visitor report demonstration.
+        // It avoids mixed-content requests from the bundled HTTPS app origin.
+        @JavascriptInterface
+        public String demoReportRequest(String method, String path, String body) {
+            if (!BuildConfig.DEBUG || method == null || path == null
+                    || !(method.equals("GET") || method.equals("POST"))
+                    || !path.matches("/api/demo/reports(?:\\?[A-Za-z0-9=&%_-]+)?")) {
+                return "{\"ok\":false,\"error\":\"Demo request blocked\"}";
+            }
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection) new URL("http://localhost:3100" + path).openConnection();
+                connection.setRequestMethod(method);
+                connection.setConnectTimeout(4000);
+                connection.setReadTimeout(8000);
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Origin", "https://appassets.androidplatform.net");
+                if (method.equals("POST")) {
+                    byte[] bytes = (body == null ? "" : body).getBytes(StandardCharsets.UTF_8);
+                    if (bytes.length > 3_000_000) throw new IOException("Report exceeds size limit");
+                    connection.setDoOutput(true);
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    try (OutputStream output = connection.getOutputStream()) { output.write(bytes); }
+                }
+                int code = connection.getResponseCode();
+                InputStream stream = code >= 400 ? connection.getErrorStream() : connection.getInputStream();
+                StringBuilder response = new StringBuilder();
+                if (stream != null) try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+                    String line; while ((line = reader.readLine()) != null) response.append(line);
+                }
+                return new JSONObject().put("ok", code >= 200 && code < 300).put("body", new JSONObject(response.toString())).toString();
+            } catch (Exception error) {
+                try { return new JSONObject().put("ok", false).put("error", "Local MMS unavailable: " + error.getMessage()).toString(); }
+                catch (Exception ignored) { return "{\"ok\":false,\"error\":\"Local MMS unavailable\"}"; }
+            } finally { if (connection != null) connection.disconnect(); }
+        }
         @JavascriptInterface
         public boolean isNativeApp() {
             return true;
@@ -970,7 +1008,14 @@ public final class MainActivity extends Activity {
         ) {
             if (fileCallback != null) fileCallback.onReceiveValue(null);
             fileCallback = callback;
-            launchFileChooser(params);
+            String currentUrl = webView.getUrl();
+            if (currentUrl != null && currentUrl.contains("/report/")
+                    && !hasPermission(Manifest.permission.CAMERA)) {
+                pendingReportFileChooser = params;
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, REPORT_CAMERA_PERMISSION_REQUEST);
+            } else {
+                launchFileChooser(params);
+            }
             return true;
         }
 
@@ -1117,7 +1162,11 @@ public final class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == WEB_PERMISSION_REQUEST && pendingWebPermission != null) {
+        if (requestCode == REPORT_CAMERA_PERMISSION_REQUEST && pendingReportFileChooser != null) {
+            WebChromeClient.FileChooserParams params = pendingReportFileChooser;
+            pendingReportFileChooser = null;
+            launchFileChooser(params);
+        } else if (requestCode == WEB_PERMISSION_REQUEST && pendingWebPermission != null) {
             PermissionRequest request = pendingWebPermission;
             pendingWebPermission = null;
             grantSupportedWebResources(request);

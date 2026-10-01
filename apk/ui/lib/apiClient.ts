@@ -10,6 +10,15 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
+const isIOS = () => typeof window !== 'undefined' && 'SanskritiIOS' in window
+async function postApp(path: string, body: Record<string, unknown>) {
+  if (!isIOS()) return axios.post(path, body)
+  const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.error || 'The online service is unavailable.')
+  return { data }
+}
+
 // Default user for demo
 export const DEFAULT_USER = 'demo_user'
 
@@ -30,13 +39,13 @@ export const api = {
   askChat: (question: string, monumentId = '', lang?: SupportedLanguage) =>
     hasNativeNvidia()
       ? askNativeHeritageChat(question, monumentId, lang).then(answer => ({ data: { answer, response: answer } }))
-      : apiClient.post('/chat/ask', { question, monument_id: monumentId, lang }),
+      : isIOS() ? postApp('/api/chat', { question, monument_id: monumentId, lang }) : apiClient.post('/chat/ask', { question, monument_id: monumentId, lang }),
 
   // Recognition
   recognize: (imageB64: string, filename = 'image.jpg', options?: Record<string, unknown>) =>
     hasNativeNvidia()
       ? recognizeMonumentNative(imageB64).then(data => ({ data }))
-      : axios.post('/api/recognize', {
+      : postApp('/api/recognize', {
         image_b64: imageB64,
         filename,
         ...(options || {}),
@@ -54,7 +63,7 @@ export const api = {
       category?: string
     },
   ) =>
-    axios.post('/api/quiz', {
+    postApp('/api/quiz', {
       monument_id: monumentId,
       monument_name: context?.name,
       summary: context?.summary,
@@ -93,13 +102,13 @@ export const api = {
 
   // Itinerary
   getItinerary: (monumentId: string, days = 3) =>
-    axios.post('/api/itinerary', {
+    postApp('/api/itinerary', {
       monument_id: monumentId, days
     }),
 
   // Legacy aliases
   itinerary: (monumentId: string, days = 3) =>
-    axios.post('/api/itinerary', {
+    postApp('/api/itinerary', {
       monument_id: monumentId, days
     }),
 
