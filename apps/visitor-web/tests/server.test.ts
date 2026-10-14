@@ -107,3 +107,11 @@ test("the operations bridge only ever targets this computer", () => {
   throwsCode(() => opsBaseUrl({ OPS_BASE_URL: "http://192.168.1.20:3100" }), 503);
   throwsCode(() => opsBaseUrl({ OPS_BASE_URL: "not a url" }), 503);
 });
+
+test("reporting mode follows the VERCEL environment flag", async () => {
+  const { reportingMode, assertReportingAvailable } = await import("../lib/server/ops.ts");
+  assert.equal(reportingMode({}), "local-demo");
+  assert.equal(reportingMode({ VERCEL: "1" }), "unavailable");
+  assert.doesNotThrow(() => assertReportingAvailable({}));
+  throwsCode(() => assertReportingAvailable({ VERCEL: "1" }), 503);
+});

@@ -19,6 +19,8 @@
 .demo-banner .tag { align-self: flex-start; }
 
 .report__group { display: flex; flex-direction: column; gap: var(--s3); }
+.report__group:disabled { opacity: 0.55; }
+.report__group:disabled .choice { cursor: not-allowed; }
 .report__legend { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s1); font-family: var(--font-display); font-size: var(--text-xl); font-weight: 600; }
 .report__step {
   display: inline-grid;

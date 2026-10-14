@@ -100,8 +100,12 @@ export function ReportFlow() {
     }
   }
 
+  // Public Vercel deployment: reporting is switched off by the server.
+  const publicSite = capabilities.reportsMode === "unavailable";
+
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (publicSite) return;
     const next: typeof errors = {};
     if (!draft.category) next.category = "Choose what kind of issue it is.";
     if (!draft.zoneId) next.zone = "Choose the area where it is.";
@@ -124,7 +128,9 @@ export function ReportFlow() {
     } catch (error) {
       const message =
         error instanceof ApiError
-          ? error.code === "ops_unavailable"
+          ? error.code === "reporting_unavailable"
+            ? error.message
+            : error.code === "ops_unavailable"
             ? "The local operations demo isn't running, so the report wasn't sent."
             : error.code === "local_only"
               ? error.message
@@ -132,6 +138,11 @@ export function ReportFlow() {
                 ? "You seem to be offline, so the report wasn't sent."
                 : error.message
           : "The report wasn't sent.";
+      if (error instanceof ApiError && error.code === "reporting_unavailable") {
+        capabilities.markReportingUnavailable();
+        setErrors({});
+        return;
+      }
       setErrors({ form: `${message} Your draft is saved on this device; try again when it's available.` });
       if (error instanceof ApiError && (error.code === "ops_unavailable" || error.code === "local_only")) capabilities.refresh();
       window.setTimeout(() => errorRef.current?.focus(), 0);
@@ -164,15 +175,22 @@ export function ReportFlow() {
         <p className="page-head__lede">You don&apos;t need to give your name. If someone needs help urgently, find a member of staff straight away.</p>
       </header>
 
-      <div className="demo-banner">
-        <span className="tag tag--demo">Local demo</span>
-        <p>
-          Reports go to the Sanskriti operations demo on this computer, for a sample site called <strong>Heritage Park</strong>. They don&apos;t reach staff at a real
-          monument.
-        </p>
-      </div>
+      {publicSite ? (
+        <Notice tone="warn" title="Reporting isn't available on the public website yet." role="status">
+          Visitor reports only work with the Sanskriti operations demo running locally, so sending is switched off here. If something needs attention now,
+          please tell a member of staff at the site.
+        </Notice>
+      ) : (
+        <div className="demo-banner">
+          <span className="tag tag--demo">Local demo</span>
+          <p>
+            Reports go to the Sanskriti operations demo on this computer, for a sample site called <strong>Heritage Park</strong>. They don&apos;t reach staff at a
+            real monument.
+          </p>
+        </div>
+      )}
 
-      {capabilities.reportsReachable === false && (
+      {!publicSite && capabilities.reportsReachable === false && (
         <Notice tone="warn" title="The operations demo isn't running">
           Reports can&apos;t be sent right now. You can still fill in the form; it&apos;s saved on this device until you send it.
         </Notice>
@@ -190,7 +208,7 @@ export function ReportFlow() {
         </div>
       )}
 
-      <fieldset className="report__group" aria-describedby={errors.category ? `${id}-cat-err` : undefined}>
+      <fieldset className="report__group" disabled={publicSite} aria-describedby={errors.category ? `${id}-cat-err` : undefined}>
         <legend className="report__legend">
           <span className="report__step">1</span> What&apos;s the issue?
         </legend>
@@ -212,7 +230,7 @@ export function ReportFlow() {
         </div>
       </fieldset>
 
-      <fieldset className="report__group" aria-describedby={errors.zone ? `${id}-zone-err` : undefined}>
+      <fieldset className="report__group" disabled={publicSite} aria-describedby={errors.zone ? `${id}-zone-err` : undefined}>
         <legend className="report__legend">
           <span className="report__step">2</span> Where is it?
         </legend>
@@ -249,7 +267,7 @@ export function ReportFlow() {
         </div>
       </fieldset>
 
-      <fieldset className="report__group">
+      <fieldset className="report__group" disabled={publicSite}>
         <legend className="report__legend">
           <span className="report__step">3</span> Details <span className="report__optional">optional</span>
         </legend>
@@ -297,7 +315,7 @@ export function ReportFlow() {
       </fieldset>
 
       <div className="report__submit">
-        <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
+        <button type="submit" className="btn btn--primary btn--block" disabled={submitting || publicSite}>
           {submitting ? (
             <>
               <span className="spinner" aria-hidden="true" /> Sending…
@@ -307,7 +325,9 @@ export function ReportFlow() {
           )}
         </button>
         <p className="field__hint">
-          Only what you add here is sent. Your name isn&apos;t attached.{draftSaved ? " Your draft is kept on this device until you send it." : ""}
+          {publicSite
+            ? "Sending reports is switched off on the public website."
+            : `Only what you add here is sent. Your name isn't attached.${draftSaved ? " Your draft is kept on this device until you send it." : ""}`}
         </p>
       </div>
     </form>

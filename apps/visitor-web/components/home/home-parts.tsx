@@ -32,11 +32,12 @@ export function YatrikTile() {
 
 // Only appears when something is switched off, and says what still works.
 export function ServiceNote() {
-  const { status, live, reportsReachable } = useCapabilities();
+  const { status, live, reportsMode, reportsReachable } = useCapabilities();
   if (status !== "ready") return null;
   const items: string[] = [];
   if (live === false) items.push("Live recognition, Yatrik's AI answers and voice questions aren't switched on yet. Yatrik answers from saved notes, and the monument guide and audio stories work as normal.");
-  if (reportsReachable === false) items.push("Reporting uses a local operations demo that isn't running on this computer right now.");
+  if (reportsMode === "unavailable") items.push("Reporting isn't available on the public website yet.");
+  else if (reportsReachable === false) items.push("Reporting uses a local operations demo that isn't running on this computer right now.");
   if (items.length === 0) return null;
   return (
     <Notice title="Some features are unavailable">

@@ -11,6 +11,7 @@ export type ApiErrorCode =
   | "upstream"
   | "ops_unavailable"
   | "local_only"
+  | "reporting_unavailable"
   | "network"
   | "aborted"
   | "unknown";
@@ -64,7 +65,7 @@ async function call<T>(path: string, init: RequestInit & { timeoutMs?: number } 
 
 export type Capabilities = {
   live: boolean;
-  reports: { mode: "local-demo"; reachable: boolean };
+  reports: { mode: "local-demo" | "unavailable"; reachable: boolean };
 };
 
 export const getCapabilities = () => call<Capabilities>("/api/status", { timeoutMs: 8_000 });

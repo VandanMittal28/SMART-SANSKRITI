@@ -9,7 +9,8 @@ export type ErrorCode =
   | "not_configured"
   | "upstream"
   | "ops_unavailable"
-  | "local_only";
+  | "local_only"
+  | "reporting_unavailable";
 
 export class HttpError extends Error {
   status: number;

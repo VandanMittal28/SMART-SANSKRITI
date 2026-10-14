@@ -9,6 +9,24 @@
 
 import { HttpError } from "./http.ts";
 
+export type ReportingMode = "local-demo" | "unavailable";
+
+/**
+ * "unavailable" on a public Vercel deployment (Vercel sets VERCEL=1 at build
+ * and runtime): a hosted site can't reach the operations demo on someone's
+ * computer, and there is no public reporting destination yet. Everywhere
+ * else reporting keeps working as the local demo.
+ */
+export function reportingMode(env: Record<string, string | undefined> = process.env): ReportingMode {
+  return env.VERCEL === "1" ? "unavailable" : "local-demo";
+}
+
+export function assertReportingAvailable(env: Record<string, string | undefined> = process.env): void {
+  if (reportingMode(env) === "unavailable") {
+    throw new HttpError(503, "reporting_unavailable", "Reporting isn't available on the public website yet.");
+  }
+}
+
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 
 export function opsBaseUrl(env: Record<string, string | undefined> = process.env): URL {

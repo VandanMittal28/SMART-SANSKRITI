@@ -126,6 +126,20 @@ bridge, Supabase auth, and the original 640px-only image picker UI.
   reviewed for this website.
 - **Yatrik**: the existing character artwork (Pulkit).
 
+## Deploying (Vercel)
+
+Deploy as a standalone Next.js project with **Root Directory `apps/visitor-web`**.
+Set `NVIDIA_API_KEY` as a server-side (Sensitive) environment variable; the
+model variables are optional because the defaults match the original app.
+No Supabase keys are needed, and `.env.local` is never deployed.
+
+On Vercel (`VERCEL=1`), reporting is switched off: `/api/status` reports
+`mode: "unavailable"`, `/api/reports` refuses without contacting anything, and
+the report page says "Reporting isn't available on the public website yet." with
+the form disabled. Locally, reporting works with the operations demo as before.
+Recognition allows up to 90 s (`maxDuration`), which needs Vercel Fluid compute
+(the default for new projects).
+
 ## Known limitations
 
 - NVIDIA-backed features are untested against the live service.

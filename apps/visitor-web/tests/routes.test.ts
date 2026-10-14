@@ -147,3 +147,39 @@ test("status exposes only booleans", async () => {
   const body = await (await status()).json();
   assert.deepEqual(body, { live: false, reports: { mode: "local-demo", reachable: false } });
 });
+
+test("on Vercel, reporting is off: status says so and nothing reaches operations", async () => {
+  resetRateLimits();
+  resetOpsCache();
+  const ops = await fakeOps(() => [201, { id: goodReport.id, status: "review" }]);
+  process.env.OPS_BASE_URL = ops.url;
+  process.env.VERCEL = "1";
+  try {
+    assert.deepEqual(await (await status()).json(), { live: false, reports: { mode: "unavailable", reachable: false } });
+    const posted = await report(post(goodReport));
+    assert.equal(posted.status, 503);
+    const body = await posted.json();
+    assert.equal(body.code, "reporting_unavailable");
+    assert.equal(body.error, "Reporting isn't available on the public website yet.");
+    const statusCheck = await reportStatus(new Request(`http://localhost/api/reports?id=${goodReport.id}&token=${goodReport.token}`));
+    assert.equal((await statusCheck.json()).code, "reporting_unavailable");
+    assert.equal(ops.seen.length, 0, "operations is never contacted on the public deployment");
+  } finally {
+    delete process.env.VERCEL;
+    ops.server.close();
+  }
+});
+
+test("off Vercel, local reporting still works", async () => {
+  resetRateLimits();
+  resetOpsCache();
+  const ops = await fakeOps((req) => (req.method === "POST" ? [201, { id: goodReport.id, status: "review", duplicate: false }] : [400, { error: "Receipt not found" }]));
+  process.env.OPS_BASE_URL = ops.url;
+  delete process.env.VERCEL;
+  try {
+    assert.deepEqual((await (await status()).json()).reports, { mode: "local-demo", reachable: true });
+    assert.equal((await report(post(goodReport))).status, 201);
+  } finally {
+    ops.server.close();
+  }
+});
