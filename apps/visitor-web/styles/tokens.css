@@ -1,0 +1,85 @@
+/* ==========================================================================
+   Design tokens. Palette: warm ivory, deep navy, muted gold, sandstone and a
+   restrained heritage green for success states. Contrast ratios are measured
+   against the surface each token is used on.
+   ========================================================================== */
+
+:root {
+  /* Surfaces */
+  --ivory: #f7f2e8;          /* page */
+  --ivory-deep: #efe6d6;     /* quiet fills */
+  --paper: #fffdf8;          /* raised surfaces, inputs */
+  --sand: #d9c3a0;
+  --sand-soft: #efe4d0;
+  --navy: #14213d;           /* brand ground */
+  --navy-raised: #1d2c4e;
+
+  /* Text */
+  --ink: #14213d;            /* 14.3:1 on ivory */
+  --ink-muted: #545b6b;      /* 6.1:1 on ivory */
+  --on-navy: #f7f2e8;
+  --on-navy-muted: #c9c3b6;  /* 9.1:1 on navy */
+
+  /* Accents */
+  --gold: #b08d3c;           /* primary fill; navy text 5.1:1 */
+  --gold-hover: #c09c4a;     /* navy text 6.2:1 */
+  --gold-text: #7f6320;      /* gold as text: 5.1:1 ivory */
+  --gold-light: #e8c877;     /* gold on navy: 9.9:1 */
+  --green: #3f6b55;          /* success text: 5.5:1 ivory */
+  --green-soft: #e2ebe3;
+  --amber: #7a4e0e;          /* caution text */
+  --amber-soft: #f6ead3;
+  --danger: #9b2c2c;         /* 6.7:1 ivory */
+  --danger-soft: #f6e4e1;
+
+  /* Lines */
+  --line: #ddd2bf;
+  --line-strong: #8f8169;    /* control borders: 3.75:1 on paper */
+
+  --focus-ring: #14213d;
+
+  /* Type */
+  --font-body: var(--font-sans), var(--font-deva), "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-serif), var(--font-deva), Georgia, serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.625rem, 1.4rem + 1vw, 2rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.8vw, 2.75rem);
+
+  /* Space: 4px grid */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+
+  --radius: 4px;
+  --radius-sm: 2px;
+  --tap: 48px;
+
+  /* Layout */
+  --gutter: 16px;
+  --content-max: 1040px;
+  --header-h: 56px;
+  --nav-h: 64px;
+  --panel-w: 400px;
+  --dock-w: 72px;
+}
+
+@media (min-width: 600px) {
+  :root { --gutter: 24px; }
+}
+@media (min-width: 1024px) {
+  :root { --gutter: 32px; --header-h: 64px; }
+}
+
+.on-dark {
+  --focus-ring: var(--gold-light);
+  color: var(--on-navy);
+}

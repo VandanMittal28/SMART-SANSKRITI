@@ -1,0 +1,154 @@
+/* Welcome screen: phone first ---------------------------------------------- */
+
+.welcome {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding:
+    max(var(--s5), env(safe-area-inset-top))
+    max(var(--gutter), env(safe-area-inset-right))
+    max(var(--s5), env(safe-area-inset-bottom))
+    max(var(--gutter), env(safe-area-inset-left));
+  overflow: hidden;
+  background: var(--ivory);
+}
+
+.welcome__column {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  width: 100%;
+  max-width: 420px;
+  /* Auto margins centre the column but collapse when content is taller than
+     the screen (short phones, open keyboard), so nothing is cut off. */
+  margin: auto;
+}
+
+.welcome__brand { display: flex; align-items: center; gap: var(--s3); }
+
+.seal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  background: var(--navy);
+  border-radius: var(--radius);
+}
+
+.welcome__brand-text { display: flex; flex-direction: column; gap: 2px; }
+.welcome__wordmark { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; line-height: 1.1; color: var(--navy); }
+.welcome__strap { font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-text); }
+
+.welcome__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  padding: var(--s5) clamp(16px, 5vw, 24px);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 40px -32px rgba(20, 33, 61, 0.5);
+}
+.welcome__intro { display: flex; flex-direction: column; gap: var(--s2); }
+.welcome__title { font-size: clamp(1.875rem, 1.45rem + 1.6vw, 2.5rem); }
+.welcome__lede { line-height: 1.5; color: var(--ink-muted); }
+.welcome__form { display: flex; flex-direction: column; gap: var(--s4); }
+.welcome__privacy { padding-top: var(--s4); border-top: 1px solid var(--line); font-size: var(--text-sm); line-height: 1.5; color: var(--ink-muted); }
+
+.returning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.returning__name { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.returning .btn--quiet { align-self: flex-start; }
+
+.welcome__credits { align-self: center; max-width: 100%; font-size: var(--text-xs); line-height: 1.5; color: var(--ink-muted); text-align: center; }
+.welcome__credits summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--s2);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.welcome__credits ul {
+  padding: var(--s3) var(--s4);
+  list-style: none;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.welcome__credits li + li { margin-top: var(--s2); }
+.welcome__credits a { color: var(--navy); }
+
+@media (max-height: 640px) {
+  .welcome { padding-top: max(var(--s4), env(safe-area-inset-top)); }
+  .welcome__column { gap: var(--s3); }
+  .welcome .seal { width: 40px; height: 40px; }
+  .welcome__card { gap: var(--s4); padding-block: var(--s4); }
+  .welcome__title { font-size: 1.75rem; }
+}
+
+@media (min-width: 768px) {
+  .welcome__column { max-width: 440px; gap: var(--s5); }
+  .welcome__card { padding: var(--s6); }
+}
+
+/* Backdrop: drifting photographs (phone first) ------------------------------ */
+
+.backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+
+.backdrop__tile {
+  position: absolute;
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+  animation: drift-sm 160s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.backdrop__tile picture,
+.backdrop__tile img { display: block; width: 100%; height: 100%; }
+.backdrop__tile img { object-fit: cover; filter: grayscale(0.5) sepia(0.3) contrast(0.9); }
+
+.backdrop__tile--1 { top: -1%; left: -16%; width: 76vw; opacity: 0.09; animation-delay: -40s; }
+.backdrop__tile--2 { top: 2%; left: 50%; width: 64vw; opacity: 0.07; animation-duration: 140s; animation-delay: -95s; }
+.backdrop__tile--3 { bottom: -3%; left: 2%; width: 94vw; opacity: 0.08; animation-duration: 175s; animation-delay: -60s; }
+.backdrop__tile--4,
+.backdrop__tile--5,
+.backdrop__tile--6 { display: none; }
+
+@media (min-width: 768px) {
+  .backdrop__tile { inset: auto; animation-name: drift-a; }
+  .backdrop__tile--4,
+  .backdrop__tile--5,
+  .backdrop__tile--6 { display: block; }
+  .backdrop__tile--1 { top: 4%; left: 2%; width: 30vw; opacity: 0.1; animation-duration: 150s; animation-delay: -40s; }
+  .backdrop__tile--2 { top: 5%; right: 3%; width: 24vw; opacity: 0.08; animation-name: drift-b; animation-duration: 125s; animation-delay: -90s; }
+  .backdrop__tile--3 { bottom: 4%; right: 5%; width: 30vw; opacity: 0.1; animation-name: drift-c; animation-duration: 170s; animation-delay: -20s; }
+  .backdrop__tile--4 { top: 32%; left: 7%; width: 14vw; opacity: 0.08; animation-name: drift-c; animation-duration: 115s; animation-delay: -70s; }
+  .backdrop__tile--5 { bottom: 5%; left: 3%; width: 27vw; opacity: 0.09; animation-name: drift-b; animation-duration: 160s; animation-delay: -110s; }
+  .backdrop__tile--6 { top: 40%; right: 4%; width: 20vw; opacity: 0.12; animation-duration: 135s; animation-delay: -55s; }
+}
+
+@keyframes drift-a { from { transform: translate3d(-24px, 0, 0); } to { transform: translate3d(24px, -6px, 0); } }
+@keyframes drift-b { from { transform: translate3d(22px, -4px, 0); } to { transform: translate3d(-22px, 3px, 0); } }
+@keyframes drift-c { from { transform: translate3d(-16px, 4px, 0); } to { transform: translate3d(24px, 0, 0); } }
+@keyframes drift-sm { from { transform: translate3d(-10px, 0, 0); } to { transform: translate3d(10px, -2px, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop__tile { animation: none; will-change: auto; }
+}

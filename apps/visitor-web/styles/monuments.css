@@ -1,0 +1,104 @@
+/* Monument list ------------------------------------------------------------- */
+
+.browser { display: flex; flex-direction: column; gap: var(--s3); }
+.search { position: relative; }
+.search__icon { position: absolute; top: 50%; left: var(--s3); transform: translateY(-50%); color: var(--ink-muted); pointer-events: none; }
+.search__input { padding-left: 44px; }
+.browser__count { font-size: var(--text-sm); color: var(--ink-muted); }
+.browser__empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); padding: var(--s5) 0; }
+
+.monument-list { display: grid; gap: var(--s2); list-style: none; }
+.monument-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 88px;
+  padding: var(--s2);
+  padding-right: var(--s3);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink);
+}
+.monument-row:hover { border-color: var(--navy); }
+.monument-row__img { flex: none; width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-sm); background: var(--sand-soft); }
+.monument-row__text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.monument-row__name { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; line-height: 1.25; }
+.monument-row__place { font-size: var(--text-sm); color: var(--ink-muted); }
+.monument-row__audio { display: inline-flex; align-items: center; gap: var(--s1); margin-top: 2px; font-size: var(--text-xs); font-weight: 650; color: var(--gold-text); }
+.monument-row__chevron { flex: none; color: var(--ink-muted); }
+.monument-row--compact { min-height: 72px; }
+.monument-row--compact .monument-row__img { width: 56px; height: 56px; }
+.monument-row--compact .monument-row__name { font-size: var(--text-base); }
+
+@media (min-width: 768px) {
+  .monument-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+}
+
+/* Monument detail ----------------------------------------------------------- */
+
+.monument { display: flex; flex-direction: column; gap: var(--s4); }
+.monument__layout { display: flex; flex-direction: column; gap: var(--s5); }
+
+.monument__hero { margin: 0 calc(-1 * var(--gutter)); }
+/* height: auto, or the <img> height attribute overrides aspect-ratio. */
+.monument__img { width: 100%; height: auto; max-height: 62svh; aspect-ratio: 4 / 3; object-fit: cover; background: var(--sand-soft); }
+.monument__hero figcaption { padding: var(--s2) var(--gutter) 0; }
+
+.monument__body { display: flex; flex-direction: column; gap: var(--s6); min-width: 0; }
+.monument__head { display: flex; flex-direction: column; gap: var(--s2); }
+.monument__head h1 { font-size: var(--text-3xl); }
+.monument__hi { font-size: var(--text-lg); color: var(--ink-muted); }
+.monument__summary { font-size: var(--text-lg); line-height: 1.5; }
+.monument__actions { margin-top: var(--s3); }
+
+.audio-story {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.audio-story__head { display: flex; gap: var(--s3); align-items: flex-start; }
+.audio-story__icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; background: var(--navy); color: var(--gold-light); border-radius: var(--radius); }
+.audio-story h2 { font-size: var(--text-lg); }
+.audio-story__note { font-size: var(--text-sm); color: var(--ink-muted); }
+.audio-story .segmented { align-self: flex-start; }
+.audio-story__player { width: 100%; height: 48px; }
+
+.monument__story { display: flex; flex-direction: column; gap: var(--s5); }
+.story-part { display: flex; flex-direction: column; gap: var(--s2); }
+.story-part p { font-size: 1.0625rem; line-height: 1.7; max-width: 62ch; }
+.monument__source { font-size: var(--text-sm); color: var(--ink-muted); max-width: 62ch; }
+
+.monument__recognise {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 56px;
+  padding: var(--s3) var(--s4);
+  background: var(--ivory-deep);
+  border-radius: var(--radius);
+  font-weight: 650;
+  color: var(--navy);
+  text-decoration: none;
+}
+.monument__recognise:hover { background: var(--sand-soft); }
+
+.monument__more { display: flex; flex-direction: column; gap: var(--s3); }
+.monument__more ul { display: grid; gap: var(--s2); list-style: none; }
+
+@media (min-width: 768px) {
+  .monument__hero { margin: 0; }
+  .monument__img { border-radius: var(--radius); max-height: 520px; }
+  .monument__hero figcaption { padding-inline: 0; }
+  .monument__actions .btn--block { width: auto; }
+}
+@media (min-width: 1024px) {
+  .monument__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s7); align-items: start; }
+  .monument__hero { position: sticky; top: calc(var(--header-h) + var(--s5)); }
+  .monument__img { aspect-ratio: 4 / 5; max-height: calc(100vh - var(--header-h) - 120px); }
+}
