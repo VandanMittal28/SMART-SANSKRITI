@@ -1,0 +1,106 @@
+/* Home ---------------------------------------------------------------------- */
+
+.home { gap: var(--s5); }
+.home-greeting { display: flex; flex-direction: column; gap: var(--s1); }
+.home-greeting h1 { font-size: var(--text-2xl); max-width: 22ch; }
+
+.home-actions { display: flex; flex-direction: column; gap: var(--s3); }
+
+/* The headline action: a solid navy block, the strongest surface on the page. */
+.home-primary {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s4);
+  min-height: 148px;
+  padding: var(--s5);
+  background: var(--navy);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.home-primary__text { position: relative; display: flex; flex-direction: column; gap: var(--s2); flex: 1; }
+.home-primary__title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 600; color: var(--on-navy); }
+.home-primary__sub { font-size: var(--text-sm); line-height: 1.5; color: var(--on-navy-muted); max-width: 32ch; }
+.home-primary__go {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  background: var(--gold);
+  border-radius: var(--radius);
+  color: var(--navy);
+}
+.home-primary:hover .home-primary__go { background: var(--gold-hover); }
+
+.home-secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s1);
+  min-height: 148px;
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: left;
+  text-decoration: none;
+  color: var(--ink);
+}
+.home-tile:hover { border-color: var(--navy); }
+.home-tile__icon { display: grid; place-items: center; width: 48px; height: 48px; color: var(--navy); }
+.home-tile--yatrik .yatrik-avatar { margin: 0 0 0 -4px; }
+.home-tile__title { margin-top: auto; font-weight: 700; font-size: var(--text-base); color: var(--navy); }
+.home-tile__text { font-size: var(--text-sm); line-height: 1.4; color: var(--ink-muted); }
+
+.home-explore { display: flex; flex-direction: column; gap: var(--s3); }
+.home-explore__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.home-explore__all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 44px;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--navy);
+}
+
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 160px;
+  gap: var(--s3);
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 0 var(--gutter) var(--s2);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  list-style: none;
+  scrollbar-width: thin;
+}
+.strip > li { scroll-snap-align: start; }
+.strip-card { display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--ink); }
+.strip-card__frame { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--radius); background: var(--sand-soft); }
+.strip-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease; }
+.strip-card:hover .strip-card__img { transform: scale(1.03); }
+.strip-card__name { margin-top: var(--s2); font-family: var(--font-display); font-weight: 600; line-height: 1.25; }
+.strip-card__place { font-size: var(--text-xs); color: var(--ink-muted); }
+
+.home-device { display: flex; flex-direction: column; gap: var(--s1); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: var(--text-sm); color: var(--ink-muted); }
+.home-device__actions { display: flex; flex-wrap: wrap; gap: var(--s4); }
+
+@media (min-width: 768px) {
+  .home-actions { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: stretch; }
+  .home-primary { min-height: 220px; padding: var(--s6); }
+  .home-primary__title { font-size: var(--text-2xl); }
+  .home-secondary { grid-template-columns: 1fr; }
+  .home-tile { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--s3); }
+  .home-tile__title { margin-top: 0; }
+  .home-tile__text { flex-basis: 100%; }
+}
+@media (min-width: 1024px) {
+  .strip { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; margin-inline: 0; padding: 0; overflow: visible; }
+}
