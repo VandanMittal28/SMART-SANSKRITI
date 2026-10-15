@@ -1,1197 +1,259 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { AppShell } from "@/components/app-shell"
-import { MapPin, Trophy, ChevronDown, Eye, EyeOff, Crosshair, Lightbulb, Volume2, Share2, Compass, Medal } from "lucide-react"
-import api from "@/lib/apiClient"
-import { Toast, useToast } from "@/components/Toast"
-import { useLang } from "@/lib/languageContext"
-import { getMonument, saveMonument, clearMonument } from "@/lib/monumentStore"
-import { useAuth } from "@/lib/authContext"
-import { addXP, computeAndSaveBadges } from "@/lib/authClient"
-import { cn } from "@/lib/utils"
-import dynamic from "next/dynamic"
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import { MapPin, Trophy, Volume2, Share2, Crosshair } from 'lucide-react'
+import { AppShell } from '@/components/app-shell'
+import { useAuth } from '@/lib/authContext'
+import { addXP, computeAndSaveBadges } from '@/lib/authClient'
+import { getMonument, saveMonument } from '@/lib/monumentStore'
+import { MONUMENT_RIDDLES, HUNT_NAMES, newProgress, readProgress, progressKey, checkCheckpoint, distanceMeters } from '@/lib/hunt'
+import type { HuntMode, HuntPosition, HuntProgress } from '@/lib/hunt'
 
-// ─── Haversine distance (meters) ───
-function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371000
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  return R * 2 * Math.asin(Math.sqrt(a))
-}
+const HuntMap = dynamic(() => import('@/components/hunt-map'), { ssr: false, loading: () => <div className="h-64 rounded-2xl bg-white/5 p-4">Loading map…</div> })
+const primary = 'min-h-12 w-full rounded-xl gold-gradient px-4 py-3 font-bold text-[#080D1D] disabled:opacity-50'
+const secondary = 'min-h-11 rounded-xl border border-[#D6A84B]/40 px-4 py-2 text-sm font-semibold text-[#D6A84B] disabled:opacity-50'
 
-function scaleCoordinates(lat: number, lng: number, centerLat: number, centerLng: number, factor = 1.32) {
-  return {
-    lat: centerLat + (lat - centerLat) * factor,
-    lng: centerLng + (lng - centerLng) * factor,
-  }
-}
-
-// ─── Monument GPS coordinates ───
-const MONUMENT_COORDS: Record<string, { lat: number; lng: number; radius: number }> = {
-  "taj-mahal":         { lat: 27.1751, lng: 78.0421, radius: 500 },
-  "red-fort":          { lat: 28.6562, lng: 77.2410, radius: 400 },
-  "qutub-minar":       { lat: 28.5244, lng: 77.1855, radius: 300 },
-  "hawa-mahal":        { lat: 26.9239, lng: 75.8267, radius: 300 },
-  "india-gate":        { lat: 28.6129, lng: 77.2295, radius: 400 },
-  "gateway-india":     { lat: 18.9220, lng: 72.8347, radius: 300 },
-  "golden-temple":     { lat: 31.6200, lng: 74.8765, radius: 300 },
-  "hampi":             { lat: 15.3350, lng: 76.4600, radius: 600 },
-  "kedarnath":         { lat: 30.7352, lng: 79.0669, radius: 400 },
-  "meenakshi":         { lat:  9.9195, lng: 78.1193, radius: 300 },
-  "mysore-palace":     { lat: 12.3052, lng: 76.6552, radius: 400 },
-  "charminar":         { lat: 17.3616, lng: 78.4747, radius: 300 },
-  "victoria-memorial": { lat: 22.5448, lng: 88.3426, radius: 400 },
-  "ajanta":            { lat: 20.5519, lng: 75.7033, radius: 600 },
-  "konark":            { lat: 19.8876, lng: 86.0945, radius: 400 },
-}
-
-const MONUMENT_NAMES: Record<string, string> = {
-  'taj-mahal': 'Taj Mahal', 'red-fort': 'Red Fort', 'qutub-minar': 'Qutub Minar',
-  'gateway-india': 'Gateway of India', 'hampi': 'Hampi', 'golden-temple': 'Golden Temple Amritsar',
-  'kedarnath': 'Kedarnath Temple', 'meenakshi': 'Meenakshi Amman Temple', 'mysore-palace': 'Mysore Palace',
-  'hawa-mahal': 'Hawa Mahal Jaipur', 'charminar': 'Charminar Hyderabad', 'victoria-memorial': 'Victoria Memorial Kolkata',
-  'ajanta': 'Ajanta Caves', 'konark': 'Konark Sun Temple', 'india-gate': 'India Gate Delhi',
-}
-
-// ─── Taj Mahal Predefined Riddles ───
-const TAJ_MAHAL_RIDDLES = [
-  {
-    id: 1,
-    riddle: "Shah Jahan whispered his grief into these curved walls — stand where sound travels in secrets. Where do whispers travel without being heard by others?",
-    location_name: "Whispering Gallery",
-    hint: "Look for the curved chambers inside the main mausoleum",
-    target_lat: 27.17510, target_lng: 78.04215, radius_meters: 40,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 2,
-    riddle: "Four sentinels stand guard at the corners, tilted slightly outward so they never fall upon the tomb. Climb to where the muezzin once called the faithful.",
-    location_name: "Northwest Minaret Base",
-    hint: "Head to one of the four tall towers at the corners of the plinth",
-    target_lat: 27.17498, target_lng: 78.04178, radius_meters: 35,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 3,
-    riddle: "Stand at the threshold where the Yamuna meets eternity. The river flows behind the marble throne — find the terrace where emperors once sat to grieve.",
-    location_name: "River Terrace",
-    hint: "Walk behind the main tomb toward the Yamuna riverbank",
-    target_lat: 27.17535, target_lng: 78.04220, radius_meters: 45,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 4,
-    riddle: "Two mosques face each other in perfect symmetry — one faces Mecca, the other is just a mirror for balance. Find the one that cannot be used for prayer.",
-    location_name: "Jawab (Echo Mosque)",
-    hint: "Look to the east side — the mirror building of the mosque",
-    target_lat: 27.17461, target_lng: 78.04268, radius_meters: 40,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 5,
-    riddle: "The great gate of paradise — stand at the point where the reflecting pool perfectly frames the white dome. This is where every photograph begins.",
-    location_name: "Hauz-i-Kausar Reflecting Pool Center",
-    hint: "Stand at the midpoint of the long rectangular pool in the garden",
-    target_lat: 27.17390, target_lng: 78.04215, radius_meters: 50,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  }
-]
-
-// ─── Red Fort Predefined Riddles ───
-const RED_FORT_RIDDLES = [
-  {
-    id: 11,
-    riddle: "I am the mighty entrance where the flag flies high on Independence Day. My red sandstone towers have watched empires fall and republics rise.",
-    location_name: "Lahori Gate",
-    hint: "Walk to the main western entrance of the fort",
-    target_lat: 28.6558, target_lng: 77.2386, radius_meters: 50,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 12,
-    riddle: "Once a covered bazaar where royal ladies shopped for silks and jewels, today I still bustle with merchants under my vaulted roof.",
-    location_name: "Chatta Chowk",
-    hint: "The covered bazaar immediately after entering Lahori Gate",
-    target_lat: 28.6559, target_lng: 77.2393, radius_meters: 60,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 13,
-    riddle: "Here musicians once played the naubat (kettledrum) five times a day. Only princes of royal blood could ride their elephants past my gates.",
-    location_name: "Naubat Khana",
-    hint: "The Drum House located east of Chatta Chowk",
-    target_lat: 28.6560, target_lng: 77.2405, radius_meters: 50,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 14,
-    riddle: "I am the Hall of Public Audience. Emperor Shah Jahan sat on my marble canopy, listening to the pleas of commoners.",
-    location_name: "Diwan-i-Am",
-    hint: "The large pillared hall just past the Naubat Khana",
-    target_lat: 28.6561, target_lng: 77.2415, radius_meters: 60,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 15,
-    riddle: "If there is paradise on earth, it is here. I once housed the legendary Peacock Throne before it was stolen away.",
-    location_name: "Diwan-i-Khas",
-    hint: "The marble Hall of Private Audience closer to the riverbed",
-    target_lat: 28.6565, target_lng: 77.2428, radius_meters: 50,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  }
-]
-
-// ─── Qutub Minar Predefined Riddles ───
-const QUTUB_MINAR_RIDDLES = [
-  {
-    id: 21,
-    riddle: "I am the tallest brick minaret in the world, soaring over 72 meters into the sky. I was built as a victory tower centuries ago.",
-    location_name: "Qutub Minar Base",
-    hint: "Walk to the base of the massive victory tower",
-    target_lat: 28.5244, target_lng: 77.1855, radius_meters: 60,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 22,
-    riddle: "I have stood here for over 1,600 years without rusting. Local legend says if you can wrap your arms around me backward, your wish comes true.",
-    location_name: "The Iron Pillar",
-    hint: "Find the ancient metallic pillar standing in the courtyard",
-    target_lat: 28.5247, target_lng: 77.1849, radius_meters: 40,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 23,
-    riddle: "I am the magnificent southern gateway, added by Alauddin Khalji. My red sandstone and white marble arches are considered masterpieces of Islamic art.",
-    location_name: "Alai Darwaza",
-    hint: "The impressive domed gateway on the south side",
-    target_lat: 28.5242, target_lng: 77.1852, radius_meters: 40,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 24,
-    riddle: "I was meant to be twice as high as my famous neighbor, but the ambitious sultan who started me died, leaving me as an unfinished dream of stone.",
-    location_name: "Alai Minar",
-    hint: "The large, unfinished rubble tower to the north",
-    target_lat: 28.5256, target_lng: 77.1843, radius_meters: 60,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  },
-  {
-    id: 25,
-    riddle: "I am the final resting place of Delhi's second sultan. Look up inside me, and instead of a dome, you'll see the open sky above my intricately carved walls.",
-    location_name: "Tomb of Iltutmish",
-    hint: "The square tomb structure located to the northwest of the mosque",
-    target_lat: 28.5251, target_lng: 77.1844, radius_meters: 40,
-    xp_rewards: { first: 50, second: 30, third: 20 }
-  }
-]
-
-const MONUMENT_RIDDLES: Record<string, typeof TAJ_MAHAL_RIDDLES> = {
-  'taj-mahal': TAJ_MAHAL_RIDDLES,
-  'red-fort': RED_FORT_RIDDLES,
-  'qutub-minar': QUTUB_MINAR_RIDDLES,
-}
-
-// ─── Per-monument synthetic player data with real GPS positions ───
-const MONUMENT_PLAYERS: Record<string, {
-  id: string; name: string; color: string; avatar: string;
-  positions: { lat: number; lng: number }[]; clueInterval: number
-}[]> = {
-  'taj-mahal': [
-    { id: 'p0', name: 'Priya', color: '#FF6B9D', avatar: '👩', clueInterval: 45000,
-      positions: [{ lat: 27.17455, lng: 78.04190 }, { lat: 27.17498, lng: 78.04178 }, { lat: 27.17535, lng: 78.04220 }] },
-    { id: 'p1', name: 'Arjun', color: '#4ECDC4', avatar: '👨', clueInterval: 75000,
-      positions: [{ lat: 27.17520, lng: 78.04240 }, { lat: 27.17461, lng: 78.04268 }, { lat: 27.17390, lng: 78.04215 }] },
-    { id: 'p2', name: 'Diya',  color: '#FFE66D', avatar: '👧', clueInterval: 60000,
-      positions: [{ lat: 27.17440, lng: 78.04260 }, { lat: 27.17510, lng: 78.04215 }, { lat: 27.17462, lng: 78.04178 }] },
-  ],
-  'red-fort': [
-    { id: 'p0', name: 'Priya', color: '#FF6B9D', avatar: '👩', clueInterval: 45000,
-      positions: [{ lat: 28.6558, lng: 77.2386 }, { lat: 28.6559, lng: 77.2393 }, { lat: 28.6560, lng: 77.2405 }] },
-    { id: 'p1', name: 'Arjun', color: '#4ECDC4', avatar: '👨', clueInterval: 75000,
-      positions: [{ lat: 28.6561, lng: 77.2415 }, { lat: 28.6565, lng: 77.2428 }, { lat: 28.6558, lng: 77.2386 }] },
-    { id: 'p2', name: 'Diya',  color: '#FFE66D', avatar: '👧', clueInterval: 60000,
-      positions: [{ lat: 28.6560, lng: 77.2400 }, { lat: 28.6562, lng: 77.2410 }, { lat: 28.6563, lng: 77.2420 }] },
-  ],
-  'qutub-minar': [
-    { id: 'p0', name: 'Priya', color: '#FF6B9D', avatar: '👩', clueInterval: 45000,
-      positions: [{ lat: 28.5244, lng: 77.1855 }, { lat: 28.5247, lng: 77.1849 }, { lat: 28.5242, lng: 77.1852 }] },
-    { id: 'p1', name: 'Arjun', color: '#4ECDC4', avatar: '👨', clueInterval: 75000,
-      positions: [{ lat: 28.5256, lng: 77.1843 }, { lat: 28.5251, lng: 77.1844 }, { lat: 28.5244, lng: 77.1855 }] },
-    { id: 'p2', name: 'Diya',  color: '#FFE66D', avatar: '👧', clueInterval: 60000,
-      positions: [{ lat: 28.5248, lng: 77.1850 }, { lat: 28.5245, lng: 77.1855 }, { lat: 28.5243, lng: 77.1848 }] },
-  ],
-}
-
-// Generate PlayerState[] from MONUMENT_PLAYERS
-function makePlayers(monumentId: string): PlayerState[] {
-  const players = MONUMENT_PLAYERS[monumentId] || MONUMENT_PLAYERS['taj-mahal']
-  return players.map(p => ({
-    id: p.id, name: p.name, color: p.color, avatar: p.avatar,
-    lat: p.positions[0].lat, lng: p.positions[0].lng,
-    prevLat: p.positions[0].lat, prevLng: p.positions[0].lng,
-    cluesCompleted: 0, xp: 0, posIndex: 0,
-  }))
-}
-
-// Per-monument starting GPS for the user (demo mode)
-const MONUMENT_USER_START: Record<string, { lat: number; lng: number }> = {
-  'taj-mahal':   { lat: 27.17300, lng: 78.04215 },
-  'red-fort':    { lat: 28.6545, lng: 77.2375 },
-  'qutub-minar': { lat: 28.5235, lng: 77.1845 },
-}
-
-type GeoStatus = 'idle' | 'checking' | 'inside' | 'outside' | 'error'
-
-interface PlayerState {
-  id: string; name: string; color: string; avatar: string;
-  lat: number; lng: number; prevLat: number; prevLng: number;
-  cluesCompleted: number; xp: number; posIndex: number;
-}
-
-// ─── Leaflet Map Component (dynamically imported, no SSR) ───
-const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
-  riddles, activeClueIdx, completedClues, userLat, userLng,
-  players, demoMode, monumentId,
-}: {
-  riddles: typeof TAJ_MAHAL_RIDDLES; activeClueIdx: number;
-  completedClues: Set<number>; userLat: number; userLng: number;
-  players: PlayerState[]; demoMode: boolean; monumentId: string;
-}) {
-  const mapRef = useRef<L.Map | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const markersRef = useRef<L.Layer[]>([])
-  const lastMonumentRef = useRef<string>('')
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    // Inject Leaflet CSS via CDN link (Turbopack doesn't support CSS require in components)
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link')
-      link.id = 'leaflet-css'
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
-    }
-    const L = require('leaflet')
-
-    if (!containerRef.current) return
-    
-    // If monument changed, destroy and recreate the map
-    if (mapRef.current && lastMonumentRef.current !== monumentId) {
-      mapRef.current.remove()
-      mapRef.current = null
-    }
-    lastMonumentRef.current = monumentId
-    
-    // Compute map center from first riddle
-    const centerLat = riddles[0]?.target_lat ?? 27.17490
-    const centerLng = riddles[0]?.target_lng ?? 78.04215
-
-    if (mapRef.current) {
-      // Update existing map
-      markersRef.current.forEach(m => mapRef.current!.removeLayer(m))
-      markersRef.current = []
-    } else {
-      mapRef.current = L.map(containerRef.current, {
-        center: [centerLat, centerLng],
-        zoom: 16.5,
-        zoomControl: false,
-        attributionControl: false,
-      })
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-      }).addTo(mapRef.current)
-      L.control.zoom({ position: 'topright' }).addTo(mapRef.current)
-      // Force Leaflet to recalculate its size after mounting
-      setTimeout(() => { mapRef.current?.invalidateSize() }, 200)
-    }
-    // Pan to new center when active clue changes
-    const toScaled = (lat: number, lng: number) => scaleCoordinates(lat, lng, centerLat, centerLng)
-    const scaledActive = toScaled(
-      riddles[activeClueIdx]?.target_lat ?? centerLat,
-      riddles[activeClueIdx]?.target_lng ?? centerLng,
-    )
-
-    mapRef.current?.flyTo(
-      [scaledActive.lat, scaledActive.lng],
-      17,
-      { duration: 0.65 }
-    )
-
-    const map = mapRef.current!
-    const newMarkers: L.Layer[] = []
-
-    const routePoints = riddles.map(r => {
-      const scaled = toScaled(r.target_lat, r.target_lng)
-      return [scaled.lat, scaled.lng]
-    })
-    const routeLine = L.polyline(routePoints as [number, number][], {
-      color: '#8A6A05',
-      weight: 3,
-      dashArray: '8 10',
-      opacity: 0.7,
-    }).addTo(map)
-    newMarkers.push(routeLine)
-
-    // Riddle target markers
-    riddles.forEach((r, idx) => {
-      const isActive = idx === activeClueIdx
-      const isCompleted = completedClues.has(r.id)
-      const isFuture = idx > activeClueIdx && !isCompleted
-
-      let markerColor = '#555'
-      let markerRadius = 9
-      let markerOpacity = 0.5
-      let fillColor = '#555'
-
-      if (isActive) {
-        markerColor = '#F6C00A'
-        fillColor = '#F6C00A'
-        markerRadius = 14
-        markerOpacity = 0.9
-      } else if (isCompleted) {
-        markerColor = '#2F7D63'
-        fillColor = '#2F7D63'
-        markerRadius = 11
-        markerOpacity = 0.8
-      } else if (isFuture) {
-        markerColor = '#666'
-        fillColor = '#444'
-        markerRadius = 8
-        markerOpacity = 0.4
-      }
-
-      const scaled = toScaled(r.target_lat, r.target_lng)
-
-      const cm = L.circleMarker([scaled.lat, scaled.lng], {
-        radius: markerRadius,
-        fillColor, color: markerColor,
-        fillOpacity: markerOpacity, weight: 2, opacity: 1,
-      }).addTo(map)
-
-      const label = isCompleted ? `✓ ${r.location_name}` : isFuture ? `🔒 Clue ${idx + 1}` : `📍 ${r.location_name}`
-      cm.bindPopup(`<div style="font-size:12px;color:#333;font-weight:600">${label}</div>`)
-
-      // Active clue pulsing ring
-      if (isActive) {
-        const pulse = L.circleMarker([scaled.lat, scaled.lng], {
-          radius: 24, fillColor: '#F6C00A', color: '#8A6A05',
-          fillOpacity: 0.15, weight: 1, opacity: 0.4,
-        }).addTo(map)
-        newMarkers.push(pulse)
-      }
-
-      newMarkers.push(cm)
-    })
-
-    // User marker
-    const scaledUser = toScaled(userLat, userLng)
-    const userMarker = L.circleMarker([userLat, userLng], {
-      radius: 10, fillColor: '#FFFFFF', color: '#8A6A05',
-      fillOpacity: 1, weight: 3, opacity: 1,
-    }).addTo(map)
-    userMarker.bindPopup('<div style="font-size:12px;font-weight:700;color:#D6A84B">📍 You</div>')
-    userMarker.setLatLng([scaledUser.lat, scaledUser.lng])
-    newMarkers.push(userMarker)
-
-    // Synthetic player markers
-    if (demoMode) {
-      players.forEach(p => {
-        const scaledPrev = toScaled(p.prevLat, p.prevLng)
-        const scaledCurrent = toScaled(p.lat, p.lng)
-        // Trail dot (previous position)
-        const trail = L.circleMarker([scaledPrev.lat, scaledPrev.lng], {
-          radius: 3, fillColor: p.color, color: p.color,
-          fillOpacity: 0.3, weight: 0, opacity: 0.3,
-        }).addTo(map)
-        newMarkers.push(trail)
-
-        // Current position
-        const pm = L.circleMarker([scaledCurrent.lat, scaledCurrent.lng], {
-          radius: 9, fillColor: p.color, color: '#fff',
-          fillOpacity: 0.9, weight: 2, opacity: 1,
-        }).addTo(map)
-        pm.bindPopup(`<div style="font-size:12px;font-weight:600">${p.avatar} ${p.name} — Clue ${Math.min(p.cluesCompleted + 1, 5)}</div>`)
-        newMarkers.push(pm)
-      })
-    }
-
-    markersRef.current = newMarkers
-
-    return () => {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeClueIdx, completedClues.size, userLat, userLng, players, demoMode, monumentId])
-
-  // Invalidate size when active clue changes (panel may have re-rendered)
-  useEffect(() => {
-    setTimeout(() => { mapRef.current?.invalidateSize() }, 300)
-  }, [activeClueIdx])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
-  }, [])
-
-  return <div ref={containerRef} style={{ width: '100%', height: '68vh', minHeight: '520px', borderRadius: 16, overflow: 'hidden' }} />
-}), { ssr: false, loading: () => <div style={{ width: '100%', height: '68vh', minHeight: '520px', background: 'rgba(28,22,56,0.9)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#494B45', fontSize: 13 }}>Loading map...</div> })
-
-// ─── Loading Spinner ───
-function LoadingSpinner({ text }: { text?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px', gap: 12 }}>
-      <div style={{
-        width: 40, height: 40,
-        border: '3px solid rgba(201,168,76,0.2)',
-        borderTop: '3px solid #D6A84B',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-      }} />
-      {text && <p style={{ color: '#494B45', fontSize: 14, margin: 0 }}>{text}</p>}
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════
 export default function HuntPage() {
-  const lastMonument = getMonument()
-  const router = useRouter()
-  const { user, profile, setProfile } = useAuth()
-  const { toast, showToast, hideToast } = useToast()
-  const { t } = useLang()
+  const { user, loading } = useAuth()
+  // Remount on identity changes: an outstanding GPS or reward response must never enter another person's hunt.
+  return <AppShell>{loading ? <p className="p-6" role="status">Loading your hunt…</p> : <SoloHunt key={user?.id || 'guest'} />}</AppShell>
+}
 
-  const shareAchievement = useCallback(async (monumentLabel: string, totalXp: number) => {
-    const text = `I just completed the ${monumentLabel} Treasure Hunt on Sanskriti AI and earned ${totalXp} XP! 🏆`
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({ text, title: 'Sanskriti AI — Heritage Hunter' })
-        return
-      } catch {
-        // User cancelled the native share sheet — fall through to clipboard.
-      }
-    }
+function SoloHunt() {
+  const { user, setProfile } = useAuth()
+  const [monument, setMonument] = useState('taj-mahal')
+  const [mode, setMode] = useState<HuntMode>('onsite')
+  const [progress, setProgress] = useState<HuntProgress | null>(null)
+  const [active, setActive] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [hint, setHint] = useState(false)
+  const [position, setPosition] = useState<HuntPosition | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [storageWarning, setStorageWarning] = useState('')
+  const [recenter, setRecenter] = useState(0)
+  const request = useRef(0)
+  const locked = useRef(false)
+  const mounted = useRef(true)
+  const top = useRef<HTMLDivElement>(null)
+  const clues = MONUMENT_RIDDLES[monument]
+  const completed = progress?.completed || 0
+  const finished = completed === clues.length
+  const clue = clues[completed]
+  const key = progressKey(user?.id, monument, mode)
+  const score = completed * 50 + (finished ? 500 : 0)
+
+  useEffect(() => {
+    const stored = getMonument()?.id
+    if (stored && MONUMENT_RIDDLES[stored]) setMonument(stored)
+    setReady(true)
+    mounted.current = true
+    return () => { mounted.current = false; request.current++; window.speechSynthesis?.cancel() }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    request.current++
+    locked.current = false
+    setBusy(false)
+    setActive(false)
+    setHint(false)
+    setPosition(null)
+    setMessage('')
+    try { setProgress(readProgress(localStorage.getItem(key), clues.length)) }
+    catch { setProgress(null); setStorageWarning('Device storage is unavailable. Keep this page open to retain your progress.') }
+  }, [key, ready, clues.length])
+
+  useEffect(() => {
+    if (active) top.current?.scrollIntoView({ block: 'start' })
+  }, [active, completed])
+
+  function persist(next: HuntProgress) {
+    setProgress(next)
+    try { localStorage.setItem(key, JSON.stringify(next)); return true }
+    catch { setStorageWarning('Progress could not be saved on this device. Keep this page open.'); return false }
+  }
+
+  function pause() {
+    request.current++
+    locked.current = false
+    setBusy(false)
+    setActive(false)
+    setMessage('')
+    window.speechSynthesis?.cancel()
+  }
+
+  function start() {
+    if (!progress) persist(newProgress())
+    saveMonument(monument, HUNT_NAMES[monument])
+    setActive(true)
+    setMessage('')
+  }
+
+  function completeCheckpoint() {
+    if (!progress || finished) return
+    persist({ ...progress, completed: completed + 1 })
+    setHint(false)
+    setMessage(mode === 'practice' ? 'Practice checkpoint complete.' : 'Checkpoint verified! +50 hunt points.')
+    window.speechSynthesis?.cancel()
+  }
+
+  function verify() {
+    if (locked.current || !clue || !progress) return
+    if (mode === 'practice') { completeCheckpoint(); return }
+    if (!navigator.geolocation) { setMessage('This device does not provide location. Use practice mode, or open the hunt on a GPS-enabled device.'); return }
+    locked.current = true
+    setBusy(true)
+    setMessage('Checking your current GPS location…')
+    const token = ++request.current
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (!mounted.current || request.current !== token) return
+      const point = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: pos.timestamp }
+      setPosition(point)
+      const result = checkCheckpoint(point, clue)
+      if (result.verified) completeCheckpoint()
+      else setMessage(result.message)
+      locked.current = false
+      setBusy(false)
+    }, error => {
+      if (!mounted.current || request.current !== token) return
+      setMessage(error.code === 1
+        ? 'Location permission was denied. Allow location in your browser or app settings, then try again. Your progress is saved.'
+        : 'GPS could not get a location. Move to an open visitor area and try again. No checkpoint was completed.')
+      locked.current = false
+      setBusy(false)
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 })
+  }
+
+  async function claimReward() {
+    if (!user || !progress || !finished || mode !== 'onsite' || progress.reward !== 'none' || locked.current) return
+    if (!navigator.onLine) { setMessage('Connect to the internet, then save your XP. Your completed hunt is saved on this device.'); return }
+    // Persist the attempt before sending. The existing XP service has no idempotency key,
+    // so an ambiguous response must not be automatically retried after a reload.
     try {
-      await navigator.clipboard.writeText(text)
-      showToast('Copied to clipboard!')
+      const latest = readProgress(localStorage.getItem(key), clues.length)
+      if (latest && latest.reward !== 'none') { setProgress(latest); return }
+    } catch { setMessage('Enable device storage before saving profile XP.'); return }
+    const pending: HuntProgress = { ...progress, reward: 'pending' }
+    if (!persist(pending)) { setProgress(progress); setMessage('Enable device storage before saving profile XP.'); return }
+    locked.current = true
+    setBusy(true)
+    const token = ++request.current
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    try {
+      const total = await Promise.race([
+        addXP(user.id, score, 'HUNT_COMPLETED'),
+        new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('XP confirmation timed out')), 15000) }),
+      ])
+      const saved: HuntProgress = { ...pending, reward: 'saved' }
+      try { localStorage.setItem(key, JSON.stringify(saved)) } catch { /* The persisted pending marker still prevents duplicate submission. */ }
+      if (mounted.current && request.current === token) {
+        setProgress(saved)
+        setProfile(prev => prev ? { ...prev, total_xp: total } : prev)
+        setMessage(`${score} XP saved to your profile.`)
+        window.dispatchEvent(new Event('xp-updated'))
+      }
+      void computeAndSaveBadges(user.id, { total_xp: total }).catch(() => {})
     } catch {
-      showToast('Could not share right now')
+      const uncertain: HuntProgress = { ...pending, reward: 'unconfirmed' }
+      try { localStorage.setItem(key, JSON.stringify(uncertain)) } catch { /* Retain the pending marker. */ }
+      if (mounted.current && request.current === token) {
+        setProgress(uncertain)
+        setMessage('XP could not be confirmed. Check your profile activity before contacting support; your hunt remains complete.')
+      }
+    } finally {
+      clearTimeout(timeout)
+      if (mounted.current && request.current === token) { locked.current = false; setBusy(false) }
     }
-  }, [showToast])
+  }
 
-  // ─── Selection state ───
-  const monumentSelected = true // always start directly into hunt (no blocking gate)
-  const [huntMonumentId, setHuntMonumentId] = useState(
-    (() => {
-      const stored = lastMonument?.id
-      return stored && MONUMENT_RIDDLES[stored] ? stored : 'taj-mahal'
-    })()
-  )
-  const [monuments, setMonuments] = useState<{id: string, name: string}[]>([])
-
-  // ─── Geo state ───
-  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle')
-  const [demoMode, setDemoMode] = useState(true) // ON by default
-  const [userDistance, setUserDistance] = useState<number | null>(null)
-
-  // ─── Riddle state ───
-  const [activeClueIdx, setActiveClueIdx] = useState(0)
-  const [completedClues, setCompletedClues] = useState<Set<number>>(new Set())
-  const [showHint, setShowHint] = useState(false)
-  const [checkingGeo, setCheckingGeo] = useState(false)
-  const [locationVerified, setLocationVerified] = useState(false)
-  const [huntCompleted, setHuntCompleted] = useState(false)
-  const [xpEarned, setXpEarned] = useState(0)
-  const [huntStarted, setHuntStarted] = useState(false)
-
-  // ─── Clue completion tracking (for XP tiers) ───
-  const [clueCompletions, setClueCompletions] = useState<Record<number, string[]>>({})
-
-  // ─── User GPS ───
-  const [userLat, setUserLat] = useState(() => (MONUMENT_USER_START[lastMonument?.id || 'taj-mahal'] || MONUMENT_USER_START['taj-mahal']).lat)
-  const [userLng, setUserLng] = useState(() => (MONUMENT_USER_START[lastMonument?.id || 'taj-mahal'] || MONUMENT_USER_START['taj-mahal']).lng)
-
-  // ─── Synthetic players ───
-  const [playerStates, setPlayerStates] = useState<PlayerState[]>(() => makePlayers(lastMonument?.id || 'taj-mahal'))
-
-  // ─── Leaderboard ───
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-
-  // ─── Celebration ───
-  const [celebrateXp, setCelebrateXp] = useState<number | null>(null)
-  const [celebrateMedal, setCelebrateMedal] = useState('')
-
-  // ─── Guard ref: prevents double-firing of onClueVerified ───
-  const isAdvancingRef = useRef(false)
-
-  const monumentName = MONUMENT_NAMES[huntMonumentId] || huntMonumentId
-  const activeRiddles = MONUMENT_RIDDLES[huntMonumentId] || TAJ_MAHAL_RIDDLES
-  const activeRiddle = activeRiddles[activeClueIdx]
-
-  const speakCurrentClue = useCallback(() => {
-    if (!activeRiddle || typeof window === 'undefined' || !window.speechSynthesis) return
+  function speak() {
+    if (!window.speechSynthesis) { setMessage('Voice clues are unavailable on this device. The full clue is shown below.'); return }
     window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(activeRiddle.riddle)
-    utterance.lang = 'en-US'
-    utterance.rate = 0.92
-    window.speechSynthesis.speak(utterance)
-  }, [activeRiddle])
+    const speech = new SpeechSynthesisUtterance(clue.riddle)
+    speech.lang = 'en-IN'
+    speech.rate = 0.9
+    window.speechSynthesis.speak(speech)
+  }
 
-  const recenterOnActiveClue = useCallback(() => {
-    if (!activeRiddle) return
-    setUserLat(activeRiddle.target_lat - 0.00008)
-    setUserLng(activeRiddle.target_lng - 0.00008)
-  }, [activeRiddle])
-
-  // ─── Monument list — only the 3 demo-ready ones ───
-  useEffect(() => {
-    setMonuments([
-      { id: 'taj-mahal',   name: 'Taj Mahal' },
-      { id: 'red-fort',    name: 'Red Fort' },
-      { id: 'qutub-minar', name: 'Qutub Minar' },
-    ])
-    // Save default on first load so localStorage is set
-    if (!lastMonument) saveMonument('taj-mahal', 'Taj Mahal')
-  }, [])
-
-  // ─── Geo-fence entry check ───
-  const checkMonumentGeo = useCallback((monumentId: string) => {
-    const coords = MONUMENT_COORDS[monumentId]
-    if (!coords) { setGeoStatus('inside'); return }
-    setGeoStatus('checking')
-    if (!navigator.geolocation) { setGeoStatus('error'); return }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const dist = getDistanceMeters(pos.coords.latitude, pos.coords.longitude, coords.lat, coords.lng)
-        setUserDistance(Math.round(dist))
-        setGeoStatus(dist <= coords.radius ? 'inside' : 'outside')
-      },
-      () => setGeoStatus('error'),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }, [])
-
-  // Trigger geo-check on monument selection
-  useEffect(() => {
-    if (monumentSelected && !demoMode) checkMonumentGeo(huntMonumentId)
-    if (monumentSelected && demoMode) setGeoStatus('inside')
-  }, [monumentSelected, huntMonumentId, demoMode, checkMonumentGeo])
-
-  // Auto-start hunt when geo is inside or demo
-  useEffect(() => {
-    if (monumentSelected && (geoStatus === 'inside' || demoMode) && activeRiddles) {
-      setHuntStarted(true)
+  async function share() {
+    const text = `I completed the ${HUNT_NAMES[monument]} ${mode === 'practice' ? 'practice ' : ''}Treasure Hunt on Sanskriti AI: ${clues.length} checkpoints!`
+    try {
+      if (navigator.share) await navigator.share({ title: 'My solo treasure hunt', text })
+      else { await navigator.clipboard.writeText(text); setMessage('Achievement copied to clipboard.') }
+    } catch (error) {
+      if (!(error instanceof Error && error.name === 'AbortError')) setMessage('Sharing is unavailable. You completed all five checkpoints!')
     }
-  }, [monumentSelected, geoStatus, demoMode, huntMonumentId, activeRiddles])
-
-  // NOTE: No locationVerified useEffect needed.
-  // Advance is driven directly from onClueVerified via sequential timers.
-
-  // ─── GPS tracking ───
-  useEffect(() => {
-    if (!huntStarted || demoMode) return
-    const watchId = navigator.geolocation?.watchPosition(
-      (pos) => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude) },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 5000 }
-    )
-    return () => { if (watchId !== undefined) navigator.geolocation?.clearWatch(watchId) }
-  }, [huntStarted, demoMode])
-
-  // ─── Synthetic player position cycling (every 4s) ───
-  useEffect(() => {
-    if (!huntStarted || !demoMode) return
-    const interval = setInterval(() => {
-      const players = MONUMENT_PLAYERS[huntMonumentId] || MONUMENT_PLAYERS['taj-mahal']
-      setPlayerStates(prev => prev.map(p => {
-        const sp = players.find(s => s.id === p.id)
-        if (!sp) return p
-        const nextIdx = (p.posIndex + 1) % sp.positions.length
-        return {
-          ...p,
-          prevLat: p.lat, prevLng: p.lng,
-          lat: sp.positions[nextIdx].lat,
-          lng: sp.positions[nextIdx].lng,
-          posIndex: nextIdx,
-        }
-      }))
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [huntStarted, demoMode, huntMonumentId])
-
-  // ─── Synthetic player clue completion (auto-advance) ───
-  useEffect(() => {
-    if (!huntStarted || !demoMode) return
-    const players = MONUMENT_PLAYERS[huntMonumentId] || MONUMENT_PLAYERS['taj-mahal']
-    const timers = players.map((sp) => {
-      return setInterval(() => {
-        setPlayerStates(prev => prev.map(p => {
-          if (p.id !== sp.id || p.cluesCompleted >= 5) return p
-          const newCompleted = p.cluesCompleted + 1
-          const clueId = activeRiddles[p.cluesCompleted]?.id
-          if (clueId) {
-            setClueCompletions(cc => {
-              const arr = cc[clueId] || []
-              if (!arr.includes(p.id)) return { ...cc, [clueId]: [...arr, p.id] }
-              return cc
-            })
-          }
-          // Determine XP for position
-          const completersCount = (clueCompletions[clueId] || []).length
-          let xpGain = 10
-          if (completersCount === 0) xpGain = 50
-          else if (completersCount === 1) xpGain = 30
-          else if (completersCount === 2) xpGain = 20
-          return { ...p, cluesCompleted: newCompleted, xp: p.xp + xpGain }
-        }))
-      }, sp.clueInterval)
-    })
-    return () => timers.forEach(clearInterval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [huntStarted, demoMode, huntMonumentId])
-
-  // ─── Verify current clue location ───
-  const verifyClueLocation = () => {
-    if (!activeRiddle) return
-    if (isAdvancingRef.current) return // guard: already advancing
-
-    // Demo mode: skip GPS distance check but still require manual button click
-    if (demoMode) {
-      onClueVerified()
-      return
-    }
-
-    setCheckingGeo(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const dist = getDistanceMeters(pos.coords.latitude, pos.coords.longitude, activeRiddle.target_lat, activeRiddle.target_lng)
-        if (dist <= activeRiddle.radius_meters) {
-          onClueVerified()
-        } else {
-          showToast(`📍 Walk ~${Math.round(dist)}m closer`)
-          setCheckingGeo(false)
-        }
-      },
-      () => { onClueVerified(); setCheckingGeo(false) },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
   }
 
-  // ─── On Clue Verified — single entry point, drives entire advance sequence ───
-  // NOTE: NOT async — the setTimeout(1500) must always fire unconditionally.
-  // XP is fire-and-forget (.then/.catch) so a slow/hung network never blocks advancement.
-  const onClueVerified = () => {
-    if (!activeRiddle) return
-    if (isAdvancingRef.current) return
-    isAdvancingRef.current = true
+  if (!ready) return <p className="p-6" role="status">Loading your hunt…</p>
 
-    // Show verified message
-    setLocationVerified(true)
-
-    const clueId = activeRiddle.id
-    const xpAmount = 50
-
-    // Mark clue completed immediately
-    setCompletedClues(prev => new Set([...prev, clueId]))
-    setXpEarned(prev => prev + xpAmount)
-
-    // Award XP — fire-and-forget, NEVER block the advance timer
-    if (user?.id) {
-      addXP(user.id, xpAmount, 'HUNT_STEP_DONE')
-        .then(newXP => {
-          setProfile((prev: any) => prev ? { ...prev, total_xp: newXP } : prev)
-          computeAndSaveBadges(user.id, { total_xp: newXP }).then(() => {
-            window.dispatchEvent(new Event('xp-updated'))
-          }).catch(() => {})
-        })
-        .catch(e => console.error('XP award failed:', e))
-    }
-
-    // Show toast immediately
-    showToast('🥇 First to find it! +' + xpAmount + ' XP')
-
-    // Always advance after 1.5s — regardless of XP network outcome
-    setTimeout(() => {
-      setLocationVerified(false)
-      setCheckingGeo(false)
-      setShowHint(false)
-
-      // Functional updater avoids stale closure on activeClueIdx
-      setActiveClueIdx(prev => {
-        const next = prev + 1
-
-        if (next < activeRiddles.length) {
-          // More clues remaining
-          setTimeout(() => {
-            isAdvancingRef.current = false
-            window.scrollTo({ top: 0, behavior: 'smooth' })
-          }, 200)
-          return next
-        } else {
-          // All clues done — hunt complete
-          setTimeout(() => {
-            setHuntCompleted(true)
-            isAdvancingRef.current = false
-            // Bonus XP for completion — fire-and-forget
-            if (user?.id) {
-              addXP(user.id, 500, 'HUNT_COMPLETED')
-                .then(newXP => {
-                  setProfile((p: any) => p ? { ...p, total_xp: newXP } : p)
-                  window.dispatchEvent(new Event('xp-updated'))
-                })
-                .catch(() => {})
-            }
-          }, 200)
-          return prev
-        }
-      })
-    }, 1500)
-  }
-
-  const activateDemo = () => { setDemoMode(true); setGeoStatus('inside') }
-
-  // ─── Build leaderboard ───
-  const leaderboard = [
-    ...playerStates.map(p => ({
-      name: p.name, avatar: p.avatar, clues: p.cluesCompleted,
-      xp: p.xp, isUser: false, color: p.color,
-    })),
-    {
-      name: profile?.full_name?.split(' ')[0] || 'You',
-      avatar: '🧑', clues: completedClues.size, xp: xpEarned,
-      isUser: true, color: '#8A6A05',
-    }
-  ].sort((a, b) => b.xp - a.xp || b.clues - a.clues)
-
-  // ═══════════════
-  // RENDER: Monument Selection
-  // ═══════════════
-  // No blocking gate — always go directly into hunt/demo
-  // ═══════════════
-  // RENDER: Geo-checking
-  // ═══════════════
-  if (geoStatus === 'checking') {
-    return <AppShell><div className="p-4 lg:p-8"><h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#D6A84B] mb-2">{t('treasure_hunt')}</h1><LoadingSpinner text="📍 Checking your location..." /></div></AppShell>
-  }
-
-  // ═══════════════
-  // RENDER: Outside geo-fence
-  // ═══════════════
-  if (geoStatus === 'outside' && !demoMode) {
-    return (
-      <AppShell>
-        <div className="p-4 lg:p-8">
-          <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#D6A84B] mb-2">{t('treasure_hunt')}</h1>
-          <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, padding: 40, maxWidth: 520, margin: '2rem auto', textAlign: 'center' }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🔒</div>
-            <h2 style={{ color: '#8A6A05', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 22, margin: '0 0 12px' }}>Location Required</h2>
-            <p style={{ color: '#494B45', fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
-              You must be physically present at <strong style={{ color: '#8A6A05' }}>{monumentName}</strong> to join this hunt.
-            </p>
-            {userDistance !== null && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(212,137,63,0.12)', border: '1px solid rgba(212,137,63,0.3)', borderRadius: 10, color: '#C66B4E', fontSize: 14, fontWeight: 600, marginBottom: 20 }}>
-                📍 You are ~{userDistance >= 1000 ? `${(userDistance / 1000).toFixed(1)}km` : `${userDistance}m`} away
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Re-check Location</button>
-              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
-            </div>
-          </div>
-        </div>
-      </AppShell>
-    )
-  }
-
-  // GPS error
-  if (geoStatus === 'error' && !demoMode) {
-    return (
-      <AppShell>
-        <div className="p-4 lg:p-8">
-          <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#D6A84B] mb-2">{t('treasure_hunt')}</h1>
-          <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(196,91,58,0.4)', borderRadius: 20, padding: 40, maxWidth: 520, margin: '2rem auto', textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📍</div>
-            <h2 style={{ color: '#E8A85C', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 20, margin: '0 0 12px' }}>Location Access Required</h2>
-            <p style={{ color: '#494B45', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>Please enable GPS / location services.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Try Again</button>
-              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
-            </div>
-          </div>
-        </div>
-      </AppShell>
-    )
-  }
-
-  // ═══════════════
-  // RENDER: Hunt Completed
-  // ═══════════════
-  if (huntCompleted) {
-    const totalXp = 500 + xpEarned
-    return (
-      <AppShell>
-        <div className="screen-gutter flex flex-col items-center py-8 text-center animate-fade-in">
-          {demoMode && (
-            <div className="mb-4 w-full rounded-xl border border-[#D6A84B]/40 bg-[linear-gradient(135deg,rgba(214,168,75,0.16),rgba(198,107,78,0.12))] px-4 py-2 text-xs font-bold text-[#E8BE69]">
-              DEMO MODE — Geo-fence bypassed · Synthetic players active
-            </div>
-          )}
-
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#D6A84B]/12 text-[#D6A84B]">
-            <Trophy className="h-8 w-8" />
-          </span>
-          <h1 className="mt-4 font-heritage text-2xl font-bold text-[#F6F1E8]">{t('heritage_hunter')}</h1>
-          <p className="mt-1.5 text-sm text-[#AEB6C8]">You completed the {monumentName} Treasure Hunt!</p>
-
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#7C3AED]/15 px-4 py-1.5 text-sm font-bold text-[#B9A2F5] animate-xp-pulse">
-            +500 XP Bonus · {totalXp} XP Total
-          </span>
-
-          <div className="app-card mt-6 flex flex-col items-center gap-1 rounded-2xl px-6 py-5">
-            <Medal className="h-9 w-9 text-[#D6A84B]" />
-            <p className="text-sm font-semibold text-[#D6A84B]">Heritage Hunter Badge Unlocked</p>
-          </div>
-
-          <div className="app-card mt-4 w-full rounded-2xl p-4 text-left">
-            <h2 className="mb-3 text-center font-heritage text-sm font-bold text-[#D6A84B]">Final Standings</h2>
-            <div className="flex flex-col gap-1">
-              {leaderboard.map((p, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'flex items-center justify-between rounded-lg px-3 py-2',
-                    p.isUser ? 'border border-[#D6A84B]/40 bg-[#D6A84B]/12' : 'border border-transparent',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 text-sm">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}</span>
-                    <span className={cn('text-sm', p.isUser ? 'font-bold text-[#D6A84B]' : 'font-medium text-[#F6F1E8]')}>{p.avatar} {p.name}</span>
-                  </div>
-                  <span className="text-xs font-bold text-[#B9A2F5]">{p.xp} XP</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
-            <button
-              onClick={() => void shareAchievement(monumentName, totalXp)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D6A84B]/50 px-6 py-3 text-sm font-semibold text-[#D6A84B] transition-colors hover:bg-[#D6A84B]/10"
-            >
-              <Share2 className="h-4 w-4" /> {t('share_achievement')}
-            </button>
-            <button
-              onClick={() => router.push('/explore')}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] px-6 py-3 text-sm font-semibold text-[#080D1D] transition-transform active:scale-95"
-            >
-              <Compass className="h-4 w-4" /> {t('explore_more')}
-            </button>
-          </div>
-        </div>
-        {toast && <Toast message={toast} onDone={hideToast} />}
-      </AppShell>
-    )
-  }
-
-  // ═══════════════
-  // RENDER: Active Hunt
-  // ═══════════════
-  return (
-    <AppShell>
-      <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(75,155,142,0.5)}70%{box-shadow:0 0 0 10px rgba(75,155,142,0)}}
-        @keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.4)}70%{box-shadow:0 0 0 8px rgba(201,168,76,0)}}
-        @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-      `}</style>
-      <div className="px-4 py-3 animate-fade-in">
-
-        {/* ═══ Side-by-side wrapper ═══ */}
-        <div className="flex w-full flex-col gap-4">
-
-          {/* ── LEFT PANEL (60%) — Riddle + Controls ── */}
-          <div className="flex w-full flex-col gap-3 order-2">
-
-            {/* Demo Mode ribbon */}
-            {demoMode && (
-              <div className="bg-gradient-to-br from-[#D6A84B]/20 to-[#C66B4E]/15 border border-[#D6A84B]/50 rounded-xl p-3 flex items-center justify-between text-[#E8BE69] text-xs md:text-sm font-bold">
-                <span>🎮 DEMO MODE<span className="hidden sm:inline"> — Geo bypassed</span></span>
-                <button onClick={() => setDemoMode(false)} className="bg-[#D6A84B]/20 border border-[#D6A84B]/40 rounded-lg px-2 md:px-3 py-1 text-[#D6A84B] text-[10px] md:text-sm font-semibold cursor-pointer min-h-[44px] flex items-center justify-center">Turn Off</button>
-              </div>
-            )}
-
-            {/* Monument switcher + progress */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <select
-                    value={huntMonumentId}
-                    onChange={e => {
-                      const id = e.target.value
-                      const name = monuments.find(m => m.id === id)?.name || id
-                      const start = MONUMENT_USER_START[id] || MONUMENT_USER_START['taj-mahal']
-                      setHuntMonumentId(id); saveMonument(id, name)
-                      setActiveClueIdx(0); setCompletedClues(new Set()); setXpEarned(0); setHuntCompleted(false)
-                      setPlayerStates(makePlayers(id))
-                      setUserLat(start.lat); setUserLng(start.lng)
-                      setLocationVerified(false); setShowHint(false); setClueCompletions({})
-                      isAdvancingRef.current = false // reset guard when monument changes
-                    }}
-                    style={{
-                      fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '20px', fontWeight: 700,
-                      color: '#8A6A05', background: 'transparent', border: 'none',
-                      paddingRight: 22, cursor: 'pointer', appearance: 'none' as const,
-                      outline: 'none'
-                    }}
-                  >
-                    {monuments.map(m => (
-                      <option key={m.id} value={m.id} style={{ background: '#F2F2F4', color: '#8A6A05' }}>
-                        🗺️ {m.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown style={{ position: 'absolute', right: 0, top: 7, width: 13, height: 13, color: '#8A6A05', pointerEvents: 'none' }} />
-                </div>
-                <p className="text-[#AEB6C8] text-xs m-0 mt-0.5">{t('treasure_hunt')}</p>
-              </div>
-              <div className="flex items-center gap-2 md:gap-3">
-                <span className="text-[#F6F1E8] text-sm md:text-base font-semibold">Clue {activeClueIdx + 1} of {activeRiddles.length}</span>
-                <span className="px-2 py-1 rounded-lg border border-[#63C7BA]/40 bg-[#63C7BA]/15 text-[#7EE4D4] text-[11px] font-bold">
-                  {completedClues.size}/{activeRiddles.length} checkpoints
-                </span>
-                <span className="px-3 py-1.5 bg-[#D6A84B]/15 rounded-full text-[#D6A84B] text-[11px] md:text-[13px] font-bold">⚡ {xpEarned} XP</span>
-              </div>
-            </div>
-
-            {/* Progress dots */}
-            <div style={{ display: 'flex', gap: 6 }}>
-              {activeRiddles.map((r, idx) => (
-                <div key={r.id} style={{
-                  flex: 1, height: 4, borderRadius: 2,
-                  background: completedClues.has(r.id) ? '#2F7D63' : idx === activeClueIdx ? '#F6C00A' : 'rgba(201,168,76,0.15)',
-                  transition: 'all 0.3s ease'
-                }} />
-              ))}
-            </div>
-
-            {/* Scoreboard toggle */}
-            <div className="relative">
-              <button 
-                onClick={() => setShowLeaderboard(!showLeaderboard)} 
-                className="flex items-center gap-2 px-4 rounded-xl bg-[#171F34]/90 border border-[#D6A84B]/20 text-[#D6A84B] text-xs md:text-sm font-semibold cursor-pointer min-h-[44px]"
-              >
-                🏆 Scoreboard {showLeaderboard ? '▲' : '▼'}
-              </button>
-
-              {showLeaderboard && (
-                <>
-                  <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={() => setShowLeaderboard(false)} />
-                  <div className="fixed md:static bottom-0 left-0 w-full md:w-auto max-h-[50vh] md:max-h-none overflow-y-auto z-50 bg-[#171F34] md:bg-[#171F34]/90 border-t md:border border-[#D6A84B]/20 md:rounded-xl rounded-t-2xl p-4 md:p-3 animate-slide-up md:mt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:shadow-none">
-                    <div className="flex md:hidden justify-between items-center mb-4">
-                      <span className="text-[#D6A84B] font-bold text-lg">🏆 Scoreboard</span>
-                      <button onClick={() => setShowLeaderboard(false)} aria-label="Close scoreboard" className="text-[#AEB6C8] text-2xl p-2 min-h-[44px] leading-none">&times;</button>
-                    </div>
-                    {leaderboard.map((p, i) => (
-                      <div key={i} className={`flex items-center justify-between p-2 md:p-2 rounded-lg mb-1 ${p.isUser ? 'bg-[#D6A84B]/10 border border-[#D6A84B]/30' : 'bg-transparent border border-transparent'}`}>
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 md:w-6 text-center text-sm">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}</span>
-                          <span className={`${p.isUser ? 'text-[#D6A84B] font-bold' : 'text-[#F6F1E8] font-medium'} text-xs md:text-sm`}>
-                            <span className="inline-block md:inline">{p.avatar}</span> {p.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] md:text-xs">
-                          <span className="text-[#8891A6]">{p.clues} clue{p.clues !== 1 ? 's' : ''} ✓</span>
-                          <span className="text-[#D6A84B] font-bold">⚡ {p.xp} XP</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Active Riddle Card */}
-            {activeRiddle && !locationVerified && (
-              <div className="bg-[#171F34]/90 backdrop-blur-md border border-[#C66B4E]/40 p-4 md:p-6 rounded-2xl bg-gradient-to-br from-[#C66B4E]/10 to-transparent">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <span style={{
-                    display: 'inline-block', padding: '4px 12px',
-                    background: 'rgba(201,168,76,0.2)', color: '#8A6A05',
-                    fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const,
-                    borderRadius: 20, letterSpacing: 1
-                  }}>Clue {activeClueIdx + 1}</span>
-                  <span style={{ color: '#494B45', fontSize: 12 }}>📍 {activeRiddle.location_name}</span>
-                </div>
-
-                {/* Riddle text */}
-                <p style={{
-                  color: '#181A13', fontSize: 16, lineHeight: 1.6,
-                  fontFamily: 'var(--font-literata), Georgia, serif', marginBottom: 20,
-                  fontStyle: 'italic'
-                }} className="md:text-lg">
-                  &ldquo;{activeRiddle.riddle}&rdquo;
-                </p>
-
-                {/* Hint toggle */}
-                <button onClick={() => setShowHint(!showHint)} className="flex items-center gap-2 px-3 md:px-4 py-2 min-h-[44px] rounded-lg mb-4 bg-[#D6A84B]/10 border border-[#D6A84B]/20 text-[#D6A84B] text-xs md:text-sm font-semibold cursor-pointer">
-                  {showHint ? <EyeOff size={16} /> : <Eye size={16} />}
-                  {showHint ? 'Hide Hint' : 'Show Hint'}
-                </button>
-                {showHint && (
-                  <div style={{
-                    padding: '12px 16px', marginBottom: 16,
-                    background: 'rgba(201,168,76,0.06)',
-                    border: '1px solid rgba(201,168,76,0.15)',
-                    borderRadius: 10, color: '#8A6A05', fontSize: 13,
-                    fontStyle: 'italic'
-                  }} className="md:text-sm">
-                    💡 {activeRiddle.hint}
-                  </div>
-                )}
-
-                {/* I Am Here button */}
-                <button
-                  onClick={verifyClueLocation}
-                  disabled={checkingGeo}
-                  className={`w-full p-3 md:p-4 min-h-[48px] rounded-xl flex items-center justify-center gap-2 text-[#080D1D] text-sm md:text-base font-bold transition-all duration-300 border-none ${checkingGeo ? 'bg-[#7C3AED]/30 cursor-not-allowed text-white' : 'gold-gradient cursor-pointer'}`}
-                >
-                  {checkingGeo ? (
-                    <>📍 Verifying location...</>
-                  ) : (
-                    <><MapPin size={18} /> I Am Here</>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Location verified transition — shows spinner so panel is never blank */}
-            {locationVerified && (
-              <div style={{
-                textAlign: 'center', padding: '30px 20px',
-                background: 'rgba(75,155,142,0.1)',
-                border: '1px solid rgba(75,155,142,0.3)',
-                borderRadius: 16,
-              }}>
-                <div style={{ color: '#2F7D63', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>
-                  ✓ Location verified!
-                </div>
-                <div style={{
-                  width: 32, height: 32, margin: '0 auto',
-                  border: '3px solid rgba(75,155,142,0.2)',
-                  borderTop: '3px solid #63C7BA',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                <p style={{ color: '#7ECDC0', fontSize: 13, marginTop: 12 }}>Loading next clue...</p>
-              </div>
-            )}
-          </div>
-
-          {/* ── RIGHT PANEL (40%) — Sticky Map ── */}
-          <div className="order-1 flex w-full flex-col">
-
-            <div className="mb-2 rounded-2xl border border-[#D6A84B]/25 bg-white/5 px-3 py-2 backdrop-blur-xl">
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[#AEB6C8]">
-                <span>Clue {activeClueIdx + 1} of {activeRiddles.length}</span>
-                <span>{Math.round(((activeClueIdx + 1) / activeRiddles.length) * 100)}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-black/35">
-                <div className="h-full rounded-full bg-[linear-gradient(90deg,#C66B4E,#D6A84B)] transition-all duration-500" style={{ width: `${Math.round(((activeClueIdx + 1) / activeRiddles.length) * 100)}%` }} />
-              </div>
-            </div>
-
-            {/* Map container */}
-            <div className="rounded-2xl border border-[#D6A84B]/20 bg-white/5 p-2 backdrop-blur-xl">
-              <div className="relative z-0 w-full overflow-hidden rounded-2xl border border-[#D6A84B]/20 bg-[#171F34]/90">
-                <HuntMap
-                  riddles={activeRiddles}
-                  activeClueIdx={activeClueIdx}
-                  completedClues={completedClues}
-                  userLat={userLat}
-                  userLng={userLng}
-                  players={playerStates}
-                  demoMode={demoMode}
-                  monumentId={huntMonumentId}
-                />
-
-                <div className="absolute right-3 top-3 z-[1200] flex flex-col gap-2">
-                  <button
-                    onClick={speakCurrentClue}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D6A84B]/35 bg-[#080D1D]/85 text-[#D6A84B]"
-                    aria-label="Voice clue"
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setShowHint(prev => !prev)}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D6A84B]/35 bg-[#080D1D]/85 text-[#D6A84B]"
-                    aria-label="Toggle hint"
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={recenterOnActiveClue}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D6A84B]/35 bg-[#080D1D]/85 text-[#D6A84B]"
-                    aria-label="Recenter hunt"
-                  >
-                    <Crosshair className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Player status chips */}
-            {demoMode && (
-              <div className="flex flex-row overflow-hidden max-w-full gap-2 mt-3 items-center">
-                {[
-                  { avatar: '🧑', name: profile?.full_name?.split(' ')[0] || 'You', clue: activeClueIdx + 1, color: '#8A6A05', isUser: true },
-                  ...playerStates.map(p => ({ avatar: p.avatar, name: p.name, clue: Math.min(p.cluesCompleted + 1, 5), color: p.color, isUser: false }))
-                ].map((p, i) => (
-                  <div key={i} className={`flex items-center gap-1.5 md:gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full whitespace-nowrap flex-shrink-0 min-h-[28px] ${p.isUser ? 'bg-[var(--primary)]/18' : 'bg-[var(--muted)]'}`}>
-                    {/* The dot carries the player's identity colour; the label
-                        stays ink so it survives on a light chip. */}
-                    <div className="w-2 h-2 rounded-full md:hidden flex-shrink-0" style={{ backgroundColor: p.color }}></div>
-                    <span className="hidden md:inline">{p.avatar}</span>
-                    <span className="hidden md:inline text-xs font-semibold text-[var(--foreground)]">{p.name}</span>
-                    <span className="md:hidden text-[10px] font-bold text-[var(--foreground)]">C{p.clue}</span>
-                    <span className="hidden md:inline text-[10px] text-[#8891A6]">— Clue {p.clue}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>{/* end side-by-side wrapper */}
-
-        {/* Celebration overlay (fixed, outside layout) */}
-        {celebrateXp !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#080D1D]/90 backdrop-blur-sm" />
-            <div className="relative glass-card rounded-2xl p-8 max-w-sm w-full text-center animate-slide-up">
-              <div className="text-6xl mb-4">📍</div>
-              <h2 className="text-2xl font-bold text-[#63C7BA] mb-2">Location Found!</h2>
-              <p style={{ color: '#494B45', marginBottom: 8, fontSize: 15 }}>{activeRiddle?.location_name}</p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#7C3AED]/20 rounded-full mb-4 animate-xp-pulse">
-                <span className="text-[#7C3AED] font-bold">{celebrateMedal} +{celebrateXp} XP</span>
-              </div>
-              <p style={{ color: '#494B45', fontSize: 13 }}>Next clue loading...</p>
-            </div>
-          </div>
-        )}
-
+  return <div ref={top} className="space-y-5 px-4 pt-5 pb-28 text-[#F6F1E8]">
+    <header>
+      <Link href="/explore" className="text-sm text-[#D6A84B]">← Explore monuments</Link>
+      <h1 className="mt-4 font-serif text-3xl font-bold text-[#D6A84B]">Treasure Hunt</h1>
+      <p className="mt-2 text-sm text-[#AEB6C8]">Your own adventure, at your own pace.</p>
+    </header>
+    {storageWarning && <p role="alert" className="rounded-xl border border-amber-400/40 p-3 text-sm">{storageWarning}</p>}
+    {!active ? <section className="space-y-4 rounded-2xl border border-white/10 bg-[#171F34] p-4">
+      <h2 className="text-xl font-semibold">Plan your solo hunt</h2>
+      <label className="block text-sm" htmlFor="hunt-monument">Choose a monument</label>
+      <select id="hunt-monument" value={monument} onChange={e => setMonument(e.target.value)} className="min-h-12 w-full rounded-xl border border-white/20 bg-[#080D1D] px-3">
+        {Object.entries(HUNT_NAMES).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+      </select>
+      <fieldset className="space-y-2">
+        <legend className="mb-2 text-sm">How would you like to play?</legend>
+        {(['onsite', 'practice'] as const).map(value => <label key={value} className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 p-3">
+          <input type="radio" name="hunt-mode" value={value} checked={mode === value} onChange={() => setMode(value)} className="mt-1" />
+          <span><strong>{value === 'onsite' ? 'On-site solo hunt' : 'Practice from anywhere'}</strong><span className="mt-1 block text-xs text-[#AEB6C8]">{value === 'onsite' ? 'Visit each checkpoint and verify with GPS.' : 'Explore clues without location access. No profile XP.'}</span></span>
+        </label>)}
+      </fieldset>
+      <p className="text-sm text-[#AEB6C8]">5 checkpoints · 50 points each · 500 completion bonus. Hints are free. No other players or timer.</p>
+      <p className="text-xs text-[#AEB6C8]">Stay on permitted visitor paths and follow site staff. Never enter a closed area to reach a marker. You can pause and return later.</p>
+      <p className="text-xs text-[#AEB6C8]">Progress is saved on this device, separately for each monument and mode.{!user && ' You are playing as a guest. Sign in before starting if you want profile XP.'}</p>
+      {progress && <p className="text-sm text-[#63C7BA]">{finished ? 'Completed hunt saved' : `Saved progress: ${completed} of 5 checkpoints`}</p>}
+      <button onClick={start} className={primary}>{finished ? 'View completed hunt' : progress ? 'Resume hunt' : mode === 'onsite' ? 'Start solo hunt' : 'Start practice'}</button>
+      {!user && <Link href="/login" className="block py-2 text-center text-sm text-[#D6A84B]">Sign in for profile XP</Link>}
+    </section> : <>
+      <div className="flex items-center justify-between gap-2">
+        <div><h2 className="font-serif text-xl font-bold">{HUNT_NAMES[monument]}</h2><p className="text-xs text-[#D6A84B]">{mode === 'practice' ? 'Practice · no profile XP' : 'Solo · GPS verification'}</p></div>
+        <button onClick={pause} disabled={busy && finished} className={secondary}>{finished ? 'Choose hunt' : 'Pause / change'}</button>
       </div>
-      {toast && <Toast message={toast} onDone={hideToast} />}
-    </AppShell>
-  )
+      <div>
+        <div className="mb-2 flex justify-between text-sm"><span>{completed} of {clues.length} complete</span><span>{score} points</span></div>
+        <progress className="h-2 w-full accent-[#D6A84B]" value={completed} max={clues.length} aria-label="Hunt progress" />
+      </div>
+      {finished ? <section className="space-y-4 rounded-2xl border border-[#D6A84B]/40 bg-[#171F34] p-5 text-center">
+        <Trophy className="mx-auto h-12 w-12 text-[#D6A84B]" />
+        <h2 className="text-2xl font-bold">{mode === 'practice' ? 'Practice complete!' : 'Hunt complete!'}</h2>
+        <p>You found all {clues.length} checkpoints. {score} hunt points, including your 500-point completion bonus.</p>
+        {mode === 'onsite' && user && progress?.reward === 'none' && <button onClick={() => void claimReward()} disabled={busy} className={primary}>Save {score} XP to my profile</button>}
+        {mode === 'onsite' && !user && <p className="text-sm text-[#AEB6C8]">Your guest result is saved on this device. Profile XP requires starting a hunt while signed in.</p>}
+        {progress?.reward === 'saved' && <p className="text-[#63C7BA]">{score} XP saved to your profile.</p>}
+        {(progress?.reward === 'pending' || progress?.reward === 'unconfirmed') && <p role="status" className="text-sm text-[#AEB6C8]">{busy ? 'Saving profile XP…' : 'XP submission is unconfirmed. Check your profile activity. We will not submit it again to avoid duplicate XP.'}</p>}
+        <button onClick={() => void share()} className={`${secondary} inline-flex items-center gap-2`}><Share2 size={16} /> Share achievement</button>
+        <Link href="/profile" className="block py-2 text-sm text-[#D6A84B]">View profile</Link>
+        {mode === 'practice' && <button className={secondary} onClick={() => { persist(newProgress()); setMessage(''); setHint(false) }}>Practice again</button>}
+      </section> : <>
+        <section className="space-y-4 rounded-2xl border border-[#D6A84B]/30 bg-[#171F34] p-5">
+          <div className="flex items-center justify-between"><h2 className="font-bold text-[#D6A84B]">Clue {completed + 1}</h2><button onClick={speak} className={secondary} aria-label="Read clue aloud"><Volume2 size={18} /></button></div>
+          <p className="font-serif text-lg leading-relaxed">{clue.riddle}</p>
+          <button onClick={() => setHint(!hint)} className={secondary} aria-expanded={hint} aria-controls="hunt-hint">{hint ? 'Hide hint' : 'Show free hint'}</button>
+          {hint && <p id="hunt-hint" className="rounded-xl bg-white/5 p-3 text-sm text-[#D6A84B]">{clue.hint}</p>}
+          {mode === 'onsite' && <p className="text-xs text-[#AEB6C8]">Reach the public visitor area within {clue.radius_meters} m of the marker. Location is requested only when you check a checkpoint.</p>}
+          <button onClick={verify} disabled={busy} className={`${primary} flex items-center justify-center gap-2`}><MapPin size={18} />{busy ? 'Checking GPS…' : mode === 'practice' ? 'Reveal and complete checkpoint' : 'I am here — check GPS'}</button>
+          {position && mode === 'onsite' && <p className="text-xs text-[#AEB6C8]">Last GPS reading: ±{Math.round(position.accuracy)} m accuracy · about {Math.round(distanceMeters(position.lat, position.lng, clue.target_lat, clue.target_lng))} m from this checkpoint.</p>}
+        </section>
+        <HuntMap key={monument} clues={clues} completed={completed} position={position} recenter={recenter} />
+        <button onClick={() => setRecenter(value => value + 1)} className={`${secondary} inline-flex items-center gap-2`}><Crosshair size={16} /> Recenter checkpoint map</button>
+      </>}
+      <details className="rounded-xl border border-white/10 p-4">
+        <summary className="cursor-pointer text-sm font-semibold">Your checkpoint trail</summary>
+        <ol className="mt-3 space-y-2 text-sm">{clues.map((item, index) => <li key={item.id} className={index < completed ? 'text-[#63C7BA]' : 'text-[#AEB6C8]'}>{index < completed ? '✓' : `${index + 1}.`} {index < completed || finished ? item.location_name : `Checkpoint ${index + 1}`}</li>)}</ol>
+      </details>
+    </>}
+    <p role="status" aria-live="polite" className="rounded-xl text-sm text-[#E8BE69]">{message}</p>
+  </div>
 }
