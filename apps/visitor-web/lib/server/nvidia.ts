@@ -104,11 +104,15 @@ async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaRespo
       signal: AbortSignal.timeout(60_000),
     });
   } catch {
+    console.warn("NVIDIA chat upstream connection failed before receiving a response.");
     throw new HttpError(502, "upstream", "Couldn't reach the AI service. Please try again.");
   }
   const data = (await response.json().catch(() => ({}))) as NvidiaResponse;
   if (response.status === 202 && data.requestId) return pollNvidiaResult(data.requestId, apiKey);
-  if (!response.ok) throw upstreamError(response.status);
+  if (!response.ok) {
+    console.warn(`NVIDIA chat upstream returned HTTP ${response.status}.`);
+    throw upstreamError(response.status);
+  }
   return data;
 }
 
