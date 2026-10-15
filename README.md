@@ -46,8 +46,10 @@ npm run build:operations
 
 - **Android:** `cd apk && ./gradlew assembleDebug`. Output:
   `apk/app/build/outputs/apk/debug/app-debug.apk`. See [Android](apk/README.md).
-- **iOS:** open `ios/SanskritiAI.xcodeproj`. Current runtime uses the bundled
-  shared interface. See [iOS](ios/README.md) and the current-state review below.
+- **iOS:** build the shared UI once (`cd apk && ./scripts/build-mobile-ui.sh`),
+  then open `ios/SanskritiAI.xcodeproj`. The iOS shell provides the same native
+  capability as Android: narration, voice input, AI calls, AR navigation,
+  camera and the operations console bridge. See [iOS](ios/README.md).
 
 ## Product documentation
 

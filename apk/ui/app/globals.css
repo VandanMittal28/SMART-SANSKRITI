@@ -5,66 +5,118 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #080D1D;
-  --foreground: #F6F1E8;
-  --card: #11182B;
-  --card-foreground: #F6F1E8;
-  --popover: #171F34;
-  --popover-foreground: #F6F1E8;
-  --primary: #D6A84B;
-  --primary-foreground: #171004;
-  --secondary: #63C7BA;
-  --secondary-foreground: #071B19;
-  --muted: #171F34;
-  --muted-foreground: #AEB6C8;
-  --accent: #C66B4E;
-  --accent-foreground: #F6F1E8;
-  --destructive: #DC2626;
+  /* Surfaces run light and quiet so photography and the amber accent carry
+     the page. Amber is reserved for one action per screen. */
+  --background: #F2F2F4;
+  --foreground: #181A13;
+  --card: #FFFFFF;
+  --card-foreground: #181A13;
+  --popover: #FFFFFF;
+  --popover-foreground: #181A13;
+  --primary: #F6C00A;
+  --primary-foreground: #181A13;
+  --secondary: #181A13;
+  --secondary-foreground: #F9F9FA;
+  --muted: #F9F9FA;
+  --muted-foreground: #494B45;
+  --accent: #F6C00A;
+  --accent-foreground: #181A13;
+  --destructive: #C2321B;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(214, 168, 75, 0.2);
-  --input: #11182B;
-  --ring: #D6A84B;
-  --success: #63C7BA;
-  --success-foreground: #F5E6D3;
-  --radius: 0.875rem;
-  --sidebar: #0F0B1E;
-  --sidebar-foreground: #F5E6D3;
-  --sidebar-primary: #C9A84C;
-  --sidebar-primary-foreground: #0F0B1E;
-  --sidebar-accent: rgba(28, 22, 56, 0.9);
-  --sidebar-accent-foreground: #F5E6D3;
-  --sidebar-border: rgba(201, 168, 76, 0.3);
-  --sidebar-ring: #C9A84C;
+  --border: rgba(24, 26, 19, 0.08);
+  --input: #FFFFFF;
+  --ring: #F6C00A;
+  --primary-text: #8A6A05;
+  --on-tint: #181A13;
+  --success: #2F7D63;
+  --success-foreground: #FFFFFF;
+  --radius: 1.5rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #181A13;
+  --sidebar-primary: #F6C00A;
+  --sidebar-primary-foreground: #181A13;
+  --sidebar-accent: #F9F9FA;
+  --sidebar-accent-foreground: #181A13;
+  --sidebar-border: rgba(24, 26, 19, 0.08);
+  --sidebar-ring: #F6C00A;
+
+  /* Elevation: wide and soft, never a hard drop shadow. */
+  --shadow-card: 0 2px 4px rgba(24, 26, 19, 0.03), 0 12px 32px rgba(24, 26, 19, 0.06);
+  --shadow-raised: 0 4px 8px rgba(24, 26, 19, 0.04), 0 20px 48px rgba(24, 26, 19, 0.10);
+  --shadow-amber: 0 8px 28px rgba(246, 192, 10, 0.35);
 }
 
 html.light {
-  --background: #F7F1E5;
-  --foreground: #1D2638;
-  --card: #FFFDF8;
-  --card-foreground: #1D2638;
-  --popover: #FFFDF8;
-  --popover-foreground: #1D2638;
-  --primary: #93650A;
-  --primary-foreground: #FFFDF8;
-  --secondary: #147A70;
-  --secondary-foreground: #FFFFFF;
-  --muted: #EEE5D6;
-  --muted-foreground: #5F6878;
-  --accent: #A94F35;
-  --accent-foreground: #FFFFFF;
-  --border: rgba(112, 78, 18, 0.22);
-  --input: #FFFDF8;
-  --ring: #93650A;
-  --success: #147A70;
+  --primary-text: #8A6A05;
+  --on-tint: #181A13;
+  --background: #F2F2F4;
+  --foreground: #181A13;
+  --card: #FFFFFF;
+  --card-foreground: #181A13;
+  --popover: #FFFFFF;
+  --popover-foreground: #181A13;
+  --primary: #F6C00A;
+  --primary-foreground: #181A13;
+  --secondary: #181A13;
+  --secondary-foreground: #F9F9FA;
+  --muted: #F9F9FA;
+  --muted-foreground: #494B45;
+  --accent: #F6C00A;
+  --accent-foreground: #181A13;
+  --border: rgba(24, 26, 19, 0.08);
+  --input: #FFFFFF;
+  --ring: #F6C00A;
+  --success: #2F7D63;
   --success-foreground: #FFFFFF;
-  --sidebar: #FFF9EE;
-  --sidebar-foreground: #1D2638;
-  --sidebar-primary: #93650A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #EEE5D6;
-  --sidebar-accent-foreground: #1D2638;
-  --sidebar-border: rgba(112, 78, 18, 0.2);
-  --sidebar-ring: #93650A;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #181A13;
+  --sidebar-primary: #F6C00A;
+  --sidebar-primary-foreground: #181A13;
+  --sidebar-accent: #F9F9FA;
+  --sidebar-accent-foreground: #181A13;
+  --sidebar-border: rgba(24, 26, 19, 0.08);
+  --sidebar-ring: #F6C00A;
+}
+
+html.dark {
+  --on-tint: #F9F9FA;
+  /* Bright amber already clears contrast on ink, so text and fill agree. */
+  --primary-text: #F6C00A;
+  /* The same system at night: ink surfaces, the amber unchanged so one
+     accent reads identically in both themes. */
+  --background: #121410;
+  --foreground: #F9F9FA;
+  --card: #1E211A;
+  --card-foreground: #F9F9FA;
+  --popover: #1E211A;
+  --popover-foreground: #F9F9FA;
+  --primary: #F6C00A;
+  --primary-foreground: #181A13;
+  --secondary: #F9F9FA;
+  --secondary-foreground: #181A13;
+  --muted: #22251D;
+  --muted-foreground: #A7AA9F;
+  --accent: #F6C00A;
+  --accent-foreground: #181A13;
+  --destructive: #E4553B;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(249, 249, 250, 0.10);
+  --input: #22251D;
+  --ring: #F6C00A;
+  --success: #6FC2A2;
+  --success-foreground: #121410;
+  --sidebar: #1E211A;
+  --sidebar-foreground: #F9F9FA;
+  --sidebar-primary: #F6C00A;
+  --sidebar-primary-foreground: #181A13;
+  --sidebar-accent: #22251D;
+  --sidebar-accent-foreground: #F9F9FA;
+  --sidebar-border: rgba(249, 249, 250, 0.10);
+  --sidebar-ring: #F6C00A;
+
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.34);
+  --shadow-raised: 0 4px 8px rgba(0, 0, 0, 0.34), 0 20px 48px rgba(0, 0, 0, 0.42);
+  --shadow-amber: 0 8px 28px rgba(246, 192, 10, 0.22);
 }
 
 @theme inline {
@@ -213,17 +265,11 @@ html.light {
   min-height: 100dvh;
   margin: 0 auto;
   background: var(--background);
-  box-shadow: 0 0 0 1px rgba(214, 168, 75, 0.08), 0 24px 80px rgba(0, 0, 0, 0.32);
 }
 
-.mobile-shell::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(214,168,75,.035), transparent 22%);
-  opacity: 1;
-}
+/* The old shell painted a dark vignette over everything. The canvas now
+   stays flat so cards provide the only depth. */
+.mobile-shell::before { content: none; }
 
 .mobile-scroll {
   height: 100dvh;
@@ -281,87 +327,7 @@ html.light .hero-grid {
     linear-gradient(180deg, rgba(255, 253, 248, 0.18), rgba(247, 241, 229, 0.76));
 }
 
-/* Much of the mobile UI predates semantic color tokens. These mappings keep
-   every existing screen readable while it is incrementally migrated. */
-html.light [class*="bg-[#050816]"],
-html.light [class*="bg-[#050814]"],
-html.light [class*="bg-[#080D1D]"],
-html.light [class*="bg-[#08070f]"],
-html.light [class*="bg-[#07101c]"] {
-  background-color: var(--background) !important;
-}
 
-html.light [class*="bg-[#0B1122]"],
-html.light [class*="bg-[#0B1020]"],
-html.light [class*="bg-[#0D1426]"],
-html.light [class*="bg-[#101827]"],
-html.light [class*="bg-[#10172a]"],
-html.light [class*="bg-[#10162a]"],
-html.light [class*="bg-[#11162a]"],
-html.light [class*="bg-[#11182B]"] {
-  background-color: var(--card) !important;
-}
-
-html.light [class*="bg-[#171F34]"],
-html.light [class*="bg-[#1D2740]"],
-html.light [class*="bg-[#252d38]"],
-html.light [class*="bg-[#0A2526]"] {
-  background-color: var(--muted) !important;
-}
-
-html.light [class*="bg-black/"],
-html.light [class*="bg-white/[0.0"],
-html.light [class*="bg-white/5"],
-html.light [class*="bg-white/8"] {
-  background-color: rgba(255, 253, 248, 0.72) !important;
-}
-
-html.light [class*="text-[#F6F1E8]"],
-html.light [class*="text-[#F5E6D3]"],
-html.light [class*="text-[#F3DFC0]"],
-html.light [class*="text-[#fff0ce]"],
-html.light [class*="text-[#ffe7b0]"],
-html.light [class*="text-[#E9FFF9]"] {
-  color: var(--foreground) !important;
-}
-
-html.light [class*="text-[#AEB6C8]"],
-html.light [class*="text-[#8891A6]"],
-html.light [class*="text-[#C7CDDA]"],
-html.light [class*="text-[#D9C7AA]"],
-html.light [class*="text-[#667086]"],
-html.light [class*="text-[#5A6478]"] {
-  color: var(--muted-foreground) !important;
-}
-
-html.light [class*="text-[#D6A84B]"],
-html.light [class*="text-[#E8BE69]"],
-html.light [class*="text-[#E8C97A]"],
-html.light [class*="text-[#F7D88C]"],
-html.light [class*="text-[#efc566]"],
-html.light [class*="text-[#f2ca50]"] {
-  color: #805706 !important;
-}
-
-html.light [class*="text-[#63C7BA]"],
-html.light [class*="text-[#7EE4D4]"],
-html.light [class*="text-[#7ECDC0]"],
-html.light [class*="text-[#79dfd0]"],
-html.light [class*="text-[#8DE0D6]"] {
-  color: #126F67 !important;
-}
-
-html.light [class*="text-[#B9A2F5]"] {
-  color: #6843A4 !important;
-}
-
-html.light [class*="border-white/"] {
-  border-color: rgba(51, 65, 85, 0.16) !important;
-}
-
-html.light [class*="shadow-[0_-8px_24px_rgba(0,0,0"] {
-  box-shadow: 0 -8px 24px rgba(73, 52, 17, 0.12) !important;
-}
 
 html.light [style*="background: rgb(17, 24, 43)"],
 html.light [style*="background-color: rgb(17, 24, 43)"],
@@ -443,40 +409,151 @@ html.light [style*="color: #8891A6"] {
   font-family: var(--font-devanagari), var(--font-sans), system-ui, sans-serif !important;
 }
 
+/* Clash Display carries no Devanagari, so Hindi headings use Noto Sans
+   Devanagari at the same optical weight rather than falling back to a serif. */
 :lang(hi) h1, :lang(hi) h2, :lang(hi) h3,
-[data-lang="hi"] h1, [data-lang="hi"] h2, [data-lang="hi"] h3 {
-  font-family: var(--font-devanagari), Georgia, serif !important;
+:lang(hi) .font-heritage, :lang(hi) .font-display, :lang(hi) .section-title,
+[data-lang="hi"] h1, [data-lang="hi"] h2, [data-lang="hi"] h3,
+[data-lang="hi"] .font-heritage, [data-lang="hi"] .font-display, [data-lang="hi"] .section-title {
+  font-family: var(--font-devanagari), var(--font-manrope), system-ui, sans-serif !important;
+  letter-spacing: -0.01em;
 }
 
-.font-heritage {
-  font-family: var(--font-literata), Georgia, serif;
+/* Clash Display carries every heading. It has no Devanagari, so Hindi falls
+   through to Noto Sans Devanagari — see the :lang(hi) rules below. */
+.font-heritage,
+.font-display {
+  font-family: var(--font-display), var(--font-manrope), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Display scale. Headings are large, tight and set in few words. */
+.text-display-xl { font-size: 2.5rem;  line-height: 1.04; letter-spacing: -0.035em; font-weight: 600; }
+.text-display-lg { font-size: 2rem;    line-height: 1.08; letter-spacing: -0.03em;  font-weight: 600; }
+.text-display-md { font-size: 1.5rem;  line-height: 1.16; letter-spacing: -0.025em; font-weight: 600; }
+.text-display-sm { font-size: 1.1875rem; line-height: 1.26; letter-spacing: -0.02em; font-weight: 600; }
+
+/* The one word that carries the accent in a heading. */
+.text-accent-word { color: var(--primary-text); }
+
+/* Small all-caps label above a heading. */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 .screen-gutter {
-  padding-inline: 20px;
+  padding-inline: 22px;
 }
 
 .section-title {
-  font-family: var(--font-literata), Georgia, serif;
-  color: #F6F1E8;
-  font-size: 1.125rem;
-  font-weight: 650;
+  font-family: var(--font-display), var(--font-manrope), system-ui, sans-serif;
+  color: var(--foreground);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.5rem;
 }
 
 .status-chip {
   display: inline-flex;
-  min-height: 28px;
+  min-height: 32px;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(99, 199, 186, 0.25);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(99, 199, 186, 0.08);
-  padding: 4px 9px;
-  color: #8DE0D6;
-  font-size: 11px;
-  font-weight: 700;
+  background: var(--card);
+  padding: 6px 13px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
 }
+
+/* Pill sitting on top of a photograph. */
+.photo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: rgba(24, 26, 19, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 7px 13px;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Surfaces -------------------------------------------------------------- */
+.surface {
+  background: var(--card);
+  border-radius: 28px;
+  box-shadow: var(--shadow-card);
+}
+.surface-quiet {
+  background: var(--muted);
+  border-radius: 24px;
+  border: 1px solid var(--border);
+}
+.surface-ink {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-radius: 28px;
+}
+
+/* The single amber action per screen. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: var(--shadow-amber);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.btn-primary:active { transform: scale(0.985); filter: brightness(0.97); }
+.btn-primary:disabled { opacity: 0.55; box-shadow: none; }
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-weight: 700;
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+.btn-ink:active { transform: scale(0.985); }
+
+/* Circular icon button, as on the reference detail screen. */
+.icon-button {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  width: 44px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease;
+}
+.icon-button:active { transform: scale(0.94); }
 
 @keyframes yatrik-float {
   0%, 100% { transform: translateY(0) rotate(-1deg); }
@@ -607,4 +684,301 @@ html.light [style*="color: #8891A6"] {
   .yatrik-welcome-art--talking {
     animation: none !important;
   }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Legacy colour bridge
+
+   Most screens were written before this design system, with ~1,500 literal
+   hex colours chosen for a dark navy canvas. Re-pointing them at the tokens
+   here means the whole app adopts the new palette at once, instead of leaving
+   twenty screens looking like the old product while they are rebuilt.
+
+   `~=` matches a whole class name, so `bg-[#D6A84B]` is remapped while
+   `bg-[#D6A84B]/12` keeps its transparency and reads as a tint.
+
+   This is a bridge, not the destination. Screens get converted to tokens as
+   they are redesigned, and each conversion removes work from this block.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Page canvases */
+[class~="bg-[#050816]"], [class~="bg-[#050814]"], [class~="bg-[#080D1D]"],
+[class~="bg-[#08070f]"], [class~="bg-[#08070F]"], [class~="bg-[#070a16]"],
+[class~="bg-[#07101c]"], [class~="bg-[#0F0B1E]"] {
+  background-color: var(--background);
+}
+
+/* Cards */
+[class~="bg-[#0B1122]"], [class~="bg-[#0B1020]"], [class~="bg-[#0D1426]"],
+[class~="bg-[#101827]"], [class~="bg-[#10172a]"], [class~="bg-[#10162a]"],
+[class~="bg-[#11162a]"], [class~="bg-[#11182B]"], [class~="bg-[#0a1020]"],
+[class~="bg-[#09101e]"], [class~="bg-[#0A1020]"] {
+  background-color: var(--card);
+}
+
+/* Raised / inset panels */
+[class~="bg-[#171F34]"], [class~="bg-[#1D2740]"], [class~="bg-[#172536]"],
+[class~="bg-[#1b2a3b]"], [class~="bg-[#1B2A3B]"], [class~="bg-[#15363b]"],
+[class~="bg-[#252d38]"], [class~="bg-[#22251D]"] {
+  background-color: var(--muted);
+}
+
+/* Primary text */
+[class~="text-[#F6F1E8]"], [class~="text-[#F5E6D3]"], [class~="text-[#fff0cd]"],
+[class~="text-[#ffe7b0]"], [class~="text-[#f8ecd2]"], [class~="text-[#F3DFC0]"],
+[class~="text-[#fff0ce]"], [class~="text-[#f6e9d0]"], [class~="text-[#F6F1E8]/90"] {
+  color: var(--foreground);
+}
+
+/* Secondary text */
+[class~="text-[#AEB6C8]"], [class~="text-[#8891A6]"], [class~="text-[#c9b89b]"],
+[class~="text-[#C9B89B]"], [class~="text-[#877a65]"], [class~="text-[#9d8e72]"],
+[class~="text-[#7d8795]"], [class~="text-[#818b92]"], [class~="text-[#C7CDDA]"],
+[class~="text-[#d9c7aa]"], [class~="text-[#D9C7AA]"], [class~="text-[#51646a]"],
+[class~="text-[#587077]"], [class~="text-[#637a76]"] {
+  color: var(--muted-foreground);
+}
+
+/* The accent: every former gold becomes the one amber. */
+[class~="text-[#D6A84B]"], [class~="text-[#EFC566]"], [class~="text-[#E8BE69]"],
+[class~="text-[#C9A84C]"], [class~="text-[#E8C97A]"], [class~="text-[#F7D88C]"],
+[class~="text-[#efc566]"], [class~="text-[#e8be69]"], [class~="text-[#E8A85C]"],
+[class~="text-[#caa967]"], [class~="text-[#987021]"] {
+  color: var(--primary-text);
+}
+[class~="bg-[#D6A84B]"], [class~="bg-[#EFC566]"], [class~="bg-[#E8BE69]"],
+[class~="bg-[#C9A84C]"], [class~="bg-[#efc566]"], [class~="bg-[#d5a94d]"],
+[class~="bg-[#D5A94D]"] {
+  background-color: var(--primary);
+  color: var(--on-tint);
+}
+[class~="text-[#171004]"], [class~="text-[#201406]"], [class~="text-[#211406]"],
+[class~="text-[#241507]"], [class~="text-[#142126]"] {
+  color: var(--on-tint);
+}
+[class~="border-[#D6A84B]"], [class~="border-[#EFC566]"], [class~="border-[#C9A84C]"] {
+  border-color: var(--primary);
+}
+
+/* Teal carried success and "ready" meaning; it becomes the muted green so the
+   palette keeps exactly one bright accent. */
+[class~="text-[#63C7BA]"], [class~="text-[#8DE0D6]"], [class~="text-[#7EE4D4]"],
+[class~="text-[#7ECDC0]"], [class~="text-[#79dfd0]"], [class~="text-[#8fbcb6]"],
+[class~="text-[#86cabe]"], [class~="text-[#6fd6c6]"], [class~="text-[#8de0d6]"] {
+  color: var(--success);
+}
+[class~="bg-[#63C7BA]"], [class~="bg-[#55c7b6]"] {
+  background-color: var(--success);
+  color: var(--success-foreground);
+}
+
+/* White tints were drawn for a dark canvas and vanish on a light one. */
+html.light [class*="border-white/"] { border-color: var(--border); }
+html.light [class*="bg-white/"]:not([class*="bg-white/9"]) { background-color: var(--muted); }
+/* `text-white` is left alone: it is nearly always deliberate, sitting on a
+   photograph or a dark surface, where rewriting it to ink destroys it. */
+
+/* Heavy dark drop shadows read as grime on a light canvas. */
+html.light [class*="shadow-[0_-8px_24px_rgba(0,0,0"],
+html.light [class*="shadow-[0_18px_50px_rgba(0,0,0"],
+html.light [class*="shadow-[0_0_80px_rgba(0,0,0"] {
+  box-shadow: var(--shadow-card);
+}
+
+/* Generated from a scan of every colour literal in the app, so nothing is
+   left rendering against the retired dark canvas. Regenerate after a
+   screen is converted and its entries can simply be deleted. */
+[class~="from-[#080D1D]"] {
+  --tw-gradient-from: var(--card);
+}
+[class~="from-[#C66B4E]"] {
+  --tw-gradient-from: var(--destructive);
+}
+[class~="from-[#D6A84B]"] {
+  --tw-gradient-from: var(--primary);
+}
+[class~="from-[#7C3AED]"] {
+  --tw-gradient-from: var(--secondary);
+}
+[class~="to-[#C66B4E]"] {
+  --tw-gradient-to: var(--destructive);
+}
+[class~="ring-[#D6A84B]"] {
+  --tw-ring-color: var(--primary);
+}
+[class~="bg-[#050814]"],
+[class~="bg-[#07101c]"],
+[class~="bg-[#08070f]"],
+[class~="bg-[#080D1D]"],
+[class~="bg-[#09101e]"],
+[class~="bg-[#0B1020]"],
+[class~="bg-[#0D1426]"],
+[class~="bg-[#0a1020]"],
+[class~="bg-[#10172a]"],
+[class~="bg-[#101827]"],
+[class~="bg-[#11162a]"],
+[class~="bg-[#11182B]"],
+[class~="bg-[#15363b]"],
+[class~="bg-[#171F34]"],
+[class~="bg-[#172536]"],
+[class~="bg-[#1b2a3b]"] {
+  background-color: var(--card);
+}
+[class~="bg-[#C66B4E]"],
+[class~="bg-[#DC2626]"],
+[class~="bg-[#E8928B]"] {
+  background-color: var(--destructive);
+}
+[class~="bg-[#D6A84B]"],
+[class~="bg-[#e8be69]"],
+[class~="bg-[#efc566]"] {
+  background-color: var(--primary);
+}
+[class~="bg-[#7C3AED]"] {
+  background-color: var(--secondary);
+}
+[class~="bg-[#63C7BA]"],
+[class~="bg-[#7ECDC0]"],
+[class~="bg-[#7EE4D4]"] {
+  background-color: var(--success);
+}
+[class~="border-[#C66B4E]"],
+[class~="border-[#DC2626]"],
+[class~="border-[#E8928B]"] {
+  border-color: var(--destructive);
+}
+[class~="border-[#F3DFC0]"] {
+  border-color: var(--foreground);
+}
+[class~="border-[#D6A84B]"],
+[class~="border-[#e8be69]"],
+[class~="border-[#efc566]"],
+[class~="border-[#f2ca50]"] {
+  border-color: var(--primary);
+}
+[class~="border-[#63C7BA]"],
+[class~="border-[#63c7ba]"],
+[class~="border-[#7ECDC0]"],
+[class~="border-[#7EE4D4]"] {
+  border-color: var(--success);
+}
+[class~="text-[#C66B4E]"],
+[class~="text-[#E8928B]"] {
+  color: var(--destructive);
+}
+[class~="text-[#D9C7AA]"],
+[class~="text-[#F3DFC0]"],
+[class~="text-[#F6F1E8]"],
+[class~="text-[#f6e9d0]"],
+[class~="text-[#f8ecd2]"],
+[class~="text-[#ffe7b0]"],
+[class~="text-[#fff0cd]"],
+[class~="text-[#fff0ce]"] {
+  color: var(--foreground);
+}
+[class~="text-[#667086]"],
+[class~="text-[#7A6E5C]"],
+[class~="text-[#7d8795]"],
+[class~="text-[#818b92]"],
+[class~="text-[#877a65]"],
+[class~="text-[#8891A6]"],
+[class~="text-[#9d8e72]"],
+[class~="text-[#AEB6C8]"],
+[class~="text-[#C7CDDA]"],
+[class~="text-[#aeb6c8]"],
+[class~="text-[#c9b89b]"] {
+  color: var(--muted-foreground);
+}
+[class~="text-[#D6A84B]"],
+[class~="text-[#E8A85C]"],
+[class~="text-[#E8BE69]"],
+[class~="text-[#F7D88C]"],
+[class~="text-[#caa967]"],
+[class~="text-[#e8be69]"],
+[class~="text-[#efc566]"],
+[class~="text-[#f2ca50]"] {
+  color: var(--primary-text);
+}
+[class~="text-[#080D1D]"],
+[class~="text-[#0E0916]"],
+[class~="text-[#171004]"],
+[class~="text-[#201406]"],
+[class~="text-[#211406]"],
+[class~="text-[#241507]"] {
+  color: var(--on-tint);
+}
+[class~="text-[#7C3AED]"],
+[class~="text-[#B9A2F5]"] {
+  color: var(--secondary);
+}
+[class~="text-[#63C7BA]"],
+[class~="text-[#6fd6c6]"],
+[class~="text-[#79dfd0]"],
+[class~="text-[#7ECDC0]"],
+[class~="text-[#7EE4D4]"],
+[class~="text-[#86cabe]"],
+[class~="text-[#8DE0D6]"],
+[class~="text-[#8de0d6]"],
+[class~="text-[#8fbcb6]"],
+[class~="text-[#A9E5DB]"],
+[class~="text-[#E9FFF9]"] {
+  color: var(--success);
+}
+
+/* Long tail: one-off literals, classified by their luminance so a colour
+   that used to be light-on-dark becomes ink-on-light, and a dark chip
+   label stays legible on the amber it sits on. */
+[class~="to-[#5B21B6]"] {
+  --tw-gradient-to: var(--card);
+}
+[class~="bg-[#071716]"],
+[class~="bg-[#0A2526]"],
+[class~="bg-[#0b1423]"],
+[class~="bg-[#0c1824]"],
+[class~="bg-[#152333]"] {
+  background-color: var(--card);
+}
+[class~="bg-[#9BE5D9]"],
+[class~="bg-[#E46F67]"] {
+  background-color: var(--muted);
+}
+[class~="border-[#70d6c6]"],
+[class~="border-[#E46F67]"] {
+  border-color: var(--border);
+}
+[class~="text-[#A9D7CE]"],
+[class~="text-[#D8DEE9]"],
+[class~="text-[#F3D48A]"],
+[class~="text-[#FFB3A1]"],
+[class~="text-[#d9c9ab]"],
+[class~="text-[#e4d6ba]"],
+[class~="text-[#ead6b0]"],
+[class~="text-[#f3dfba]"],
+[class~="text-[#f5d18e]"],
+[class~="text-[#f5f0e5]"],
+[class~="text-[#f6ddb0]"],
+[class~="text-[#f7ead1]"],
+[class~="text-[#ffe5a7]"] {
+  color: var(--foreground);
+}
+[class~="text-[#5A6478]"],
+[class~="text-[#76A49B]"],
+[class~="text-[#9CBAB4]"],
+[class~="text-[#D9A066]"],
+[class~="text-[#F87171]"],
+[class~="text-[#FFAAA4]"],
+[class~="text-[#bfae92]"] {
+  color: var(--muted-foreground);
+}
+[class~="text-[#07131A]"],
+[class~="text-[#1b1d20]"] {
+  color: var(--on-tint);
+}
+
+/* Teal-tinted darks only ever sat on the teal fill, which is now the deep
+   green. Ink on deep green fails; its own foreground does not. */
+[class~="text-[#071B19]"],
+[class~="text-[#071716]"],
+[class~="text-[#0B1F1C]"] {
+  color: var(--success-foreground);
 }

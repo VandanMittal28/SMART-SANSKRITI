@@ -54,6 +54,41 @@ export function validateTranscribe(body: Record<string, unknown>): { audioBase64
 }
 
 /** Mirrors apps/operations/app/api/demo/reports POST validation, so bad input is rejected here first. */
+export const HERITAGE_WATCH_MAX_IMAGE_BYTES = 1_500_000;
+
+/**
+ * Mirrors apk/ui/app/api/heritage-watch/route.ts: { image, region,
+ * motionContext }. Both images must be JPEG — the Explore camera encodes its
+ * keyframes as JPEG, so anything else is a malformed client, not a visitor
+ * with an unusual photo.
+ */
+export function validateHeritageWatch(body: Record<string, unknown>): {
+  imageBase64: string;
+  regionBase64: string | null;
+  motionContext: string | null;
+} {
+  const image = decodeBase64(body.image, "frame", HERITAGE_WATCH_MAX_IMAGE_BYTES);
+  if (image.length < 100 || !image.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) {
+    throw bad("Send the frame as a JPEG image.");
+  }
+
+  let regionBase64: string | null = null;
+  if (body.region !== null && body.region !== undefined && body.region !== "") {
+    const region = decodeBase64(body.region, "region crop", HERITAGE_WATCH_MAX_IMAGE_BYTES);
+    if (region.length < 100 || !region.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) {
+      throw bad("Send the region crop as a JPEG image.");
+    }
+    regionBase64 = region.toString("base64");
+  }
+
+  const motionContext =
+    typeof body.motionContext === "string" && body.motionContext.trim()
+      ? body.motionContext.trim().slice(0, 400)
+      : null;
+
+  return { imageBase64: image.toString("base64"), regionBase64, motionContext };
+}
+
 export function validateReport(body: Record<string, unknown>): {
   id: string;
   token: string;

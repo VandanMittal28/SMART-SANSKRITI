@@ -17,6 +17,7 @@
 // Not verified against the live API from this website: no key was available.
 
 import { getMonument } from "../content/monuments.ts";
+import { buildSceneMessageContent, parseSceneAssessment, type SceneAssessment, type SceneRequest } from "../heritage/watch.ts";
 import { HttpError } from "./http.ts";
 import type { Language } from "./validate.ts";
 
@@ -319,4 +320,26 @@ export async function synthesizeNarration(text: string, language: string, voice:
   }
   if (!response.ok) throw upstreamError(response.status);
   return Buffer.from(await response.arrayBuffer()).toString("base64");
+}
+
+/**
+ * Heritage Watch (Explore camera) scene assessment.
+ *
+ * The mobile app used to run this over a key compiled into the APK. That key
+ * is gone on purpose, so the assessment lands here instead. An upstream
+ * failure throws rather than returning "none": a frame we could not assess
+ * must never be indistinguishable from a frame we assessed and cleared.
+ */
+export async function assessHeritageScene(request: SceneRequest): Promise<SceneAssessment> {
+  const model = process.env.NVIDIA_VISION_MODEL || DEFAULT_NVIDIA_VISION_MODEL;
+  const data = await requestNvidia({
+    model,
+    messages: [{ role: "user", content: buildSceneMessageContent(request) }],
+    temperature: 0.1,
+    max_tokens: 220,
+    reasoning_budget: 0,
+    chat_template_kwargs: { enable_thinking: false },
+    stream: false,
+  });
+  return parseSceneAssessment(removeHiddenReasoning(data.choices?.[0]?.message?.content || ""));
 }

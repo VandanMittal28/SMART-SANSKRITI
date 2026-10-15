@@ -80,7 +80,7 @@ interface SyntheticReview {
   cautions: string[]
 }
 
-const ACCENT_COLORS = ['#D6A84B', '#D4893F', '#63C7BA', '#7C3AED', '#C66B4E']
+const ACCENT_COLORS = ['#F6C00A', '#D4893F', '#2F7D63', '#7C3AED', '#C66B4E']
 
 export default function ItineraryPage() {
   const { t, lang } = useLang()
@@ -157,21 +157,21 @@ export default function ItineraryPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 18 }}>🏨</span>
-          <span style={{ color: '#AEB6C8', fontSize: 12, fontWeight: 600 }}>Suggested Stay</span>
+          <span style={{ color: '#494B45', fontSize: 12, fontWeight: 600 }}>Suggested Stay</span>
         </div>
-        <div style={{ color: '#D6A84B', fontSize: 13, letterSpacing: 1 }}>
+        <div style={{ color: '#8A6A05', fontSize: 13, letterSpacing: 1 }}>
           {'★'.repeat(hotel.stars)}{'☆'.repeat(5 - hotel.stars)}
         </div>
       </div>
-      <div style={{ color: '#E8C97A', fontSize: 15, fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-literata), Georgia, serif' }}>
+      <div style={{ color: '#8A6A05', fontSize: 15, fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-literata), Georgia, serif' }}>
         {hotel.name}
       </div>
-      <div style={{ color: '#8891A6', fontSize: 12, marginBottom: 4, lineHeight: 1.4 }}>
+      <div style={{ color: '#494B45', fontSize: 12, marginBottom: 4, lineHeight: 1.4 }}>
         {hotel.address}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#8891A6', fontSize: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#494B45', fontSize: 12 }}>
         <span>📞 {hotel.phone}</span>
-        <span style={{ color: '#63C7BA', fontWeight: 700 }}>~₹{hotel.price.toLocaleString('en-IN')}/night</span>
+        <span style={{ color: '#2F7D63', fontWeight: 700 }}>~₹{hotel.price.toLocaleString('en-IN')}/night</span>
       </div>
     </div>
   )
@@ -212,12 +212,12 @@ export default function ItineraryPage() {
       <div style={{ padding: '20px', maxWidth: 420, margin: '0 auto' }}>
         <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <Route size={20} color="#D6A84B" />
-            <h1 style={{ fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '28px', lineHeight: '36px', color: '#F6F1E8', fontWeight: 700, margin: 0 }}>
+            <Route size={20} color="#F6C00A" />
+            <h1 style={{ fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '28px', lineHeight: '36px', color: '#181A13', fontWeight: 700, margin: 0 }}>
               {t('itinerary_title')}
             </h1>
           </div>
-          <p style={{ color: '#AEB6C8', margin: '6px 0 0', fontSize: 14, lineHeight: '21px' }}>Build a heritage route around your time and interests.</p>
+          <p style={{ color: '#494B45', margin: '6px 0 0', fontSize: 14, lineHeight: '21px' }}>Build a heritage route around your time and interests.</p>
           <div style={{ marginTop: 16 }}><TravelTabs active="itinerary" /></div>
         </div>
 
@@ -228,35 +228,35 @@ export default function ItineraryPage() {
           </section>
         ) : null}
 
-        <div style={{ background: '#11182B', border: '1px solid rgba(214,168,75,0.17)', borderRadius: '16px', padding: '16px', marginBottom: '1.5rem' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid rgba(214,168,75,0.17)', borderRadius: '16px', padding: '16px', marginBottom: '1.5rem' }}>
           {/* Days selector */}
           <div style={{ marginBottom: '1.2rem' }}>
-            <label style={{ display: 'block', color: '#AEB6C8', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('num_days')}</label>
+            <label style={{ display: 'block', color: '#494B45', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('num_days')}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[1,2,3,4,5].map(d => (
                 <button key={d} onClick={() => setDays(d)} style={{
                   flex: 1, minWidth: 44, height: 46, borderRadius: '10px',
-                  background: days === d ? '#D6A84B' : '#171F34',
-                  color: days === d ? '#171004' : '#AEB6C8',
+                  background: days === d ? '#F6C00A' : '#F2F2F4',
+                  color: days === d ? '#171004' : '#494B45',
                   fontSize: '15px', fontWeight: 700, cursor: 'pointer',
                   border: days === d ? 'none' : '1px solid rgba(201,168,76,0.2)',
                   transition: 'all 0.2s ease'
                 }}>{d}</button>
               ))}
-              <span style={{ color: '#8891A6', fontSize: '13px', alignSelf: 'center', marginLeft: '4px' }}>{days === 1 ? t('day') : t('days_word')}</span>
+              <span style={{ color: '#494B45', fontSize: '13px', alignSelf: 'center', marginLeft: '4px' }}>{days === 1 ? t('day') : t('days_word')}</span>
             </div>
           </div>
 
           {/* City search */}
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: '#AEB6C8', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('search_city')}</label>
+            <label style={{ display: 'block', color: '#494B45', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>{t('search_city')}</label>
             <input type="text" placeholder={t('search_city_placeholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              style={{ width: '100%', minHeight: 48, padding: '10px 14px', background: '#080D1D', border: '1px solid rgba(214,168,75,0.24)', borderRadius: '12px', color: '#F6F1E8', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', minHeight: 48, padding: '10px 14px', background: '#FFFFFF', border: '1px solid rgba(214,168,75,0.24)', borderRadius: '12px', color: '#181A13', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
           {/* City grid */}
           <div style={{ marginBottom: '1.2rem' }}>
-            <label style={{ display: 'block', color: '#AEB6C8', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', color: '#494B45', fontSize: '13px', marginBottom: '8px', fontWeight: 600 }}>
               {t('select_city')} {selectedCity && `— ${selectedCity} ${t('selected')}`}
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '196px', overflowY: 'auto', paddingRight: '4px' }}>
@@ -265,12 +265,12 @@ export default function ItineraryPage() {
                 return (
                   <button key={cityData.city} onClick={() => setSelectedCity(cityData.city)} style={{
                     minHeight: 66, padding: '10px 12px', borderRadius: '12px',
-                    background: isSelected ? 'rgba(214,168,75,0.13)' : '#171F34',
+                    background: isSelected ? 'rgba(214,168,75,0.13)' : '#F2F2F4',
                     border: isSelected ? '1px solid rgba(214,168,75,0.55)' : '1px solid rgba(255,255,255,0.06)',
                     cursor: 'pointer', textAlign: 'left' as const, transition: 'all 0.2s ease'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: isSelected ? '#D6A84B' : '#F6F1E8', fontSize: '13px', fontWeight: isSelected ? 700 : 600 }}><MapPin size={14} />{cityData.city}</div>
-                    <div style={{ color: '#8891A6', fontSize: '10px', marginTop: '2px' }}>{cityData.state}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: isSelected ? '#F6C00A' : '#181A13', fontSize: '13px', fontWeight: isSelected ? 700 : 600 }}><MapPin size={14} />{cityData.city}</div>
+                    <div style={{ color: '#494B45', fontSize: '10px', marginTop: '2px' }}>{cityData.state}</div>
                   </button>
                 )
               })}
@@ -280,16 +280,16 @@ export default function ItineraryPage() {
           {/* Selected city highlights */}
           {selectedCityData && (
             <div style={{ padding: '10px 14px', marginBottom: '1.2rem', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '10px' }}>
-              <div style={{ color: '#E8C97A', fontSize: '13px', fontWeight: 700, marginBottom: '3px' }}>{selectedCityData.emoji} {selectedCityData.city} {t('city_highlights')}</div>
-              <div style={{ color: '#AEB6C8', fontSize: '12px' }}>{selectedCityData.highlights}</div>
+              <div style={{ color: '#8A6A05', fontSize: '13px', fontWeight: 700, marginBottom: '3px' }}>{selectedCityData.emoji} {selectedCityData.city} {t('city_highlights')}</div>
+              <div style={{ color: '#494B45', fontSize: '12px' }}>{selectedCityData.highlights}</div>
             </div>
           )}
 
           {/* Generate button */}
           <button onClick={generateItinerary} disabled={loading || !selectedCity} style={{
             width: '100%', padding: '14px',
-            background: !selectedCity ? 'rgba(214,168,75,0.18)' : loading ? 'rgba(214,168,75,0.4)' : '#D6A84B',
-            color: (!selectedCity || loading) ? '#AEB6C8' : '#080D1D',
+            background: !selectedCity ? 'rgba(214,168,75,0.18)' : loading ? 'rgba(214,168,75,0.4)' : '#F6C00A',
+            color: (!selectedCity || loading) ? '#494B45' : '#FFFFFF',
             border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700,
             cursor: (!selectedCity || loading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease'
           }}>
@@ -302,7 +302,7 @@ export default function ItineraryPage() {
         {loading && (
           <div style={{ textAlign: 'center', padding: '3rem' }}>
             <Spinner className="mx-auto mb-4 size-9 text-[#D6A84B]" />
-            <p style={{ color: '#AEB6C8', margin: 0 }}>{t('planning_journey')}</p>
+            <p style={{ color: '#494B45', margin: 0 }}>{t('planning_journey')}</p>
           </div>
         )}
 
@@ -310,10 +310,10 @@ export default function ItineraryPage() {
           <div>
             <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '14px', padding: '1.2rem 1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{selectedCityData?.emoji || '🗺️'}</div>
-              <h2 style={{ fontFamily: 'var(--font-literata), Georgia, serif', color: '#D6A84B', margin: '0 0 0.3rem', fontSize: '1.4rem' }}>
+              <h2 style={{ fontFamily: 'var(--font-literata), Georgia, serif', color: '#8A6A05', margin: '0 0 0.3rem', fontSize: '1.4rem' }}>
                 {days}-{t('day')} {selectedCity} {t('heritage_itinerary')}
               </h2>
-              <p style={{ color: '#AEB6C8', margin: 0, fontSize: '0.88rem' }}>{selectedCityData?.highlights}</p>
+              <p style={{ color: '#494B45', margin: 0, fontSize: '0.88rem' }}>{selectedCityData?.highlights}</p>
             </div>
 
             {itinerary.days.map((day, dayIdx) => (
@@ -323,17 +323,17 @@ export default function ItineraryPage() {
                     width: 38, height: 38, borderRadius: '50%',
                     background: `linear-gradient(135deg, ${ACCENT_COLORS[dayIdx % ACCENT_COLORS.length]}, ${ACCENT_COLORS[(dayIdx + 1) % ACCENT_COLORS.length]})`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#080D1D', fontWeight: 800, fontSize: '15px', flexShrink: 0
+                    color: '#FFFFFF', fontWeight: 800, fontSize: '15px', flexShrink: 0
                   }}>{day.day}</div>
-                  <h3 style={{ color: '#E8C97A', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '1.05rem', margin: 0 }}>{day.title}</h3>
+                  <h3 style={{ color: '#8A6A05', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '1.05rem', margin: 0 }}>{day.title}</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {day.activities?.map((activity, actIdx) => (
                     <div key={actIdx} style={{ display: 'flex', gap: '12px', padding: '10px 14px', background: 'rgba(15,11,30,0.5)', borderRadius: '10px', borderLeft: `3px solid ${ACCENT_COLORS[dayIdx % ACCENT_COLORS.length]}55` }}>
                       <div style={{ color: ACCENT_COLORS[dayIdx % ACCENT_COLORS.length], fontSize: '11px', fontWeight: 700, minWidth: '62px', paddingTop: '2px', fontFamily: 'monospace', flexShrink: 0 }}>{activity.time}</div>
                       <div>
-                        <div style={{ color: '#F6F1E8', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>{activity.activity}</div>
-                        {activity.tip && <div style={{ color: '#63C7BA', fontSize: '12px', display: 'flex', gap: '4px', alignItems: 'flex-start' }}><span>💡</span><span>{activity.tip}</span></div>}
+                        <div style={{ color: '#181A13', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>{activity.activity}</div>
+                        {activity.tip && <div style={{ color: '#2F7D63', fontSize: '12px', display: 'flex', gap: '4px', alignItems: 'flex-start' }}><span>💡</span><span>{activity.tip}</span></div>}
                       </div>
                     </div>
                   ))}
@@ -348,27 +348,27 @@ export default function ItineraryPage() {
               <div style={{ background: 'linear-gradient(180deg, rgba(28,22,56,0.96), rgba(15,11,30,0.96))', border: '1px solid rgba(201,168,76,0.28)', borderRadius: '18px', padding: '1.4rem 1.5rem', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
                   <div>
-                    <div style={{ color: '#AEB6C8', fontSize: '12px', fontWeight: 700, letterSpacing: 1.2, marginBottom: '4px' }}>{t('synthetic_review')}</div>
-                    <div style={{ color: '#E8C97A', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '1.1rem', fontWeight: 700 }}>{syntheticReview.verdict}</div>
+                    <div style={{ color: '#494B45', fontSize: '12px', fontWeight: 700, letterSpacing: 1.2, marginBottom: '4px' }}>{t('synthetic_review')}</div>
+                    <div style={{ color: '#8A6A05', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '1.1rem', fontWeight: 700 }}>{syntheticReview.verdict}</div>
                   </div>
                   <div style={{ minWidth: 92, textAlign: 'right' }}>
-                    <div style={{ color: '#D6A84B', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{syntheticReview.score.toFixed(1)}</div>
-                    <div style={{ color: '#8891A6', fontSize: '11px' }}>{t('out_of_five')}</div>
+                    <div style={{ color: '#8A6A05', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{syntheticReview.score.toFixed(1)}</div>
+                    <div style={{ color: '#494B45', fontSize: '11px' }}>{t('out_of_five')}</div>
                   </div>
                 </div>
 
-                <p style={{ color: '#F6F1E8', margin: '0 0 1rem', lineHeight: 1.6, fontSize: '14px' }}>{syntheticReview.summary}</p>
+                <p style={{ color: '#181A13', margin: '0 0 1rem', lineHeight: 1.6, fontSize: '14px' }}>{syntheticReview.summary}</p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                   <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.14)', borderRadius: '14px', padding: '12px 14px' }}>
-                    <div style={{ color: '#E8C97A', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>{t('review_strengths')}</div>
-                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#AEB6C8', fontSize: '13px', lineHeight: 1.6 }}>
+                    <div style={{ color: '#8A6A05', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>{t('review_strengths')}</div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#494B45', fontSize: '13px', lineHeight: 1.6 }}>
                       {syntheticReview.strengths.map((strength, index) => <li key={index}>{strength}</li>)}
                     </ul>
                   </div>
                   <div style={{ background: 'rgba(75,155,142,0.08)', border: '1px solid rgba(75,155,142,0.18)', borderRadius: '14px', padding: '12px 14px' }}>
-                    <div style={{ color: '#8DE0D6', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>{t('review_notes')}</div>
-                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#AEB6C8', fontSize: '13px', lineHeight: 1.6 }}>
+                    <div style={{ color: '#2F7D63', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>{t('review_notes')}</div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#494B45', fontSize: '13px', lineHeight: 1.6 }}>
                       {syntheticReview.cautions.map((caution, index) => <li key={index}>{caution}</li>)}
                     </ul>
                   </div>
@@ -376,7 +376,7 @@ export default function ItineraryPage() {
               </div>
             )}
 
-            <div style={{ textAlign: 'center', padding: '1rem', color: '#8891A6', fontSize: '12px' }}>{t('generated_by')}</div>
+            <div style={{ textAlign: 'center', padding: '1rem', color: '#494B45', fontSize: '12px' }}>{t('generated_by')}</div>
           </div>
         )}
       </div>

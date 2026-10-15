@@ -1,19 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
+import { isBundledNativeApp } from '@/lib/nativePlatform'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export function isBundledAndroidApp() {
-  return typeof window !== 'undefined'
-    && (window.location.hostname === 'appassets.androidplatform.net'
-      || window.location.hostname === '127.0.0.1'
-      || window.location.hostname === 'localhost'
-      || window.location.protocol === 'file:'
-      || window.location.protocol === 'sanskriti:')
-}
+export { isBundledNativeApp }
 
 function createSanskritiClient() {
-  const bundledAndroidApp = isBundledAndroidApp()
+  const bundledNativeApp = isBundledNativeApp()
   const directAppLock = async <Result>(
     _name: string,
     _acquireTimeout: number,
@@ -23,9 +17,9 @@ function createSanskritiClient() {
   const auth = {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: !bundledAndroidApp,
+    detectSessionInUrl: !bundledNativeApp,
     storageKey: 'sanskriti-ai-auth',
-    ...(bundledAndroidApp ? { lock: directAppLock } : {}),
+    ...(bundledNativeApp ? { lock: directAppLock } : {}),
   } as NonNullable<NonNullable<Parameters<typeof createClient>[2]>['auth']>
 
   return createClient(supabaseUrl, supabaseAnonKey, {

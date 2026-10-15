@@ -12,7 +12,7 @@ import { useLang } from "@/lib/languageContext"
 import { SupportedLanguage, getLanguageConfig } from "@/lib/languages"
 import { hasNativeNvidia, synthesizeNarrationNative, translateExploreGuideNative } from "@/lib/nativeNvidia"
 import { getNvidiaNarrationVoice } from "@/lib/narrationProfiles"
-import { isBundledAndroidApp } from "@/lib/supabase/client"
+import { isBundledNativeApp } from "@/lib/supabase/client"
 import { emitYatrikEvent } from "@/lib/yatrik/events"
 import {
   ExploreARHud,
@@ -22,6 +22,8 @@ import {
   type ExploreViewMode,
 } from "@/components/explore/explore-ar-hud"
 import { useYatrikControls } from "@/components/yatrik/yatrik-provider"
+import { HeritageWatchPanel } from "@/components/explore/heritage-watch-panel"
+import { useHeritageWatch } from "@/hooks/useHeritageWatch"
 
 import { saveMonument } from "@/lib/monumentStore"
 import { useARNavigation } from "@/hooks/useARNavigation"
@@ -49,6 +51,7 @@ interface GuideTranslation {
 }
 
 const GUIDE_TRANSLATION_STORAGE_KEY = 'sanskriti-explore-translations-v5'
+const HERITAGE_WATCH_CONSENT_KEY = 'sanskriti-heritage-watch-consent'
 
 // ── TAJ MAHAL ZONES ──────────────────────────────────────
 const TAJ_ZONES = [
@@ -771,7 +774,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     // Path line connecting zones
     const pathCoords = zones.map(z => [z.lat, z.lng])
     const polyline = L.polyline(pathCoords, {
-      color: '#D6A84B', weight: 2, dashArray: '8 6', opacity: 0.6
+      color: '#8A6A05', weight: 2, dashArray: '8 6', opacity: 0.6
     }).addTo(map)
     newMarkers.push(polyline)
 
@@ -783,8 +786,8 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
 
       const marker = L.circleMarker([zone.lat, zone.lng], {
         radius: isActive ? 14 : 10,
-        fillColor: isComplete ? '#63C7BA' : isActive ? '#D6A84B' : '#555',
-        color: isComplete ? '#63C7BA' : isActive ? '#D6A84B' : '#777',
+        fillColor: isComplete ? '#2F7D63' : isActive ? '#F6C00A' : '#555',
+        color: isComplete ? '#2F7D63' : isActive ? '#F6C00A' : '#777',
         fillOpacity: isActive ? 0.9 : 0.7,
         weight: isActive ? 3 : 1,
         className: isActive ? 'pulse-marker' : ''
@@ -806,7 +809,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
 
     // User marker
     const userMarker = L.circleMarker([userPos.lat, userPos.lng], {
-      radius: 8, fillColor: '#fff', color: '#D6A84B',
+      radius: 8, fillColor: '#fff', color: '#8A6A05',
       fillOpacity: 1, weight: 3
     }).addTo(map)
     userMarker.bindPopup('<b style="color:#333">📍 You</b>')
@@ -815,7 +818,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     const youLabel = L.marker([userPos.lat, userPos.lng], {
       icon: L.divIcon({
         className: '',
-        html: '<div style="font-size:11px;color:#D6A84B;font-weight:700;text-align:center;margin-top:8px">You</div>',
+        html: '<div style="font-size:11px;color:#181A13;font-weight:700;text-align:center;margin-top:8px;text-shadow:0 0 3px #fff,0 0 6px #fff">You</div>',
         iconSize: [40, 20],
       })
     }).addTo(map)
@@ -877,6 +880,11 @@ export default function ExplorePage() {
   const activeNarrationKeyRef = useRef<string | null>(null)
   const translationCacheRef = useRef<Record<string, GuideTranslation>>({})
 
+  // Heritage Watch is opt-in and starts off. `null` consent means the visitor
+  // has not been asked yet; the panel shows the opt-in card in that state.
+  const [watchConsent, setWatchConsent] = useState<boolean | null>(null)
+  const [watchRequested, setWatchRequested] = useState(false)
+
   const [exploreMonumentId, setExploreMonumentId] = useState('taj-mahal')
   const monumentSelected = true // always start directly into explore
   const [customMonumentName, setCustomMonumentName] = useState<string | null>(null)
@@ -913,6 +921,24 @@ export default function ExplorePage() {
     demoHeadingReference: DEMO_ANCHOR,
   })
 
+  // Heritage Watch borrows the camera Explore has already opened rather than
+  // opening a second one; it is inert in both map modes.
+  const cameraModeActive = viewMode === 'demo-camera' || viewMode === 'live-camera'
+  const watchStatus = useHeritageWatch({
+    enabled: watchRequested && watchConsent === true && cameraModeActive,
+    stream: cameraModeActive ? arNav.cameraStream : null,
+    context: {
+      monumentName: customMonumentName && exploreMonumentId === DEMO_MONUMENT_ID
+        ? customMonumentName
+        : MONUMENT_NAMES[exploreMonumentId] || exploreMonumentId,
+      waypointName: liveZone.name,
+      point: arNav.userPosition
+        ? { latitude: arNav.userPosition.lat, longitude: arNav.userPosition.lng }
+        : null,
+      keyframeBase64: null,
+    },
+  })
+
   useEffect(() => {
     setHasMounted(true)
     try {
@@ -920,6 +946,16 @@ export default function ExplorePage() {
       if (cached) translationCacheRef.current = JSON.parse(cached)
     } catch {
       translationCacheRef.current = {}
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(HERITAGE_WATCH_CONSENT_KEY)
+      if (saved === 'granted') { setWatchConsent(true); setWatchRequested(true) }
+      else if (saved === 'declined') setWatchConsent(false)
+    } catch {
+      // A blocked storage API just means we ask again this session.
     }
   }, [])
 
@@ -1118,7 +1154,7 @@ export default function ExplorePage() {
     // /api/narrate (ElevenLabs/Chatterbox) to reach — narrate via the
     // native NVIDIA bridge instead, falling back to on-device speech
     // synthesis (tagged as the Android system voice) if that fails.
-    if (isBundledAndroidApp()) {
+    if (isBundledNativeApp()) {
       const speakWithAndroidVoice = () => {
         if (typeof window === 'undefined' || !window.speechSynthesis) return
         const utterance = new SpeechSynthesisUtterance(text)
@@ -1419,15 +1455,15 @@ export default function ExplorePage() {
     return (
       <AppShell>
         <div className="screen-gutter flex flex-col items-center py-10 text-center animate-slide-up">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[#D6A84B]/12 text-[#D6A84B]">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[var(--primary)]/15 text-[var(--primary-text)]">
             <Trophy className="h-8 w-8" />
           </span>
           <h1 className="mt-4 font-heritage text-2xl font-bold text-[#F6F1E8]">Explorer Complete!</h1>
           <p className="mt-2 max-w-[300px] text-sm leading-6 text-[#AEB6C8]">
             You explored all {activeZones.length} historic zones of the {MONUMENT_NAMES[exploreMonumentId] || 'Monument'}
           </p>
-          <div className="mt-6 flex items-center gap-1.5 text-4xl font-bold text-[#D6A84B]">
-            <Zap className="h-7 w-7 fill-[#D6A84B]" />+{totalXP}
+          <div className="mt-6 flex items-center gap-1.5 text-4xl font-bold text-[var(--primary-text)]">
+            <Zap className="h-7 w-7 fill-[var(--primary)]" />+{totalXP}
           </div>
           <p className="mt-1 text-xs text-[#8891A6]">Total XP earned this exploration</p>
 
@@ -1435,7 +1471,7 @@ export default function ExplorePage() {
             {activeZones.map(z => (
               <span
                 key={z.id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#D6A84B]/25 bg-[#D6A84B]/10 px-3 py-1.5 text-xs font-semibold text-[#D6A84B]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--muted)] px-3 py-1.5 text-xs font-semibold text-[var(--foreground)]"
               >
                 <Check className="h-3 w-3" /> {z.emoji} {z.name}
               </span>
@@ -1444,7 +1480,7 @@ export default function ExplorePage() {
 
           <button
             onClick={() => router.push('/')}
-            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] px-8 py-3.5 text-sm font-bold text-[#080D1D] transition-transform active:scale-95"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-8 py-3.5 text-sm font-bold text-[var(--primary-foreground)] shadow-[var(--shadow-amber)] transition-transform active:scale-95"
           >
             <Home className="h-4 w-4" /> Back to Home
           </button>
@@ -1458,7 +1494,7 @@ export default function ExplorePage() {
     return (
       <AppShell>
         <div className="flex items-center justify-center gap-2.5 py-16">
-          <Spinner className="size-5 text-[#D6A84B]" />
+          <Spinner className="size-5 text-[var(--primary-text)]" />
           <p className="text-sm text-[#AEB6C8]">Loading explorer…</p>
         </div>
       </AppShell>
@@ -1533,6 +1569,7 @@ export default function ExplorePage() {
   }
 
   return (
+    <>
     <ExploreARHud
       monumentId={exploreMonumentId}
       monuments={monumentsList}
@@ -1597,5 +1634,31 @@ export default function ExplorePage() {
         zoneIndex: currentZoneIndex,
       }}
     />
+    {cameraModeActive ? (
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[72px] z-[80] mx-auto flex w-full max-w-[420px] flex-col">
+        {/* Mirrors ExploreARHud's header band so the panel is positioned
+            against the camera pane, exactly like the HUD's own chips. */}
+        <div className="h-1/4 min-h-[176px] shrink-0" aria-hidden />
+        <div className="relative min-h-0 flex-1">
+          <HeritageWatchPanel
+            consented={watchConsent}
+            onConsent={(allow) => {
+              setWatchConsent(allow)
+              setWatchRequested(allow)
+              try {
+                localStorage.setItem(HERITAGE_WATCH_CONSENT_KEY, allow ? 'granted' : 'declined')
+              } catch {
+                // Declining storage only costs us the answer next session.
+              }
+            }}
+            onDismissError={watchStatus.clearError}
+            onToggle={setWatchRequested}
+            requested={watchRequested}
+            status={watchStatus}
+          />
+        </div>
+      </div>
+    ) : null}
+    </>
   )
 }

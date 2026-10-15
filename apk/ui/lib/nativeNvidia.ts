@@ -1,5 +1,6 @@
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
 import type { SupportedLanguage } from '@/lib/languages'
+import type { SceneAssessment, SceneRequestInput } from '@/lib/vision/prompt'
 
 type NativeNvidiaBridge = {
   recordMicrophone: (requestId: string, durationMs: number) => void
@@ -8,12 +9,12 @@ type NativeNvidiaBridge = {
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://smart-sanskriti.vercel.app').replace(/\/$/, '')
 
 function bridge(): NativeNvidiaBridge | null {
-  if (!isBundledAndroidApp()) return null
+  if (!isBundledNativeApp()) return null
   return (window as unknown as { SanskritiAndroid?: NativeNvidiaBridge }).SanskritiAndroid ?? null
 }
 
 export function hasNativeNvidia(): boolean {
-  return isBundledAndroidApp()
+  return isBundledNativeApp()
 }
 
 export async function synthesizeNarrationNative(
@@ -95,4 +96,25 @@ export async function translateExploreGuideNative(
   return {
     directionHint: values[0], arrivalFact: values[1], miniFact: values[2],
   }
+}
+
+/**
+ * Heritage Watch scene assessment from inside a packaged app.
+ *
+ * This used to run over the native bridge against a key compiled into the
+ * APK. That key is gone: `apk/app/build.gradle` now ships an empty
+ * NVIDIA_API_KEY on purpose, so provider credentials stay on the server.
+ * The assessment therefore goes to the same hosted visitor API as every
+ * other model call, and the prompt and response validation still live in
+ * `@/lib/vision/prompt` so the server and the browser route cannot drift.
+ */
+export async function assessHeritageSceneNative(
+  input: SceneRequestInput | string,
+): Promise<SceneAssessment> {
+  const request: SceneRequestInput = typeof input === 'string' ? { imageBase64: input } : input
+  return postApi<SceneAssessment>('/api/heritage-watch', {
+    image: request.imageBase64,
+    region: request.regionBase64 ?? null,
+    motionContext: request.motionContext ?? null,
+  })
 }

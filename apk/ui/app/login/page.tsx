@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ArrowRight, AtSign, BadgeCheck, Cloud, UserRoundPlus, UsersRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,8 @@ import { Label } from '@/components/ui/label'
 import SanskritiLogo from '@/components/SanskritiLogo'
 import { normalizeUsername } from '@/lib/authClient'
 import { useAuth } from '@/lib/authContext'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
+import { usesLocalProfiles } from '@/lib/nativePlatform'
 import { LanguageSelect } from '@/components/language-select'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -23,7 +25,7 @@ export default function LoginPage() {
   const normalizedUsername = normalizeUsername(username)
 
   useEffect(() => {
-    setStandaloneApp(isBundledAndroidApp())
+    setStandaloneApp(usesLocalProfiles())
   }, [])
 
   async function openProfile(profileUsername: string) {
@@ -32,7 +34,7 @@ export default function LoginPage() {
 
     try {
       await signIn(profileUsername)
-      if (isBundledAndroidApp()) {
+      if (isBundledNativeApp()) {
         window.location.replace(new URL('/', window.location.href).toString())
         return
       }
@@ -51,51 +53,70 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mobile-shell min-h-dvh text-[#F6F1E8]">
-      <section className="mobile-scroll flex min-h-dvh flex-col px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-[calc(18px+env(safe-area-inset-top))]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid size-12 place-items-center overflow-hidden rounded-2xl border border-[#E8BE69]/20 bg-[#11182B] shadow-[0_10px_30px_rgba(232,166,70,0.24)]">
-              <SanskritiLogo size={46} />
+    <main className="mobile-shell min-h-dvh bg-[var(--background)] text-[var(--foreground)]">
+      <section className="mobile-scroll flex min-h-dvh flex-col">
+        {/* Hero. The photograph carries the first impression; everything above
+            it is kept to a single row so the image is what you see first. */}
+        <div className="relative h-[52dvh] min-h-[360px] w-full shrink-0 overflow-hidden">
+          <Image
+            src="/hero-monuments.png"
+            alt=""
+            fill
+            priority
+            sizes="420px"
+            className="object-cover object-center"
+          />
+          {/* Two scrims rather than one: the top keeps the brand row legible
+              over a bright sky, the bottom carries the image into the canvas. */}
+          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[rgba(14,16,11,0.62)] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-[72%] bg-gradient-to-b from-transparent via-[rgba(14,16,11,0.55)] to-[var(--background)]" />
+
+          <div className="absolute inset-x-0 top-0 flex items-center justify-between px-[22px] pt-[calc(env(safe-area-inset-top)+18px)]">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-[14px] shadow-[0_4px_14px_rgba(14,16,11,0.35)]">
+                <SanskritiLogo size={44} className="h-full w-full object-cover" />
+              </span>
+              <span className="leading-none">
+                <span className="block font-display text-[17px] font-semibold tracking-tight text-white">
+                  Sanskriti <span className="text-[var(--primary)]">AI</span>
+                </span>
+                <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.18em] text-white/70">
+                  Living Heritage
+                </span>
+              </span>
             </div>
-            <div>
-              <p className="font-heritage text-xl font-bold tracking-tight text-[#F6F1E8]">Sanskriti AI</p>
-              <p className="text-xs text-[#AEB6C8]">Mobile heritage guide</p>
+            <div className="flex items-center gap-1.5">
+              <LanguageSelect />
+              <ThemeToggle className="size-10" />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <LanguageSelect />
-            <ThemeToggle className="size-10" />
+
+          <div className="absolute inset-x-0 bottom-0 px-[22px] pb-11">
+            <p className="eyebrow text-white/85">Explorer login</p>
+            <h1 className="mt-3 max-w-[19rem] font-display text-[2.15rem] font-semibold leading-[1.06] tracking-[-0.03em] text-white [text-shadow:0_2px_18px_rgba(14,16,11,0.45)]">
+              Discover India&apos;s{' '}
+              <span className="text-[var(--primary)]">living heritage</span>
+            </h1>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col justify-center py-8">
-          <div className="mb-6">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[#D6A84B]/20 bg-[#D6A84B]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#D6A84B]">
-              <AtSign className="size-3.5" />
-              Explorer login
-            </p>
-            <h1 className="mt-5 max-w-[16rem] font-heritage text-[2.55rem] leading-[0.98] text-[#F6F1E8]">
-              What should we call you?
-            </h1>
-            <p className="mt-4 max-w-[19rem] text-sm leading-6 text-[#AEB6C8]">
-              {standaloneApp
-                ? 'Pick a username to save your XP, badges, chats, and monument visits on this phone.'
-                : 'Pick a username to keep your XP, badges, chats, and monument visits synced.'}
-            </p>
-          </div>
-
-          {standaloneApp && availableProfiles.length > 0 && (
-            <section className="mb-5 rounded-2xl border border-[#63C7BA]/18 bg-[#11182B]/72 p-4" aria-labelledby="saved-profiles-title">
-              <div className="mb-3 flex items-center justify-between gap-3">
+        {/* The card lifts over the photograph so the two read as one surface. */}
+        <div className="relative z-10 -mt-6 flex flex-1 flex-col gap-4 px-[22px] pb-[calc(28px+env(safe-area-inset-bottom))]">
+          {usesLocalProfiles() && availableProfiles.length > 0 && (
+            <section className="surface p-5" aria-labelledby="saved-profiles-title">
+              <div className="mb-3.5 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="flex items-center gap-2 text-sm font-bold text-[#F6F1E8]" id="saved-profiles-title">
-                    <UsersRound className="size-4 text-[#63C7BA]" />
-                    Profiles on this device
+                  <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold tracking-tight" id="saved-profiles-title">
+                    <UsersRound className="size-[18px] text-[var(--muted-foreground)]" />
+                    Continue as
                   </h2>
-                  <p className="mt-1 text-[11px] text-[#AEB6C8]">Choose a profile to continue with its own progress.</p>
+                  <p className="mt-1 text-[12px] leading-5 text-[var(--muted-foreground)]">
+                    Each profile keeps its own progress.
+                  </p>
                 </div>
-                <span className="rounded-full bg-[#63C7BA]/10 px-2.5 py-1 text-[10px] font-bold text-[#63C7BA]">{availableProfiles.length} saved</span>
+                <span className="shrink-0 rounded-full bg-[var(--muted)] px-2.5 py-1 text-[10px] font-bold text-[var(--muted-foreground)]">
+                  {availableProfiles.length} saved
+                </span>
               </div>
               <div className="space-y-2">
                 {availableProfiles.map((saved) => {
@@ -103,18 +124,22 @@ export default function LoginPage() {
                   const initials = displayName.slice(0, 2).toUpperCase()
                   return (
                     <button
-                      className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.04] p-3 text-left transition hover:border-[#63C7BA]/30 hover:bg-[#63C7BA]/8 disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-[20px] bg-[var(--muted)] p-3 text-left transition active:scale-[0.99] disabled:opacity-50"
                       disabled={isSubmitting}
                       key={saved.user.id}
                       onClick={() => void openProfile(saved.profile.username)}
                       type="button"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#63C7BA]/12 text-xs font-black text-[#8DE0D6]">{initials}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold text-[#F6F1E8]">{displayName}</span>
-                        <span className="block truncate text-[11px] text-[#AEB6C8]">@{saved.profile.username} · {saved.profile.total_xp.toLocaleString()} XP</span>
+                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary)] font-display text-[13px] font-semibold text-[var(--primary-foreground)]">
+                        {initials}
                       </span>
-                      <ArrowRight className="size-4 shrink-0 text-[#63C7BA]" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-bold">{displayName}</span>
+                        <span className="block truncate text-[11px] text-[var(--muted-foreground)]">
+                          @{saved.profile.username} · {saved.profile.total_xp.toLocaleString()} XP
+                        </span>
+                      </span>
+                      <ArrowRight className="size-[18px] shrink-0 text-[var(--muted-foreground)]" />
                     </button>
                   )
                 })}
@@ -122,21 +147,31 @@ export default function LoginPage() {
             </section>
           )}
 
-          <form className="space-y-4 rounded-2xl border border-[#D6A84B]/18 bg-[#171F34]/76 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl" onSubmit={handleSubmit}>
-            {standaloneApp && availableProfiles.length > 0 && (
-              <div className="flex items-center gap-2 text-sm font-bold text-[#F6F1E8]">
-                <UserRoundPlus className="size-4 text-[#D6A84B]" />
-                Create another profile
-              </div>
-            )}
-            <div className="space-y-2.5">
-              <Label className="text-sm font-semibold text-[#F6F1E8]" htmlFor="username">Username</Label>
+          <form className="surface p-5" onSubmit={handleSubmit}>
+            <h2 className="font-display text-[22px] font-semibold leading-tight tracking-[-0.025em]">
+              {usesLocalProfiles() && availableProfiles.length > 0 ? (
+                <span className="flex items-center gap-2">
+                  <UserRoundPlus className="size-[18px] text-[var(--muted-foreground)]" />
+                  Create another profile
+                </span>
+              ) : (
+                <>What should we <span className="text-accent-word">call you?</span></>
+              )}
+            </h2>
+            <p className="mt-2 text-[13px] leading-5 text-[var(--muted-foreground)]">
+              {standaloneApp
+                ? 'Your XP, badges, chats and monument visits stay on this phone.'
+                : 'Keeps your XP, badges, chats and monument visits synced.'}
+            </p>
+
+            <div className="mt-4 space-y-2.5">
+              <Label className="sr-only" htmlFor="username">Username</Label>
               <div className="relative">
-                <AtSign className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#AEB6C8]" />
+                <AtSign className="pointer-events-none absolute left-[18px] top-1/2 size-[17px] -translate-y-1/2 text-[var(--muted-foreground)]" />
                 <Input
                   autoCapitalize="none"
                   autoComplete="username"
-                  className="h-14 rounded-2xl border-[#D6A84B]/20 bg-black/28 pl-11 text-base text-[#F6F1E8] placeholder:text-[#AEB6C8] focus-visible:ring-[#D6A84B]/30"
+                  className="h-[58px] rounded-full border-0 bg-[var(--muted)] pl-12 text-[15px] text-[var(--foreground)] shadow-none placeholder:text-[var(--muted-foreground)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
                   id="username"
                   maxLength={30}
                   minLength={3}
@@ -147,41 +182,47 @@ export default function LoginPage() {
                   value={username}
                 />
               </div>
-              <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="text-[#AEB6C8]">3-24 letters, numbers, or underscores</span>
-                {normalizedUsername && <span className="rounded-full bg-[#D6A84B]/10 px-2.5 py-1 font-semibold text-[#D6A84B]">@{normalizedUsername}</span>}
+              <div className="flex min-h-7 flex-wrap items-center justify-between gap-2 px-1 text-[11px]">
+                <span className="text-[var(--muted-foreground)]">3–24 letters, numbers or underscores</span>
+                {normalizedUsername && (
+                  <span className="rounded-full bg-[var(--primary)]/15 px-2.5 py-1 font-bold text-[var(--foreground)]">
+                    @{normalizedUsername}
+                  </span>
+                )}
               </div>
             </div>
 
             {(error || authError) && (
-              <p className="rounded-2xl border border-red-400/30 bg-red-950/30 px-3.5 py-3 text-sm leading-5 text-red-200" role="alert">
+              <p className="mt-3 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-[var(--destructive)]" role="alert">
                 {error || authError}
               </p>
             )}
 
-            <Button className="h-14 w-full rounded-2xl bg-gradient-to-r from-[#D6A84B] to-[#E8BE69] text-base font-bold text-[#171004] shadow-[0_16px_34px_rgba(224,160,68,0.22)] hover:brightness-110" disabled={isSubmitting} type="submit">
-              {isSubmitting ? 'Opening profile...' : availableProfiles.length > 0 && standaloneApp ? 'Create profile' : 'Enter Sanskriti AI'}
-              {!isSubmitting && <ArrowRight className="size-5" />}
+            <Button className="btn-primary mt-4" disabled={isSubmitting} type="submit">
+              {isSubmitting ? 'Opening profile…' : availableProfiles.length > 0 && standaloneApp ? 'Create profile' : 'Enter Sanskriti AI'}
+              {!isSubmitting && <ArrowRight className="size-[18px]" />}
             </Button>
           </form>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-              <Cloud className="mb-2 size-4 text-[#63C7BA]" />
-              <p className="text-xs font-semibold text-[#F6F1E8]">{standaloneApp ? 'Device saved' : 'Cloud saved'}</p>
-              <p className="mt-1 text-[11px] leading-4 text-[#AEB6C8]">{standaloneApp ? 'Works without login' : 'Works across visits'}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="surface p-4">
+              <Cloud className="mb-2.5 size-[18px] text-[var(--muted-foreground)]" />
+              <p className="text-[13px] font-bold">{standaloneApp ? 'Device saved' : 'Cloud saved'}</p>
+              <p className="mt-1 text-[11px] leading-4 text-[var(--muted-foreground)]">
+                {standaloneApp ? 'Works without a login' : 'Works across visits'}
+              </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-              <BadgeCheck className="mb-2 size-4 text-[#D6A84B]" />
-              <p className="text-xs font-semibold text-[#F6F1E8]">No password</p>
-              <p className="mt-1 text-[11px] leading-4 text-[#AEB6C8]">Browser-linked demo</p>
+            <div className="surface p-4">
+              <BadgeCheck className="mb-2.5 size-[18px] text-[var(--muted-foreground)]" />
+              <p className="text-[13px] font-bold">No password</p>
+              <p className="mt-1 text-[11px] leading-4 text-[var(--muted-foreground)]">Browser-linked demo</p>
             </div>
           </div>
-        </div>
 
-        <p className="text-center text-[11px] leading-5 text-[#AEB6C8]">
-          Each device profile keeps its own XP, badges, chats, and journey history.
-        </p>
+          <p className="mt-auto pt-2 text-center text-[11px] leading-5 text-[var(--muted-foreground)]">
+            Each device profile keeps its own XP, badges, chats and journey history.
+          </p>
+        </div>
       </section>
     </main>
   )

@@ -165,8 +165,8 @@ export function ExploreARHud({
   }, [cameraStream])
 
   return (
-    <main className="fixed inset-x-0 bottom-0 top-[72px] z-40 mx-auto h-[calc(100dvh-72px)] w-full max-w-[420px] overflow-hidden bg-[#050814] text-[#f8ecd2] shadow-[0_0_80px_rgba(0,0,0,.65)]">
-      <section className="relative z-20 flex h-1/4 min-h-[176px] flex-col border-b border-[#efc566]/20 bg-[linear-gradient(180deg,rgba(7,11,23,.98),rgba(12,22,39,.94))] px-4 pb-3 pt-3 shadow-[0_18px_50px_rgba(0,0,0,.4)]">
+    <main className="fixed inset-x-0 bottom-0 top-[72px] z-40 mx-auto h-[calc(100dvh-72px)] w-full max-w-[420px] overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+      <section className="relative z-20 flex h-1/4 min-h-[176px] flex-col border-b border-[var(--border)] bg-[var(--card)] px-4 pb-3 pt-3">
         <div className="flex items-center gap-2">
           <button
             aria-label="Leave Explore"
@@ -177,7 +177,7 @@ export function ExploreARHud({
             <ArrowLeft className="size-4" />
           </button>
 
-          <label className="relative min-w-0 flex-1 rounded-2xl border border-[#efc566]/18 bg-[#efc566]/8 px-3 py-2">
+          <label className="relative min-w-0 flex-1 rounded-2xl bg-[var(--muted)] px-3 py-2">
             <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-[#9d8e72]">Active mission</span>
             <select
               aria-label="Choose monument journey"
@@ -186,7 +186,7 @@ export function ExploreARHud({
               value={monumentId}
             >
               {monuments.map((monument) => (
-                <option className="bg-[#10172a] text-[#ffe7b0]" key={monument.id} value={monument.id}>
+                <option className="bg-[var(--card)] text-[var(--foreground)]" key={monument.id} value={monument.id}>
                   {monument.name}
                 </option>
               ))}
@@ -196,7 +196,7 @@ export function ExploreARHud({
 
           <button
             aria-label={muted ? 'Unmute Yatrik' : 'Mute Yatrik'}
-            className="grid size-10 shrink-0 place-items-center rounded-2xl border border-[#efc566]/20 bg-[#efc566]/10 text-[#efc566]"
+            className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)]"
             onClick={onToggleMute}
             type="button"
           >
@@ -216,7 +216,7 @@ export function ExploreARHud({
           </div>
 
           <div className="flex items-center gap-2 rounded-2xl border border-white/8 bg-black/20 px-2.5 py-2">
-            <div className="relative grid size-9 place-items-center rounded-full border border-[#efc566]/25 bg-[#07101c]">
+            <div className="relative grid size-9 place-items-center rounded-full bg-[var(--muted)]">
               <span className="absolute top-0.5 text-[6px] font-black text-[#79dfd0]">GO</span>
               {cameraMode ? <DirectionNeedle className="size-5" degrees={relativeDirection} /> : <Map className="size-4 text-[#79dfd0]" />}
             </div>
@@ -231,13 +231,13 @@ export function ExploreARHud({
           <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.15em] text-[#877a65]">
             <span>Journey progress</span><span>{progress}%</span>
           </div>
-          <div className="h-1 overflow-hidden rounded-full bg-white/8">
-            <div className="h-full rounded-full bg-[linear-gradient(90deg,#55c7b6,#efc566)] transition-[width] duration-500" style={{ width: `${progress}%` }} />
+          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--muted)]">
+            <div className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-500" style={{ width: `${progress}%` }} />
           </div>
         </div>
       </section>
 
-      <section className="relative h-3/4 min-h-0 overflow-hidden bg-[#101827]">
+      <section className="relative h-3/4 min-h-0 overflow-hidden bg-[var(--muted)]">
         {showCamera ? (
           <video
             ref={videoRef}
@@ -249,12 +249,12 @@ export function ExploreARHud({
         ) : mapView ? (
           <div className="absolute inset-0 z-0">{mapView}</div>
         ) : (
-          <div className="absolute inset-0 bg-[linear-gradient(145deg,#102238,#07101c_55%,#102f32)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,var(--muted),var(--background)_55%,var(--muted))]" />
         )}
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(4,10,18,.35),rgba(2,8,14,.04)_45%,rgba(2,6,13,.88)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,transparent,transparent_55%,rgba(14,16,11,.30)_100%)]" />
         <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_50%_52%,transparent_0,transparent_22%,rgba(3,12,18,.18)_58%,rgba(3,8,14,.55)_100%)]" />
 
-        <div className="absolute inset-x-3 top-3 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-white/12 bg-[#07101c]/92 p-1.5 shadow-xl backdrop-blur-xl" aria-label="Explore view mode">
+        <div className="absolute inset-x-3 top-3 z-30 grid grid-cols-4 gap-1 rounded-2xl bg-[var(--card)]/95 p-1.5 shadow-[var(--shadow-card)] backdrop-blur-xl" aria-label="Explore view mode">
           {EXPLORE_VIEW_MODES.map(({ id, label, icon: Icon }) => {
             const active = viewMode === id
             const live = id.startsWith('live')
@@ -285,7 +285,7 @@ export function ExploreARHud({
         </div>
 
         {state.fallbackStatus !== 'none' ? (
-          <div className="absolute inset-x-5 top-[25%] z-30 rounded-[26px] border border-[#efc566]/24 bg-[#09101e]/92 p-5 text-center shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-x-5 top-[25%] z-30 rounded-[26px] bg-[var(--card)] p-5 text-center shadow-[var(--shadow-raised)]">
             <Map className="mx-auto size-8 text-[#efc566]" />
             <h2 className="mt-3 font-serif text-2xl text-[#fff0ce]">Continue with map guidance</h2>
             <p className="mt-2 text-sm leading-6 text-[#c9b89b]">{fallbackCopy[state.fallbackStatus]}</p>
@@ -299,7 +299,7 @@ export function ExploreARHud({
 
             {cameraMode ? (
               <div className="pointer-events-none absolute left-1/2 top-[43%] z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
-                <div className="relative grid size-28 place-items-center rounded-full border border-[#efc566]/45 bg-[#07101c]/66 shadow-[0_0_48px_rgba(239,197,102,.32)] backdrop-blur-sm">
+                <div className="relative grid size-28 place-items-center rounded-full border border-[#efc566]/45 bg-[rgba(14,16,11,0.55)] shadow-[0_0_48px_rgba(246,192,10,.3)] backdrop-blur-sm">
                   <span className="absolute inset-2 rounded-full border border-[#efc566]/20" />
                   <DirectionNeedle className="size-16" degrees={relativeDirection} />
                 </div>
@@ -313,9 +313,9 @@ export function ExploreARHud({
         )}
 
         <div className="absolute inset-x-4 bottom-[calc(18px+env(safe-area-inset-bottom))] z-30 space-y-2.5">
-          <div className="rounded-2xl border border-white/10 bg-[#07101c]/82 px-3.5 py-3 shadow-xl backdrop-blur-xl">
+          <div className="rounded-[22px] bg-[var(--card)] px-4 py-3.5 shadow-[var(--shadow-card)]">
             <div className="flex items-start gap-2.5">
-              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[#55c7b6]/16 text-[#79dfd0]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-[var(--muted)] text-[var(--success)]">
                 <Sparkles className="size-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -331,15 +331,15 @@ export function ExploreARHud({
           </div>
 
           {state.arrivalStatus === 'arrived' && state.story ? (
-            <div className="rounded-[22px] border border-[#efc566]/30 bg-[#0a1020]/94 p-4 shadow-2xl backdrop-blur-xl">
+            <div className="rounded-[26px] bg-[var(--card)] p-4 shadow-[var(--shadow-raised)]">
               <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full bg-[linear-gradient(135deg,#efc566,#da8f38)] px-3 py-1 text-xs font-black text-[#241507]">+{state.xpEarned ?? state.activeZone.xp} XP</span>
+                <span className="rounded-full bg-[var(--primary)] px-3 py-1 text-xs font-black text-[var(--primary-foreground)]">+{state.xpEarned ?? state.activeZone.xp} XP</span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6fd6c6]">Arrival unlocked</span>
               </div>
               <p data-no-translate className="mt-2 line-clamp-2 text-sm leading-5 text-[#f6e9d0]">{state.story}</p>
               {state.miniFact && <p data-no-translate className="mt-2 line-clamp-1 text-xs text-[#86cabe]">💡 {state.miniFact}</p>}
               <button
-                className="mt-3 h-11 w-full rounded-2xl bg-[linear-gradient(135deg,#efc566,#d99b44)] text-sm font-black text-[#211406]"
+                className="btn-primary mt-3 !min-h-[52px] text-sm"
                 onClick={isFinalZone ? onComplete : onNextZone}
                 type="button"
               >
@@ -348,7 +348,7 @@ export function ExploreARHud({
             </div>
           ) : (
             <button
-              className="flex h-13 w-full items-center justify-center gap-2 rounded-[20px] border border-[#70d6c6]/30 bg-[linear-gradient(135deg,rgba(47,150,139,.94),rgba(31,105,104,.96))] px-4 py-3.5 text-base font-black text-white shadow-[0_16px_36px_rgba(20,103,98,.32)] disabled:border-white/10 disabled:bg-[#252d38] disabled:text-[#818b92]"
+              className="btn-primary disabled:!bg-[var(--muted)] disabled:!text-[var(--muted-foreground)] disabled:!shadow-none"
               disabled={!canArrive}
               onClick={onArrive}
               type="button"

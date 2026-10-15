@@ -5,9 +5,12 @@ import { site, staff, zones } from './domain.ts';
 
 export type Point = { latitude: number; longitude: number; accuracy?: number };
 export type Assessment = 'relevant' | 'uncertain' | 'irrelevant' | 'unavailable';
+export type ReportOrigin = 'visitor' | 'automated';
 export type ReportState = 'review' | 'unassigned' | 'assigned' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed' | 'dismissed';
 export type DemoReport = {
-  id: string; receiptHash: string; category: string; note: string; zoneId: string; point: Point | null;
+  // Optional: reports persisted before automated detection existed have no
+  // origin, and are read back as visitor reports.
+  id: string; receiptHash: string; origin?: ReportOrigin; category: string; note: string; zoneId: string; point: Point | null;
   evidenceId: string | null; completionEvidenceId: string | null; assessment: Assessment; assessmentReason: string; status: ReportState;
   assigneeId: string | null; assignmentReason: string | null; createdAt: string; assignedAt: string | null;
   resolvedAt: string | null; alerts: string[]; history: { at: string; actor: string; action: string; note: string }[];
@@ -55,6 +58,10 @@ const distance = (a: Point, b: Point) => {
   return Math.round(6371000 * Math.hypot(x, y));
 };
 export function dispatch(data: DemoData, report: DemoReport, now = new Date().toISOString()) {
+  // An automated camera detection is an unconfirmed machine guess. It never
+  // pulls a staff member away on its own; an admin confirms it first, which
+  // routes it back here with origin-independent status 'unassigned'.
+  if (report.origin === 'automated' && report.status === 'review') return;
   if (report.assessment !== 'relevant' || !['unassigned', 'review'].includes(report.status)) return;
   const candidates = data.duties.filter(d => d.onDuty && !data.reports.some(r => r.id !== report.id && r.assigneeId === d.id && active(r)));
   const ranked = candidates.map(d => {
@@ -92,7 +99,8 @@ export function validateSubmission(input: unknown) {
   if (!input || typeof input !== 'object') throw new Error('Invalid report');
   const v = input as Record<string, unknown>;
   if (typeof v.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(v.id) || !categories.includes(String(v.category)) || typeof v.note !== 'string' || v.note.length > 1200 || !zones.some(z => z.id === v.zoneId) || (v.point != null && !validPoint(v.point))) throw new Error('Invalid report details');
-  return { id: v.id, category: String(v.category), note: v.note, zoneId: String(v.zoneId), point: (v.point || null) as Point | null, photo: v.photo };
+  if (v.origin !== undefined && v.origin !== 'visitor' && v.origin !== 'automated') throw new Error('Invalid report origin');
+  return { id: v.id, origin: (v.origin ?? 'visitor') as ReportOrigin, category: String(v.category), note: v.note, zoneId: String(v.zoneId), point: (v.point || null) as Point | null, photo: v.photo };
 }
 export function sessionRole(request: Request): { role: 'admin' | 'staff'; staffId?: string } | null {
   const cookie = request.headers.get('cookie')?.match(/(?:^|; )demo_role=([^;]+)/)?.[1];

@@ -189,7 +189,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
       borderRadius: 14,
       overflow: 'hidden',
       border: `1px solid ${accentColor}44`,
-      background: '#080D1D'
+      background: '#FFFFFF'
     }}>
       <iframe
         ref={iframeRef}
@@ -210,7 +210,7 @@ export function PanoramaViewer({ imageSrc, accentColor, eraLabel, eraPeriod, mon
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#080D1D'
+          background: '#FFFFFF'
         }}>
           <div style={{
             width: 36, height: 36,

@@ -1,4 +1,5 @@
 import { getLanguageConfig, isSupportedLanguage } from '@/lib/languages'
+import { buildSceneRequestBody, parseSceneAssessment, type SceneAssessment, type SceneRequestInput } from '@/lib/vision/prompt'
 
 const DEFAULT_NVIDIA_MODEL = 'nvidia/nemotron-3.5-lightning-30b-a3b'
 const DEFAULT_NVIDIA_TRANSLATION_MODEL = 'nvidia/riva-translate-4b-instruct-v2'
@@ -446,4 +447,17 @@ export async function transcribeAudio(
   })
 
   return getAnswer(data).replace(/^["']|["']$/g, '').trim()
+}
+
+/**
+ * Server-side Heritage Watch scene assessment, used by `/api/heritage-watch`
+ * when the UI runs in a browser rather than inside the APK. The in-APK path
+ * is `assessHeritageSceneNative`; both share the prompt and the parser.
+ */
+export async function assessHeritageScene(
+  input: SceneRequestInput | string,
+): Promise<SceneAssessment> {
+  const model = process.env.NVIDIA_VISION_MODEL || DEFAULT_NVIDIA_VISION_MODEL
+  const data = await requestNvidia({ model, ...buildSceneRequestBody(input) })
+  return parseSceneAssessment(removeHiddenReasoning(getAnswer(data)))
 }

@@ -50,7 +50,12 @@ export async function POST(request: Request) {
       const token = parsed.token; const now = new Date().toISOString();
       const evidenceId = bytes ? `${randomUUID()}.${mime === 'jpeg' ? 'jpg' : mime}` : null;
       if (bytes && evidenceId) { await mkdir(evidenceDir,{recursive:true}); await writeFile(path.join(evidenceDir,evidenceId), bytes,{mode:0o600}); }
-      const report: DemoReport = { id:input.id, receiptHash:receiptHash(token), category:input.category, note:input.note, zoneId:input.zoneId, point:input.point, evidenceId, completionEvidenceId:null, assessment:assessment.value, assessmentReason:assessment.reason, status:assessment.value === 'relevant' ? 'unassigned':'review', assigneeId:null, assignmentReason:null, createdAt:now, assignedAt:null, resolvedAt:null, alerts:[], history:[{at:now,actor:'Guest visitor',action:'submitted',note:'Visitor report received.'},{at:now,actor:'NVIDIA AI',action:'assessed',note:assessment.reason}] };
+      // An automated camera detection always waits for a human to confirm it,
+      // whatever the independent triage thought. A visitor report keeps the
+      // existing behaviour.
+      const automated = input.origin === 'automated';
+      const submitter = automated ? 'Automated camera detection' : 'Guest visitor';
+      const report: DemoReport = { id:input.id, receiptHash:receiptHash(token), origin:input.origin, category:input.category, note:input.note, zoneId:input.zoneId, point:input.point, evidenceId, completionEvidenceId:null, assessment:assessment.value, assessmentReason:assessment.reason, status:!automated && assessment.value === 'relevant' ? 'unassigned':'review', assigneeId:null, assignmentReason:null, createdAt:now, assignedAt:null, resolvedAt:null, alerts:[], history:[{at:now,actor:submitter,action:'submitted',note:automated ? 'Unconfirmed camera detection received. Confirm on site before acting.' : 'Visitor report received.'},{at:now,actor:'NVIDIA AI',action:'assessed',note:assessment.reason}] };
       data.reports.unshift(report); dispatch(data,report,now);
       return { id: report.id, status:report.status, token, duplicate:false };
     });

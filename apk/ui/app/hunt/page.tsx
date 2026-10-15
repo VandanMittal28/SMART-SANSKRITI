@@ -332,7 +332,7 @@ const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
       return [scaled.lat, scaled.lng]
     })
     const routeLine = L.polyline(routePoints as [number, number][], {
-      color: '#D6A84B',
+      color: '#8A6A05',
       weight: 3,
       dashArray: '8 10',
       opacity: 0.7,
@@ -351,13 +351,13 @@ const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
       let fillColor = '#555'
 
       if (isActive) {
-        markerColor = '#D6A84B'
-        fillColor = '#D6A84B'
+        markerColor = '#F6C00A'
+        fillColor = '#F6C00A'
         markerRadius = 14
         markerOpacity = 0.9
       } else if (isCompleted) {
-        markerColor = '#63C7BA'
-        fillColor = '#63C7BA'
+        markerColor = '#2F7D63'
+        fillColor = '#2F7D63'
         markerRadius = 11
         markerOpacity = 0.8
       } else if (isFuture) {
@@ -381,7 +381,7 @@ const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
       // Active clue pulsing ring
       if (isActive) {
         const pulse = L.circleMarker([scaled.lat, scaled.lng], {
-          radius: 24, fillColor: '#D6A84B', color: '#D6A84B',
+          radius: 24, fillColor: '#F6C00A', color: '#8A6A05',
           fillOpacity: 0.15, weight: 1, opacity: 0.4,
         }).addTo(map)
         newMarkers.push(pulse)
@@ -393,7 +393,7 @@ const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
     // User marker
     const scaledUser = toScaled(userLat, userLng)
     const userMarker = L.circleMarker([userLat, userLng], {
-      radius: 10, fillColor: '#FFFFFF', color: '#D6A84B',
+      radius: 10, fillColor: '#FFFFFF', color: '#8A6A05',
       fillOpacity: 1, weight: 3, opacity: 1,
     }).addTo(map)
     userMarker.bindPopup('<div style="font-size:12px;font-weight:700;color:#D6A84B">📍 You</div>')
@@ -444,7 +444,7 @@ const HuntMap = dynamic(() => Promise.resolve(function HuntMapInner({
   }, [])
 
   return <div ref={containerRef} style={{ width: '100%', height: '68vh', minHeight: '520px', borderRadius: 16, overflow: 'hidden' }} />
-}), { ssr: false, loading: () => <div style={{ width: '100%', height: '68vh', minHeight: '520px', background: 'rgba(28,22,56,0.9)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#AEB6C8', fontSize: 13 }}>Loading map...</div> })
+}), { ssr: false, loading: () => <div style={{ width: '100%', height: '68vh', minHeight: '520px', background: 'rgba(28,22,56,0.9)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#494B45', fontSize: 13 }}>Loading map...</div> })
 
 // ─── Loading Spinner ───
 function LoadingSpinner({ text }: { text?: string }) {
@@ -457,7 +457,7 @@ function LoadingSpinner({ text }: { text?: string }) {
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
       }} />
-      {text && <p style={{ color: '#AEB6C8', fontSize: 14, margin: 0 }}>{text}</p>}
+      {text && <p style={{ color: '#494B45', fontSize: 14, margin: 0 }}>{text}</p>}
     </div>
   )
 }
@@ -770,7 +770,7 @@ export default function HuntPage() {
     {
       name: profile?.full_name?.split(' ')[0] || 'You',
       avatar: '🧑', clues: completedClues.size, xp: xpEarned,
-      isUser: true, color: '#D6A84B',
+      isUser: true, color: '#8A6A05',
     }
   ].sort((a, b) => b.xp - a.xp || b.clues - a.clues)
 
@@ -795,9 +795,9 @@ export default function HuntPage() {
           <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#D6A84B] mb-2">{t('treasure_hunt')}</h1>
           <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, padding: 40, maxWidth: 520, margin: '2rem auto', textAlign: 'center' }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🔒</div>
-            <h2 style={{ color: '#D6A84B', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 22, margin: '0 0 12px' }}>Location Required</h2>
-            <p style={{ color: '#AEB6C8', fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
-              You must be physically present at <strong style={{ color: '#E8BE69' }}>{monumentName}</strong> to join this hunt.
+            <h2 style={{ color: '#8A6A05', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 22, margin: '0 0 12px' }}>Location Required</h2>
+            <p style={{ color: '#494B45', fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
+              You must be physically present at <strong style={{ color: '#8A6A05' }}>{monumentName}</strong> to join this hunt.
             </p>
             {userDistance !== null && (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(212,137,63,0.12)', border: '1px solid rgba(212,137,63,0.3)', borderRadius: 10, color: '#C66B4E', fontSize: 14, fontWeight: 600, marginBottom: 20 }}>
@@ -805,8 +805,8 @@ export default function HuntPage() {
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#D6A84B', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Re-check Location</button>
-              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#E8BE69', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
+              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Re-check Location</button>
+              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
             </div>
           </div>
         </div>
@@ -823,10 +823,10 @@ export default function HuntPage() {
           <div style={{ background: 'rgba(28,22,56,0.9)', border: '1px solid rgba(196,91,58,0.4)', borderRadius: 20, padding: 40, maxWidth: 520, margin: '2rem auto', textAlign: 'center' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📍</div>
             <h2 style={{ color: '#E8A85C', fontFamily: 'var(--font-literata), Georgia, serif', fontSize: 20, margin: '0 0 12px' }}>Location Access Required</h2>
-            <p style={{ color: '#AEB6C8', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>Please enable GPS / location services.</p>
+            <p style={{ color: '#494B45', fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>Please enable GPS / location services.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#D6A84B', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Try Again</button>
-              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#E8BE69', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
+              <button onClick={() => checkMonumentGeo(huntMonumentId)} style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🔄 Try Again</button>
+              <button onClick={activateDemo} style={{ padding: '12px 24px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(212,137,63,0.2))', border: '1px solid rgba(201,168,76,0.5)', color: '#8A6A05', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>🎮 Demo Mode</button>
             </div>
           </div>
         </div>
@@ -950,18 +950,18 @@ export default function HuntPage() {
                     }}
                     style={{
                       fontFamily: 'var(--font-literata), Georgia, serif', fontSize: '20px', fontWeight: 700,
-                      color: '#D6A84B', background: 'transparent', border: 'none',
+                      color: '#8A6A05', background: 'transparent', border: 'none',
                       paddingRight: 22, cursor: 'pointer', appearance: 'none' as const,
                       outline: 'none'
                     }}
                   >
                     {monuments.map(m => (
-                      <option key={m.id} value={m.id} style={{ background: '#171F34', color: '#D6A84B' }}>
+                      <option key={m.id} value={m.id} style={{ background: '#F2F2F4', color: '#8A6A05' }}>
                         🗺️ {m.name}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown style={{ position: 'absolute', right: 0, top: 7, width: 13, height: 13, color: '#D6A84B', pointerEvents: 'none' }} />
+                  <ChevronDown style={{ position: 'absolute', right: 0, top: 7, width: 13, height: 13, color: '#8A6A05', pointerEvents: 'none' }} />
                 </div>
                 <p className="text-[#AEB6C8] text-xs m-0 mt-0.5">{t('treasure_hunt')}</p>
               </div>
@@ -979,7 +979,7 @@ export default function HuntPage() {
               {activeRiddles.map((r, idx) => (
                 <div key={r.id} style={{
                   flex: 1, height: 4, borderRadius: 2,
-                  background: completedClues.has(r.id) ? '#63C7BA' : idx === activeClueIdx ? '#D6A84B' : 'rgba(201,168,76,0.15)',
+                  background: completedClues.has(r.id) ? '#2F7D63' : idx === activeClueIdx ? '#F6C00A' : 'rgba(201,168,76,0.15)',
                   transition: 'all 0.3s ease'
                 }} />
               ))}
@@ -1027,16 +1027,16 @@ export default function HuntPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <span style={{
                     display: 'inline-block', padding: '4px 12px',
-                    background: 'rgba(201,168,76,0.2)', color: '#D6A84B',
+                    background: 'rgba(201,168,76,0.2)', color: '#8A6A05',
                     fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const,
                     borderRadius: 20, letterSpacing: 1
                   }}>Clue {activeClueIdx + 1}</span>
-                  <span style={{ color: '#8891A6', fontSize: 12 }}>📍 {activeRiddle.location_name}</span>
+                  <span style={{ color: '#494B45', fontSize: 12 }}>📍 {activeRiddle.location_name}</span>
                 </div>
 
                 {/* Riddle text */}
                 <p style={{
-                  color: '#F6F1E8', fontSize: 16, lineHeight: 1.6,
+                  color: '#181A13', fontSize: 16, lineHeight: 1.6,
                   fontFamily: 'var(--font-literata), Georgia, serif', marginBottom: 20,
                   fontStyle: 'italic'
                 }} className="md:text-lg">
@@ -1053,7 +1053,7 @@ export default function HuntPage() {
                     padding: '12px 16px', marginBottom: 16,
                     background: 'rgba(201,168,76,0.06)',
                     border: '1px solid rgba(201,168,76,0.15)',
-                    borderRadius: 10, color: '#E8BE69', fontSize: 13,
+                    borderRadius: 10, color: '#8A6A05', fontSize: 13,
                     fontStyle: 'italic'
                   }} className="md:text-sm">
                     💡 {activeRiddle.hint}
@@ -1083,7 +1083,7 @@ export default function HuntPage() {
                 border: '1px solid rgba(75,155,142,0.3)',
                 borderRadius: 16,
               }}>
-                <div style={{ color: '#63C7BA', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>
+                <div style={{ color: '#2F7D63', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>
                   ✓ Location verified!
                 </div>
                 <div style={{
@@ -1155,14 +1155,16 @@ export default function HuntPage() {
             {demoMode && (
               <div className="flex flex-row overflow-hidden max-w-full gap-2 mt-3 items-center">
                 {[
-                  { avatar: '🧑', name: profile?.full_name?.split(' ')[0] || 'You', clue: activeClueIdx + 1, color: '#D6A84B', isUser: true },
+                  { avatar: '🧑', name: profile?.full_name?.split(' ')[0] || 'You', clue: activeClueIdx + 1, color: '#8A6A05', isUser: true },
                   ...playerStates.map(p => ({ avatar: p.avatar, name: p.name, clue: Math.min(p.cluesCompleted + 1, 5), color: p.color, isUser: false }))
                 ].map((p, i) => (
-                  <div key={i} className={`flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-full whitespace-nowrap flex-shrink-0 min-h-[28px] ${p.isUser ? 'bg-[#D6A84B]/15 border border-[#D6A84B]/40' : 'bg-[#171F34]/90 border border-white/10'}`}>
+                  <div key={i} className={`flex items-center gap-1.5 md:gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full whitespace-nowrap flex-shrink-0 min-h-[28px] ${p.isUser ? 'bg-[var(--primary)]/18' : 'bg-[var(--muted)]'}`}>
+                    {/* The dot carries the player's identity colour; the label
+                        stays ink so it survives on a light chip. */}
                     <div className="w-2 h-2 rounded-full md:hidden flex-shrink-0" style={{ backgroundColor: p.color }}></div>
                     <span className="hidden md:inline">{p.avatar}</span>
-                    <span className={`hidden md:inline text-xs font-semibold ${p.isUser ? 'text-[#D6A84B]' : 'text-[#AEB6C8]'}`}>{p.name}</span>
-                    <span className="md:hidden text-[10px] font-bold" style={{ color: p.color }}>C{p.clue}</span>
+                    <span className="hidden md:inline text-xs font-semibold text-[var(--foreground)]">{p.name}</span>
+                    <span className="md:hidden text-[10px] font-bold text-[var(--foreground)]">C{p.clue}</span>
                     <span className="hidden md:inline text-[10px] text-[#8891A6]">— Clue {p.clue}</span>
                   </div>
                 ))}
@@ -1179,11 +1181,11 @@ export default function HuntPage() {
             <div className="relative glass-card rounded-2xl p-8 max-w-sm w-full text-center animate-slide-up">
               <div className="text-6xl mb-4">📍</div>
               <h2 className="text-2xl font-bold text-[#63C7BA] mb-2">Location Found!</h2>
-              <p style={{ color: '#AEB6C8', marginBottom: 8, fontSize: 15 }}>{activeRiddle?.location_name}</p>
+              <p style={{ color: '#494B45', marginBottom: 8, fontSize: 15 }}>{activeRiddle?.location_name}</p>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#7C3AED]/20 rounded-full mb-4 animate-xp-pulse">
                 <span className="text-[#7C3AED] font-bold">{celebrateMedal} +{celebrateXp} XP</span>
               </div>
-              <p style={{ color: '#8891A6', fontSize: 13 }}>Next clue loading...</p>
+              <p style={{ color: '#494B45', fontSize: 13 }}>Next clue loading...</p>
             </div>
           </div>
         )}

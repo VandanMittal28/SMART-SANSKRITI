@@ -10,10 +10,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: "#C9A84C",
+        gold: "#F6C00A",
         rust: "#D4893F",
         teal: "#4B9B8E",
-        cream: "#F5E6D3",
+        cream: "#181A13",
         "bg-dark": "#0F0B1E",
         "bg-card": "#1C1638",
       },
