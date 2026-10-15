@@ -1,9 +1,4 @@
-// Visitor issue reports for the LOCAL operations demo (apps/operations).
-//
-// Categories and zones mirror apps/operations/lib/demo.ts and
-// apps/operations/lib/domain.ts exactly; the operations API rejects anything
-// else. They describe a sample site called "Heritage Park", not a real
-// monument. Update both sides together if they ever change.
+// Shared public report contract used by the web and mobile clients.
 
 export const REPORT_CATEGORIES = [
   "Property damage",
@@ -24,13 +19,9 @@ export const CATEGORY_HINTS: Record<ReportCategory, string> = {
   "Other site-rule concern": "Anything else staff should know about",
 };
 
-export const REPORT_ZONES = [
-  { id: "entrance", name: "Entrance court" },
-  { id: "garden", name: "Heritage gardens" },
-  { id: "gallery", name: "Stone gallery" },
-  { id: "courtyard", name: "Central courtyard" },
-] as const;
-export type ReportZoneId = (typeof REPORT_ZONES)[number]["id"];
+export type ReportSite = { id: string; name: string; city: string; state: string };
+export type ReportZone = { id: string; zone_key: string; name: string; site_id: string };
+export type ReportZoneId = string;
 
 export const NOTE_MAX_LENGTH = 1200;
 /** Operations rejects decoded photos over 2,000,000 bytes. */
@@ -41,6 +32,7 @@ export type ReportPoint = { latitude: number; longitude: number; accuracy?: numb
 export type ReportSubmission = {
   id: string;
   token: string;
+  siteId: string;
   category: ReportCategory;
   note: string;
   zoneId: ReportZoneId;
@@ -50,7 +42,10 @@ export type ReportSubmission = {
 };
 
 export type ReportStatus =
+  | "reported"
   | "review"
+  | "under_review"
+  | "confirmed"
   | "unassigned"
   | "assigned"
   | "acknowledged"
@@ -60,7 +55,10 @@ export type ReportStatus =
   | "dismissed";
 
 export const STATUS_TEXT: Record<ReportStatus, { label: string; detail: string; done?: boolean }> = {
+  reported: { label: "Report received", detail: "Site staff will review your report." },
   review: { label: "Waiting for review", detail: "Site staff will check the report before assigning it." },
+  under_review: { label: "Under review", detail: "Site staff are reviewing the report." },
+  confirmed: { label: "Confirmed", detail: "The site team confirmed the issue." },
   unassigned: { label: "Waiting for a staff member", detail: "It will be assigned to the next available person." },
   assigned: { label: "Assigned", detail: "A staff member has been asked to look into it." },
   acknowledged: { label: "Accepted", detail: "A staff member has accepted the report." },
@@ -102,13 +100,14 @@ export const RECEIPT_KEY = "sanskriti-report-receipt-v2";
 
 export type ReportDraft = {
   category: ReportCategory | null;
+  siteId: string | null;
   zoneId: ReportZoneId | null;
   note: string;
   point: ReportPoint | null;
   photo: string | null;
 };
 
-export const EMPTY_DRAFT: ReportDraft = { category: null, zoneId: null, note: "", point: null, photo: null };
+export const EMPTY_DRAFT: ReportDraft = { category: null, siteId: null, zoneId: null, note: "", point: null, photo: null };
 
 export function readJson<T>(key: string, isValid: (value: unknown) => value is T): T | null {
   try {
@@ -136,7 +135,8 @@ export function isDraft(value: unknown): value is ReportDraft {
   const v = value as Record<string, unknown>;
   return (
     (v.category === null || REPORT_CATEGORIES.includes(v.category as ReportCategory)) &&
-    (v.zoneId === null || REPORT_ZONES.some((zone) => zone.id === v.zoneId)) &&
+    (v.siteId === null || typeof v.siteId === "string") &&
+    (v.zoneId === null || typeof v.zoneId === "string") &&
     typeof v.note === "string" &&
     (v.photo === null || typeof v.photo === "string")
   );
