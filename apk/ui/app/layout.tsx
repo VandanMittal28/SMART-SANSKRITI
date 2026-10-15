@@ -11,11 +11,20 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { AppThemeSync } from '@/components/theme-toggle'
 import { TopBar } from '@/components/TopBar'
 import { ReportButton } from '@/components/report/report-button'
-import { Literata, Manrope, Noto_Sans_Devanagari } from 'next/font/google'
+import { Manrope, Noto_Sans_Devanagari } from 'next/font/google'
+import localFont from 'next/font/local'
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' })
-const literata = Literata({ subsets: ['latin'], variable: '--font-literata', display: 'swap' })
 const devanagari = Noto_Sans_Devanagari({ subsets: ['devanagari'], variable: '--font-devanagari', display: 'swap' })
+
+// Self-hosted rather than loaded from Fontshare's CDN: the UI is packaged
+// inside both apps and has to render with no network at a monument.
+const clash = localFont({
+  src: '../public/fonts/ClashDisplay-Variable.woff2',
+  variable: '--font-display',
+  display: 'swap',
+  weight: '200 700',
+})
 
 export const metadata: Metadata = {
   title: 'Sanskriti AI | Discover India\'s Living Heritage',
@@ -24,7 +33,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#08070F',
+  themeColor: '#F9F9FA',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -36,9 +45,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${literata.variable} ${devanagari.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${manrope.variable} ${clash.variable} ${devanagari.variable}`} suppressHydrationWarning>
       <body className="overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AppThemeSync />
           <BackendPrewarmer />
           <AuthProvider>

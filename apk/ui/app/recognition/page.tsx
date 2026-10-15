@@ -109,7 +109,7 @@ function LoadingSpinner() {
   return (
     <div className="flex justify-center items-center p-10">
       <div className="w-10 h-10 border-4 rounded-full animate-spin"
-        style={{ borderColor: 'rgba(201,168,76,0.2)', borderTopColor: '#D6A84B' }} />
+        style={{ borderColor: 'rgba(201,168,76,0.2)', borderTopColor: '#F6C00A' }} />
     </div>
   )
 }
@@ -378,7 +378,7 @@ export default function RecognitionPage() {
         </div>
 
         {/* Upload / Camera tab buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 16, padding: 4, background: '#11182B', borderRadius: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 16, padding: 4, background: '#FFFFFF', borderRadius: 12 }}>
           {(['upload', 'camera'] as const).map(tab => (
             <button key={tab}
               onClick={() => {
@@ -389,9 +389,9 @@ export default function RecognitionPage() {
               style={{
                 minHeight: 44, padding: '8px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700,
                 cursor: 'pointer',
-                background: activeTab === tab ? '#D6A84B' : 'transparent',
+                background: activeTab === tab ? '#F6C00A' : 'transparent',
                 border: 'none',
-                color: activeTab === tab ? '#171004' : '#AEB6C8'
+                color: activeTab === tab ? '#171004' : '#494B45'
               }}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>{tab === 'upload' ? <Upload size={15} /> : <Camera size={15} />}{tab === 'upload' ? t('upload_photo') : t('use_camera')}</span>
@@ -403,7 +403,7 @@ export default function RecognitionPage() {
         {activeTab === 'camera' && (
           <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
             <video ref={videoRef} autoPlay playsInline
-              style={{ width: '100%', maxHeight: 380, objectFit: 'cover', background: '#171F34', display: 'block' }}
+              style={{ width: '100%', maxHeight: 380, objectFit: 'cover', background: '#F2F2F4', display: 'block' }}
             />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: 12, background: 'rgba(15,11,30,0.9)' }}>

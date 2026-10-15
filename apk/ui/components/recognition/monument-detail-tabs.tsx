@@ -147,7 +147,7 @@ const TIME_PERIODS = [
     period: "~1700s",
     description: "At the height of power. The monument gleams in its full original glory — vibrant colours, royal ceremonies, bustling courts.",
     icon: "👑",
-    accent: "#E8C97A"
+    accent: "#F6C00A"
   },
   {
     key: "colonial",
@@ -233,7 +233,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
     <div style={{ marginTop: 20 }}>
       {/* Tab Bar */}
       <div role="tablist" aria-label="Monument details" style={{
-        display: 'flex', gap: 4, overflowX: 'auto', background: '#11182B', padding: 4, borderRadius: 12,
+        display: 'flex', gap: 4, overflowX: 'auto', background: '#FFFFFF', padding: 4, borderRadius: 12,
         marginBottom: 12, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none'
       }}>
         {TAB_ITEMS.map(tab => (
@@ -244,8 +244,8 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
             onClick={() => setActiveTab(tab.id)}
             style={{
               minHeight: 42, padding: '9px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              background: activeTab === tab.id ? '#D6A84B' : 'transparent', border: 'none', borderRadius: 9, whiteSpace: 'nowrap',
-              color: activeTab === tab.id ? '#171004' : '#AEB6C8',
+              background: activeTab === tab.id ? '#F6C00A' : 'transparent', border: 'none', borderRadius: 9, whiteSpace: 'nowrap',
+              color: activeTab === tab.id ? '#171004' : '#494B45',
               transition: 'all 0.2s ease'
             }}
           >
@@ -256,7 +256,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
 
       {/* Tab Content */}
       <div style={{
-        background: '#11182B', border: '1px solid rgba(214,168,75,0.16)',
+        background: '#FFFFFF', border: '1px solid rgba(214,168,75,0.16)',
         borderRadius: 16, padding: 16, minHeight: 200
       }}>
         {/* History Tab */}
@@ -270,8 +270,8 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
                 { label: 'Type', value: data.type },
               ].map(item => (
                 <div key={item.label} style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '12px 0' }}>
-                  <div style={{ color: '#8891A6', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 700 }}>{item.label}</div>
-                  <div style={{ color: '#F6F1E8', fontSize: 13, lineHeight: 1.45, fontWeight: 650 }}>{item.value}</div>
+                  <div style={{ color: '#494B45', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, fontWeight: 700 }}>{item.label}</div>
+                  <div style={{ color: '#181A13', fontSize: 13, lineHeight: 1.45, fontWeight: 650 }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -279,7 +279,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               background: 'rgba(75,155,142,0.08)', border: '1px solid rgba(75,155,142,0.3)',
               borderRadius: 12, padding: 16, marginBottom: 16
             }}>
-              <div style={{ color: '#8DE0D6', fontWeight: 700, marginBottom: 6, fontSize: 13 }}>Why it matters</div>
+              <div style={{ color: '#2F7D63', fontWeight: 700, marginBottom: 6, fontSize: 13 }}>Why it matters</div>
               <div style={{ color: '#C7CDDA', fontSize: 14, lineHeight: 1.7 }}>{data.cultural_importance}</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -292,7 +292,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               {data.seven_wonders && (
                 <span style={{
                   background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)',
-                  borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#E8C97A', fontWeight: 700
+                  borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#8A6A05', fontWeight: 700
                 }}>Seven Wonders of the World</span>
               )}
             </div>
@@ -302,12 +302,12 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
         {/* Architecture Tab */}
         {activeTab === 'architecture' && (
           <div>
-            <div style={{ color: '#D6A84B', fontWeight: 700, fontSize: 16, marginBottom: 12, fontFamily: 'Georgia, serif' }}>
+            <div style={{ color: '#8A6A05', fontWeight: 700, fontSize: 16, marginBottom: 12, fontFamily: 'Georgia, serif' }}>
               Architecture & construction
             </div>
             <div style={{
               background: 'rgba(75,155,142,0.08)', border: '1px solid rgba(75,155,142,0.3)',
-              borderRadius: 12, padding: 16, color: '#AEB6C8', fontSize: 14, lineHeight: 1.8
+              borderRadius: 12, padding: 16, color: '#494B45', fontSize: 14, lineHeight: 1.8
             }}>
               {data.architecture}
             </div>
@@ -323,9 +323,9 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
                 borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12
               }}>
                 <span style={{
-                  color: '#D6A84B', fontWeight: 700, fontSize: 18, minWidth: 28, fontFamily: 'Georgia, serif'
+                  color: '#8A6A05', fontWeight: 700, fontSize: 18, minWidth: 28, fontFamily: 'Georgia, serif'
                 }}>#{i + 1}</span>
-                <span style={{ color: '#AEB6C8', fontSize: 14, lineHeight: 1.6 }}>{fact}</span>
+                <span style={{ color: '#494B45', fontSize: 14, lineHeight: 1.6 }}>{fact}</span>
               </div>
             ))}
           </div>
@@ -336,7 +336,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
           <div>
             <div style={{
               background: 'rgba(201,168,76,0.08)', border: '2px solid rgba(201,168,76,0.4)',
-              borderRadius: 16, padding: 24, fontSize: 16, lineHeight: 1.8, color: '#E8C97A',
+              borderRadius: 16, padding: 24, fontSize: 16, lineHeight: 1.8, color: '#8A6A05',
               textAlign: 'center'
             }}>
               {data.fun_fact}
@@ -345,7 +345,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               <a href="/quiz" style={{
                 display: 'inline-block', padding: '12px 28px', borderRadius: 10,
                 background: 'linear-gradient(135deg, #D4893F, #D6A84B)',
-                color: '#080D1D', fontWeight: 700, textDecoration: 'none', fontSize: 14
+                color: '#FFFFFF', fontWeight: 700, textDecoration: 'none', fontSize: 14
               }}>
                 Test what you learned →
               </a>
@@ -358,12 +358,12 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ background: 'rgba(15,11,30,0.6)', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#8891A6', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Best time to visit</div>
-                <div style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600 }}>{data.best_time_to_visit}</div>
+                <div style={{ color: '#494B45', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Best time to visit</div>
+                <div style={{ color: '#8A6A05', fontSize: 14, fontWeight: 600 }}>{data.best_time_to_visit}</div>
               </div>
               <div style={{ background: 'rgba(15,11,30,0.6)', borderRadius: 10, padding: 14 }}>
-                <div style={{ color: '#8891A6', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Entry fee</div>
-                <div style={{ color: '#E8C97A', fontSize: 14, fontWeight: 600 }}>{data.entry_fee}</div>
+                <div style={{ color: '#494B45', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Entry fee</div>
+                <div style={{ color: '#8A6A05', fontSize: 14, fontWeight: 600 }}>{data.entry_fee}</div>
               </div>
             </div>
             {/* Sustainability tip */}
@@ -372,7 +372,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               borderRadius: 12, padding: 16
             }}>
               <div style={{ color: '#7ECDA0', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Visit responsibly</div>
-              <div style={{ color: '#AEB6C8', fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ color: '#494B45', fontSize: 13, lineHeight: 1.6 }}>
                 {sustainabilityTip.replace(/^[^\s]+\s/, '')}
               </div>
             </div>
@@ -386,10 +386,10 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               background: 'linear-gradient(135deg, rgba(27,16,64,0.8), rgba(122,46,59,0.06))',
               border: '1px solid rgba(201,168,76,0.25)', borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '1rem'
             }}>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.05rem', color: '#E8C97A', fontWeight: 600 }}>
+              <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.05rem', color: '#8A6A05', fontWeight: 600 }}>
                 ⏳ 360° Time Travel Mode
               </div>
-              <div style={{ color: '#AEB6C8', fontSize: '0.82rem', marginTop: 4 }}>
+              <div style={{ color: '#494B45', fontSize: '0.82rem', marginTop: 4 }}>
                 🖱️ Click and drag inside the viewer to look around in 360° — select an era below to travel through history
               </div>
             </div>
@@ -406,7 +406,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
                     background: selectedEra === period.key
                       ? `${period.accent}22`
                       : 'transparent',
-                    color: selectedEra === period.key ? period.accent : '#AEB6C8',
+                    color: selectedEra === period.key ? period.accent : '#494B45',
                     cursor: 'pointer', fontSize: 13, fontWeight: 600,
                     transition: 'all 0.2s ease'
                   }}
@@ -457,7 +457,7 @@ export function MonumentDetailTabs({ monumentName }: { monumentName: string }) {
               <div style={{ color: currentPeriod.accent, fontFamily: 'Georgia, serif', fontWeight: 600, marginBottom: '0.5rem' }}>
                 {currentPeriod.label} · {currentPeriod.period}
               </div>
-              <div style={{ color: '#AEB6C8', fontSize: '0.88rem', lineHeight: 1.7 }}>
+              <div style={{ color: '#494B45', fontSize: '0.88rem', lineHeight: 1.7 }}>
                 {currentPeriod.description}
               </div>
             </div>

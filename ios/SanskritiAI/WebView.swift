@@ -1,150 +1,309 @@
 import SwiftUI
+import UIKit
 import WebKit
-import Network
 
-final class SanskritiLocalServer {
-    private let listener: NWListener
-    private let queue = DispatchQueue(label: "ai.sanskriti.local-server")
-    private let root: URL
-
-    init?() {
-        guard let root = Bundle.main.url(forResource: "www", withExtension: nil),
-              let listener = try? NWListener(using: .tcp, on: .any) else { return nil }
-        self.root = root
-        self.listener = listener
-    }
-
-    func start(ready: @escaping (URL) -> Void) {
-        listener.stateUpdateHandler = { [weak self] state in
-            guard let self, state == .ready, let port = self.listener.port?.rawValue else { return }
-            ready(URL(string: "http://127.0.0.1:\(port)/")!)
-        }
-        listener.newConnectionHandler = { [weak self] connection in
-            self?.handle(connection)
-        }
-        listener.start(queue: queue)
-    }
-
-    func stop() { listener.cancel() }
-
-    private func handle(_ connection: NWConnection) {
-        connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 128 * 1024) { [weak self] data, _, _, _ in
-            guard let self, let data, let request = String(data: data, encoding: .utf8) else { connection.cancel(); return }
-            let firstLine = request.components(separatedBy: "\r\n").first ?? ""
-            let rawPath = firstLine.split(separator: " ").dropFirst().first.map(String.init) ?? "/"
-            let path = rawPath.split(separator: "?", maxSplits: 1).first.map(String.init) ?? "/"
-            let (status, mime, body) = self.file(for: path)
-            let header = "HTTP/1.1 \(status)\r\nContent-Type: \(mime)\r\nContent-Length: \(body.count)\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n"
-            connection.send(content: header.data(using: .utf8)! + body, completion: .contentProcessed { _ in connection.cancel() })
-        }
-    }
-
-    private func file(for path: String) -> (String, String, Data) {
-        let clean = (path.removingPercentEncoding ?? path).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let safe = clean.split(separator: "/").filter { $0 != ".." }.joined(separator: "/")
-        var url = root.appendingPathComponent(safe)
-        var directory: ObjCBool = false
-        if safe.isEmpty { url = root.appendingPathComponent("index.html") }
-        else if FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue { url.appendPathComponent("index.html") }
-        else if !FileManager.default.fileExists(atPath: url.path) {
-            let route = root.appendingPathComponent(safe).appendingPathComponent("index.html")
-            url = FileManager.default.fileExists(atPath: route.path) ? route : root.appendingPathComponent("404.html")
-        }
-        let body = (try? Data(contentsOf: url)) ?? Data("Not found".utf8)
-        let status = url.lastPathComponent == "404.html" ? "404 Not Found" : "200 OK"
-        return (status, mime(for: url.pathExtension), body)
-    }
-
-    private func mime(for ext: String) -> String { switch ext.lowercased() { case "html": return "text/html; charset=utf-8"; case "js": return "text/javascript"; case "css": return "text/css"; case "json": return "application/json"; case "svg": return "image/svg+xml"; case "png": return "image/png"; case "jpg", "jpeg": return "image/jpeg"; case "webp": return "image/webp"; case "woff", "woff2": return "font/woff2"; case "mp3": return "audio/mpeg"; default: return "application/octet-stream" } }
-}
-
-final class SanskritiSchemeHandler: NSObject, WKURLSchemeHandler {
-    func webView(_ webView: WKWebView, start URLSchemeTask: WKURLSchemeTask) {
-        guard let requestURL = URLSchemeTask.request.url else { return fail(URLSchemeTask) }
-        let rawPath = requestURL.path.removingPercentEncoding ?? requestURL.path
-        let relativePath = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let bundleRoot = Bundle.main.bundleURL.appendingPathComponent("www", isDirectory: true)
-        var fileURL = bundleRoot.appendingPathComponent(relativePath, isDirectory: false)
-        var isDirectory: ObjCBool = false
-        if FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
-            fileURL.appendPathComponent("index.html")
-        } else if relativePath.isEmpty {
-            fileURL = bundleRoot.appendingPathComponent("index.html")
-        } else if !FileManager.default.fileExists(atPath: fileURL.path) {
-            let routeIndex = bundleRoot.appendingPathComponent(relativePath, isDirectory: true).appendingPathComponent("index.html")
-            if FileManager.default.fileExists(atPath: routeIndex.path) { fileURL = routeIndex } else { return fail(URLSchemeTask) }
-        }
-        guard let data = try? Data(contentsOf: fileURL) else { return fail(URLSchemeTask) }
-        let contentType = mimeType(for: fileURL.pathExtension)
-        let response = HTTPURLResponse(
-            url: requestURL,
-            statusCode: 200,
-            httpVersion: "HTTP/1.1",
-            headerFields: [
-                "Content-Type": contentType,
-                "Content-Length": String(data.count),
-                "Cache-Control": "no-cache",
-                "Access-Control-Allow-Origin": "*",
-            ]
-        )!
-        URLSchemeTask.didReceive(response)
-        URLSchemeTask.didReceive(data)
-        URLSchemeTask.didFinish()
-    }
-    func webView(_ webView: WKWebView, stop URLSchemeTask: WKURLSchemeTask) {}
-    private func fail(_ task: WKURLSchemeTask) { task.didFailWithError(NSError(domain: "SanskritiBundle", code: 404, userInfo: [NSLocalizedDescriptionKey: "Bundled UI file not found"])) }
-    private func mimeType(for ext: String) -> String { switch ext.lowercased() { case "html": return "text/html"; case "js": return "text/javascript"; case "css": return "text/css"; case "json": return "application/json"; case "svg": return "image/svg+xml"; case "png": return "image/png"; case "jpg", "jpeg": return "image/jpeg"; case "webp": return "image/webp"; case "woff", "woff2": return "font/woff2"; default: return "application/octet-stream" } }
-}
-
+/// Hosts the bundled visitor UI and wires it to the native services.
+///
+/// This is the iOS counterpart of `MainActivity` on Android: full-screen web
+/// surface, native bridge, camera/microphone/location prompts, external link
+/// handling, back navigation and a readable failure screen.
 final class SanskritiViewController: UIViewController {
-    private let webView: WKWebView
-    private var server: SanskritiLocalServer?
+    private var webView: WKWebView!
+    private var server: BundledUIServer?
+    private let bridge = NativeBridge()
+    private var progressObservation: NSKeyValueObservation?
+    private let progressBar = UIProgressView(progressViewStyle: .bar)
 
-    init() {
-        let configuration = WKWebViewConfiguration()
-        configuration.setURLSchemeHandler(SanskritiSchemeHandler(), forURLScheme: "sanskriti")
-        webView = WKWebView(frame: .zero, configuration: configuration)
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    // MARK: - Lifecycle
 
     override func loadView() {
         let container = UIView(frame: .zero)
-        container.backgroundColor = .black
+        container.backgroundColor = UIColor(red: 7/255, green: 10/255, blue: 22/255, alpha: 1)
         view = container
+
+        webView = makeWebView()
         webView.translatesAutoresizingMaskIntoConstraints = false
-        webView.isOpaque = true
-        webView.backgroundColor = .black
+        webView.isOpaque = false
+        webView.backgroundColor = container.backgroundColor
+        webView.scrollView.backgroundColor = container.backgroundColor
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.bounces = false
+        // Matches Android's back gesture through the bundled routes.
+        webView.allowsBackForwardNavigationGestures = true
         container.addSubview(webView)
+
+        progressBar.translatesAutoresizingMaskIntoConstraints = false
+        progressBar.progressTintColor = UIColor(red: 201/255, green: 168/255, blue: 76/255, alpha: 1)
+        progressBar.trackTintColor = .clear
+        progressBar.alpha = 0
+        container.addSubview(progressBar)
+
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             webView.topAnchor.constraint(equalTo: container.topAnchor),
             webView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            progressBar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            progressBar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            progressBar.topAnchor.constraint(equalTo: container.safeAreaLayoutGuide.topAnchor),
+            progressBar.heightAnchor.constraint(equalToConstant: 3),
         ])
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        edgesForExtendedLayout = [.top, .bottom, .left, .right]
+        edgesForExtendedLayout = .all
         additionalSafeAreaInsets = .zero
-        guard let server = SanskritiLocalServer() else { return }
-        self.server = server
-        server.start { [weak self] url in
-            print("Sanskriti local UI server ready: \(url.absoluteString)")
-            DispatchQueue.main.async { self?.webView.load(URLRequest(url: url)) }
+        bridge.attach(to: webView)
+        bridge.onThemeChange = { [weak self] light in
+            self?.applyTheme(light: light)
+        }
+        observeProgress()
+        startServerAndLoad()
+    }
+
+    override var preferredStatusBarStyle: UIStatusBarStyle { statusBarStyle }
+    private var statusBarStyle: UIStatusBarStyle = .lightContent
+
+    deinit {
+        progressObservation?.invalidate()
+        webView?.configuration.userContentController
+            .removeScriptMessageHandler(forName: NativeBridge.messageHandlerName)
+        server?.stop()
+    }
+
+    // MARK: - Configuration
+
+    private func makeWebView() -> WKWebView {
+        let controller = WKUserContentController()
+        controller.add(bridge, name: NativeBridge.messageHandlerName)
+        controller.addUserScript(bridge.bridgeUserScript())
+        controller.addUserScript(bridge.shimUserScript())
+
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = controller
+        // The AR view and the audio guides both need to play without a tap.
+        configuration.allowsInlineMediaPlayback = true
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.allowsAirPlayForMediaPlayback = true
+
+        let preferences = WKWebpagePreferences()
+        preferences.allowsContentJavaScript = true
+        configuration.defaultWebpagePreferences = preferences
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = self
+        webView.uiDelegate = self
+        if #available(iOS 16.4, *) {
+            // Safari Web Inspector, debug builds only.
+            #if DEBUG
+            webView.isInspectable = true
+            #endif
+        }
+        return webView
+    }
+
+    private func observeProgress() {
+        progressObservation = webView.observe(\.estimatedProgress, options: [.new]) { [weak self] webView, _ in
+            guard let self else { return }
+            let progress = Float(webView.estimatedProgress)
+            self.progressBar.setProgress(progress, animated: true)
+            let finished = progress >= 0.99
+            UIView.animate(withDuration: 0.2) { self.progressBar.alpha = finished ? 0 : 1 }
+            if finished { self.progressBar.setProgress(0, animated: false) }
         }
     }
 
-    deinit { server?.stop() }
+    private func applyTheme(light: Bool) {
+        let background = light
+            ? UIColor(red: 250/255, green: 246/255, blue: 237/255, alpha: 1)
+            : UIColor(red: 7/255, green: 10/255, blue: 22/255, alpha: 1)
+        view.backgroundColor = background
+        webView.backgroundColor = background
+        webView.scrollView.backgroundColor = background
+        statusBarStyle = light ? .darkContent : .lightContent
+        setNeedsStatusBarAppearanceUpdate()
+    }
+
+    // MARK: - Loading
+
+    private func startServerAndLoad() {
+        guard let server = BundledUIServer() else {
+            showFailure(
+                title: "The app interface is missing",
+                detail: "This build has no bundled UI. In Xcode, run the \"Bundle visitor UI\" phase, or build the Android bundle first with apk/scripts/build-mobile-ui.sh."
+            )
+            return
+        }
+        self.server = server
+        server.start(ready: { [weak self] url in
+            DispatchQueue.main.async {
+                self?.webView.load(URLRequest(url: url))
+            }
+        }, failed: { [weak self] reason in
+            DispatchQueue.main.async {
+                self?.showFailure(
+                    title: "Sanskriti could not start",
+                    detail: "The app could not open its local interface server: \(reason)"
+                )
+            }
+        })
+    }
+
+    private func showFailure(title: String, detail: String) {
+        let escapedTitle = title.replacingOccurrences(of: "<", with: "&lt;")
+        let escapedDetail = detail.replacingOccurrences(of: "<", with: "&lt;")
+        let html = """
+        <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+        <body style="margin:0;background:#070a16;color:#f5e6d3;font-family:-apple-system,system-ui,sans-serif;padding:40px 28px">
+        <h1 style="font-size:22px;margin:0 0 12px">\(escapedTitle)</h1>
+        <p style="font-size:15px;line-height:1.6;color:#aeb6c8;margin:0">\(escapedDetail)</p>
+        </body>
+        """
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+
+    /// Requests from our own loopback server stay inside the app; anything else
+    /// is a real website and belongs in Safari, as on Android.
+    private func isInternal(_ url: URL?) -> Bool {
+        guard let url, let host = url.host else { return false }
+        return host == "127.0.0.1" || host == "localhost"
+    }
 }
+
+// MARK: - Navigation
+
+extension SanskritiViewController: WKNavigationDelegate {
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+    ) {
+        let url = navigationAction.request.url
+        guard let url else { decisionHandler(.allow); return }
+
+        if isInternal(url) || url.scheme == "about" || url.scheme == "data" {
+            decisionHandler(.allow)
+            return
+        }
+
+        // Ticket links, maps and payment pages open outside the app.
+        if navigationAction.targetFrame == nil || navigationAction.navigationType == .linkActivated {
+            decisionHandler(.cancel)
+            UIApplication.shared.open(url)
+            return
+        }
+        decisionHandler(.allow)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard isInternal(webView.url) else { return }
+        // The AR controller is only meaningful on Explore; leaving the screen
+        // releases GPS and the compass, matching Android's page-start check.
+        webView.evaluateJavaScript("window.location.pathname") { [weak self] value, _ in
+            guard let path = value as? String else { return }
+            if !path.hasPrefix("/explore") {
+                self?.bridge.arNavigation.stop()
+            }
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        presentLoadFailure(error)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        presentLoadFailure(error)
+    }
+
+    private func presentLoadFailure(_ error: Error) {
+        let code = (error as NSError).code
+        // -999 is a cancelled load, which happens on every fast re-navigation.
+        guard code != NSURLErrorCancelled else { return }
+        showFailure(
+            title: "Sanskriti could not open",
+            detail: "The bundled interface failed to load: \(error.localizedDescription)"
+        )
+    }
+}
+
+// MARK: - UI delegate
+
+extension SanskritiViewController: WKUIDelegate {
+    /// Without this, `getUserMedia` is refused outright and both the AR camera
+    /// and Heritage Watch stay dark. The system still shows its own
+    /// camera/microphone prompt the first time.
+    func webView(
+        _ webView: WKWebView,
+        requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+        initiatedByFrame frame: WKFrameInfo,
+        type: WKMediaCaptureType,
+        decisionHandler: @escaping (WKPermissionDecision) -> Void
+    ) {
+        // Only our own bundled origin may reach the camera or microphone.
+        let host = origin.host
+        decisionHandler(host == "127.0.0.1" || host == "localhost" ? .prompt : .deny)
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+        // target="_blank" has no window to open into; send it to Safari.
+        if let url = navigationAction.request.url, !isInternal(url) {
+            UIApplication.shared.open(url)
+        }
+        return nil
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        runJavaScriptAlertPanelWithMessage message: String,
+        initiatedByFrame frame: WKFrameInfo,
+        completionHandler: @escaping () -> Void
+    ) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
+        present(alert, animated: true)
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        runJavaScriptConfirmPanelWithMessage message: String,
+        initiatedByFrame frame: WKFrameInfo,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
+        present(alert, animated: true)
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        runJavaScriptTextInputPanelWithPrompt prompt: String,
+        defaultText: String?,
+        initiatedByFrame frame: WKFrameInfo,
+        completionHandler: @escaping (String?) -> Void
+    ) {
+        let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
+        alert.addTextField { $0.text = defaultText }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(nil) })
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak alert] _ in
+            completionHandler(alert?.textFields?.first?.text)
+        })
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - SwiftUI wrapper
 
 struct SanskritiWebView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> SanskritiViewController {
         SanskritiViewController()
     }
+
     func updateUIViewController(_ viewController: SanskritiViewController, context: Context) {}
 }

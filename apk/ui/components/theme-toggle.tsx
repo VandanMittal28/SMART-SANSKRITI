@@ -15,7 +15,7 @@ export function AppThemeSync() {
 
   useEffect(() => {
     const theme = resolvedTheme === 'light' ? 'light' : 'dark'
-    const color = theme === 'light' ? '#F7F1E5' : '#080D1D'
+    const color = theme === 'light' ? '#F7F1E5' : '#FFFFFF'
     document.documentElement.style.colorScheme = theme
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
     const android = (window as unknown as { SanskritiAndroid?: AndroidThemeBridge }).SanskritiAndroid

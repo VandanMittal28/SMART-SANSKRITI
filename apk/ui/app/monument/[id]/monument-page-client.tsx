@@ -109,10 +109,10 @@ export default function MonumentPage() {
 
   if (!monument) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#080D1D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif' }}>Monument not found</h1>
-          <button onClick={() => router.back()} style={{ marginTop: 16, padding: '10px 20px', background: '#D6A84B', color: '#171004', fontWeight: 700, border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+          <h1 style={{ color: '#181A13', fontFamily: 'var(--font-literata), Georgia, serif' }}>Monument not found</h1>
+          <button onClick={() => router.back()} style={{ marginTop: 16, padding: '10px 20px', background: '#F6C00A', color: '#171004', fontWeight: 700, border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
             Go Back
           </button>
         </div>
@@ -142,17 +142,17 @@ export default function MonumentPage() {
         {/* Time Travel Section with 360° viewer */}
         <div
           style={{
-            backgroundColor: '#11182B',
+            backgroundColor: '#FFFFFF',
             border: '1px solid rgba(214,168,75,.16)',
             borderRadius: '16px',
             padding: '16px',
             marginBottom: '16px',
           }}
         >
-          <h2 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
+          <h2 style={{ color: '#181A13', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
             {lang === 'en' ? 'Time Travel' : 'समय यात्रा'}
           </h2>
-          <p style={{ color: '#AEB6C8', margin: '0 0 14px', fontSize: 12 }}>See how this place changed across eras.</p>
+          <p style={{ color: '#494B45', margin: '0 0 14px', fontSize: 12 }}>See how this place changed across eras.</p>
 
           {/* Era Buttons */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -170,8 +170,8 @@ export default function MonumentPage() {
                     border: isActive ? 'none' : '1px solid rgba(255,255,255,.1)',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    backgroundColor: isActive ? '#D6A84B' : '#171F34',
-                    color: isActive ? '#171004' : '#AEB6C8',
+                    backgroundColor: isActive ? '#F6C00A' : '#F2F2F4',
+                    color: isActive ? '#171004' : '#494B45',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
@@ -187,7 +187,7 @@ export default function MonumentPage() {
           </div>
 
           {/* 360° Viewer or placeholder */}
-          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#080D1D' }}>
+          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
             {hasPanorama ? (
               <iframe
                 title="Panoramic time travel"
@@ -298,7 +298,7 @@ export default function MonumentPage() {
                 <div style={{ fontSize: 40 }}>
                   {ERA_LABELS[activeEra].icon}
                 </div>
-                <div style={{ color: '#E8C97A', fontWeight: 800, fontSize: 16 }}>
+                <div style={{ color: '#8A6A05', fontWeight: 800, fontSize: 16 }}>
                   {ERA_LABELS[activeEra].en}
                 </div>
                 <div style={{ color: '#C7CDDA', fontSize: 13, textAlign: 'center', maxWidth: 360 }}>
@@ -307,7 +307,7 @@ export default function MonumentPage() {
                 <div
                   style={{
                     marginTop: 8,
-                    color: '#E8C97A',
+                    color: '#8A6A05',
                     fontSize: 12,
                     backgroundColor: 'rgba(0,0,0,0.4)',
                     padding: '6px 12px',
@@ -347,7 +347,7 @@ export default function MonumentPage() {
               flex: 1,
               minHeight: 48,
               padding: '12px 14px',
-              background: '#D6A84B',
+              background: '#F6C00A',
               color: '#171004',
               border: 'none',
               borderRadius: 10,
@@ -364,8 +364,8 @@ export default function MonumentPage() {
               flex: 1,
               minHeight: 48,
               padding: '12px 14px',
-              background: '#171F34',
-              color: '#F6F1E8',
+              background: '#F2F2F4',
+              color: '#181A13',
               border: '1px solid rgba(255,255,255,.1)',
               borderRadius: 10,
               fontWeight: 700,
@@ -379,7 +379,7 @@ export default function MonumentPage() {
         {/* AI Chat Section */}
         <div
           style={{
-            backgroundColor: '#11182B',
+            backgroundColor: '#FFFFFF',
             borderRadius: '16px',
             padding: '16px',
             border: '1px solid rgba(214,168,75,.16)',
@@ -388,10 +388,10 @@ export default function MonumentPage() {
             height: '500px',
           }}
         >
-          <h2 style={{ color: '#F6F1E8', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
+          <h2 style={{ color: '#181A13', fontFamily: 'var(--font-literata), Georgia, serif', marginTop: 0, marginBottom: '4px', fontSize: '19px', fontWeight: 700 }}>
             {lang === 'en' ? 'Ask AI Guide' : 'AI गाइड से पूछें'}
           </h2>
-          <p style={{ color: '#AEB6C8', fontSize: 12, margin: '0 0 14px' }}>Ask about history, architecture or your visit.</p>
+          <p style={{ color: '#494B45', fontSize: 12, margin: '0 0 14px' }}>Ask about history, architecture or your visit.</p>
 
           {/* Messages List */}
           <div
@@ -408,7 +408,7 @@ export default function MonumentPage() {
             }}
           >
             {messages.length === 0 && (
-              <div style={{ color: '#8891A6', textAlign: 'center', marginTop: '40px', fontSize: 13 }}>
+              <div style={{ color: '#494B45', textAlign: 'center', marginTop: '40px', fontSize: 13 }}>
                 Ask me anything about {monument.name}!
               </div>
             )}
@@ -425,8 +425,8 @@ export default function MonumentPage() {
                     maxWidth: '70%',
                     padding: '12px 16px',
                     borderRadius: 16,
-                    backgroundColor: msg.type === 'user' ? '#D6A84B' : '#171F34',
-                    color: msg.type === 'user' ? '#171004' : '#F6F1E8',
+                    backgroundColor: msg.type === 'user' ? '#F6C00A' : '#F2F2F4',
+                    color: msg.type === 'user' ? '#171004' : '#181A13',
                     wordWrap: 'break-word',
                   }}
                 >
@@ -440,8 +440,8 @@ export default function MonumentPage() {
                   style={{
                     padding: '12px 16px',
                     borderRadius: 16,
-                    backgroundColor: '#171F34',
-                    color: '#AEB6C8',
+                    backgroundColor: '#F2F2F4',
+                    color: '#494B45',
                   }}
                 >
                   Thinking...
@@ -464,8 +464,8 @@ export default function MonumentPage() {
                 flex: 1,
                 padding: '12px 16px',
                 border: '1px solid rgba(214,168,75,.2)',
-                background: '#080D1D',
-                color: '#F6F1E8',
+                background: '#FFFFFF',
+                color: '#181A13',
                 borderRadius: '12px',
                 fontSize: '14px',
                 fontFamily: 'inherit',
@@ -478,7 +478,7 @@ export default function MonumentPage() {
               style={{
                 minWidth: 48,
                 padding: '12px',
-                background: '#D6A84B',
+                background: '#F6C00A',
                 color: '#171004',
                 border: 'none',
                 borderRadius: '8px',

@@ -26,7 +26,7 @@ export function Toast({ message, onDone }: ToastProps) {
         background: 'rgba(28,22,56,0.97)',
         border: '1px solid rgba(201,168,76,0.6)',
         borderRadius: 12, padding: '12px 20px',
-        color: '#E8C97A', fontWeight: 'bold',
+        color: '#8A6A05', fontWeight: 'bold',
         zIndex: 9999, display: 'flex',
         alignItems: 'center', gap: 10,
         animation: 'slideInRight 0.3s ease',

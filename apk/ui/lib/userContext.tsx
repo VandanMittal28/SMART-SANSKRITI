@@ -22,7 +22,7 @@ const USER_TYPES: Record<string, UserConfig> = {
   student: {
     label: '🎓 Student',
     subtitle: 'Curriculum-aligned learning with quizzes & XP',
-    color: '#63C7BA',
+    color: '#2F7D63',
     border: 'rgba(99, 199, 186, 0.5)',
     bg: 'rgba(99, 199, 186, 0.08)',
     chatbot_persona: 'You are an educational heritage guide for students. Use simple language, explain historical dates and rulers clearly, mention architectural terms with definitions, connect facts to school curriculum. End responses with a quiz hint or interesting fact to remember.',

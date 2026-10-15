@@ -26,80 +26,119 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <div className="screen-gutter flex flex-col gap-6 py-5 animate-fade-in">
+      <div className="screen-gutter flex flex-col gap-7 py-6 animate-fade-in">
+        {/* Greeting. One accent word, as everywhere else. */}
         <section>
-          <p className="text-sm font-semibold text-[#D6A84B]">Good evening, {displayName}</p>
-          <h1 className="mt-1 max-w-[320px] font-heritage text-[28px] font-bold leading-9 text-[#F6F1E8]">What would you like to discover?</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="status-chip"><Download className="h-3.5 w-3.5" /> Offline content ready</span>
-            <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.035] px-2.5 text-[11px] font-semibold text-[#AEB6C8]"><MapPin className="h-3.5 w-3.5" /> Agra</span>
+          <p className="eyebrow">Good evening, {displayName}</p>
+          <h1 className="mt-2.5 max-w-[18.5rem] font-display text-[1.95rem] font-semibold leading-[1.08] tracking-[-0.03em] text-[var(--foreground)]">
+            What would you like to <span className="text-accent-word">discover?</span>
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="status-chip"><Download className="h-3.5 w-3.5" /> Offline ready</span>
+            <span className="status-chip"><MapPin className="h-3.5 w-3.5" /> Agra</span>
           </div>
         </section>
 
-        <Link href="/recognition" className="group relative min-h-[148px] overflow-hidden rounded-2xl border border-[#D6A84B]/22 bg-[#171F34] p-5 transition-colors active:bg-[#1D2740]">
-          <div className="relative z-10 max-w-[245px]">
-            <span className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-[#D6A84B]/12 text-[#E8BE69]"><Camera className="h-5 w-5" /></span>
-            <h2 className="font-heritage text-xl font-bold text-[#F6F1E8]">Scan a monument</h2>
-            <p className="mt-1 text-sm leading-5 text-[#AEB6C8]">Point your camera or upload a photo</p>
+        {/* Primary action, image-forward. */}
+        <Link href="/recognition" className="group relative block h-[216px] overflow-hidden rounded-[30px] shadow-[var(--shadow-raised)]">
+          <Image src="/hero-monuments.png" alt="" fill sizes="420px" className="object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(14,16,11,0.86)] via-[rgba(14,16,11,0.3)] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
+            <div className="min-w-0">
+              <span className="photo-chip mb-3 inline-flex"><Camera className="h-3.5 w-3.5" /> Camera or photo</span>
+              <h2 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.025em] text-white">
+                Scan a <span className="text-[var(--primary)]">monument</span>
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-white/75">Identify it and hear its story</p>
+            </div>
+            <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[var(--shadow-amber)] transition-transform group-active:scale-95">
+              <ArrowRight className="h-5 w-5" />
+            </span>
           </div>
-          <span className="absolute bottom-5 right-5 grid h-11 w-11 place-items-center rounded-full bg-[#D6A84B] text-[#171004] transition-transform group-active:scale-95"><ArrowRight className="h-5 w-5" /></span>
-          <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full border border-[#D6A84B]/10" />
         </Link>
 
         <section className="grid grid-cols-2 gap-3" aria-label="Quick actions">
           {quickActions.map((item) => (
-            <Link key={item.href} href={item.href} className="min-h-[96px] rounded-2xl border border-white/8 bg-[#11182B] p-4 transition-colors active:bg-[#171F34]">
-              <item.icon className="h-5 w-5 text-[#D6A84B]" />
-              <p className="mt-3 text-sm font-bold text-[#F6F1E8]">{item.label}</p>
-              <p className="mt-0.5 text-[11px] text-[#8891A6]">{item.detail}</p>
+            <Link key={item.href} href={item.href} className="surface p-4 transition-transform active:scale-[0.98]">
+              <span className="mb-3.5 grid h-11 w-11 place-items-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)]">
+                <item.icon className="h-[19px] w-[19px]" />
+              </span>
+              <p className="text-[14px] font-bold text-[var(--foreground)]">{item.label}</p>
+              <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">{item.detail}</p>
             </Link>
           ))}
         </section>
 
-        <Link href="/marketplace" className="flex min-h-[104px] items-center gap-4 rounded-2xl border border-[#63C7BA]/22 bg-[#63C7BA]/[0.06] p-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#63C7BA]/14 text-[#8DE0D6]"><ShoppingBag className="h-5 w-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block font-heritage text-base font-bold text-[#F6F1E8]">Local art near monuments</span><span className="mt-1 block text-xs leading-5 text-[#AEB6C8]">Reserve handmade crafts and meet verified artisans</span></span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-[#63C7BA]" />
+        <Link href="/marketplace" className="surface-ink flex items-center gap-4 p-5 transition-transform active:scale-[0.99]">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-[var(--primary)]">
+            <ShoppingBag className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[17px] font-semibold tracking-tight">Local art near monuments</span>
+            <span className="mt-1 block text-[12px] leading-5 opacity-70">Reserve crafts and meet verified artisans</span>
+          </span>
+          <ArrowRight className="h-[18px] w-[18px] shrink-0 opacity-70" />
         </Link>
 
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3.5 flex items-center justify-between">
             <h2 className="section-title">Continue your journey</h2>
-            <Link href="/explore" className="text-xs font-bold text-[#D6A84B]">View route</Link>
+            <Link href="/explore" className="text-[12px] font-bold text-[var(--foreground)]">View route</Link>
           </div>
-          <Link href="/explore" className="flex min-h-[106px] items-center gap-3 rounded-2xl border border-[#D6A84B]/16 bg-[#11182B] p-3.5">
-            <div className="relative h-[78px] w-[82px] shrink-0 overflow-hidden rounded-xl bg-[#171F34]">
-              <Image src="/hero-monuments.png" alt="Taj Mahal heritage route" fill sizes="82px" className="object-cover" />
+          <Link href="/explore" className="surface flex items-center gap-4 p-4 transition-transform active:scale-[0.99]">
+            <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[20px] bg-[var(--muted)]">
+              <Image src="/hero-monuments.png" alt="" fill sizes="72px" className="object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
-                <div><p className="font-bold text-[#F6F1E8]">Taj Mahal tour</p><p className="mt-0.5 text-xs text-[#AEB6C8]">Zone 1 of 19</p></div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#D6A84B]" />
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-bold text-[var(--foreground)]">Taj Mahal tour</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">Zone 1 of 19</p>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
               </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8"><div className="h-full w-[6%] rounded-full bg-[#D6A84B]" /></div>
-              <p className="mt-2 text-[11px] font-semibold text-[#8891A6]">Resume exploration</p>
+              <div className="mt-3 h-[6px] overflow-hidden rounded-full bg-[var(--muted)]">
+                <div className="h-full w-[6%] rounded-full bg-[var(--primary)]" />
+              </div>
+              <p className="mt-2 text-[11px] font-semibold text-[var(--muted-foreground)]">Resume exploration</p>
             </div>
           </Link>
         </section>
 
         <section>
-          <div className="mb-3 flex items-center justify-between"><h2 className="section-title">Recommended near you</h2><Compass className="h-4 w-4 text-[#8891A6]" /></div>
-          <div className="divide-y divide-white/6 overflow-hidden rounded-2xl border border-white/8 bg-[#11182B]">
-            {nearby.map((place) => (
-              <Link key={place.name} href={place.href} className="flex min-h-[72px] items-center gap-3 px-4 py-3 active:bg-white/[0.03]">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#D6A84B]/10 text-[#D6A84B]"><MapPin className="h-4 w-4" /></span>
-                <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-[#F6F1E8]">{place.name}</span><span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#AEB6C8]"><Clock3 className="h-3 w-3" /> {place.meta}</span></span>
-                <ArrowRight className="h-4 w-4 text-[#667086]" />
+          <div className="mb-3.5 flex items-center justify-between">
+            <h2 className="section-title">Recommended near you</h2>
+            <Compass className="h-4 w-4 text-[var(--muted-foreground)]" />
+          </div>
+          <div className="surface overflow-hidden">
+            {nearby.map((place, index) => (
+              <Link
+                key={place.name}
+                href={place.href}
+                className={`flex min-h-[76px] items-center gap-3.5 px-4 py-3.5 ${index > 0 ? 'border-t border-[var(--border)]' : ''}`}
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--muted)] text-[var(--foreground)]">
+                  <MapPin className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-bold text-[var(--foreground)]">{place.name}</span>
+                  <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
+                    <Clock3 className="h-3 w-3" /> {place.meta}
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)]" />
               </Link>
             ))}
           </div>
         </section>
 
-        <div className="flex items-center justify-between rounded-xl border border-[#63C7BA]/16 bg-[#63C7BA]/[0.06] px-4 py-3 text-xs">
-          <span className="flex items-center gap-2 font-semibold text-[#8DE0D6]"><CheckCircle2 className="h-4 w-4" /> Ready for offline exploring</span>
-          <span className="text-[#AEB6C8]">Updated today</span>
+        <div className="surface-quiet flex items-center justify-between px-4 py-3.5 text-[12px]">
+          <span className="flex items-center gap-2 font-bold text-[var(--foreground)]">
+            <CheckCircle2 className="h-4 w-4 text-[var(--success)]" /> Ready for offline exploring
+          </span>
+          <span className="text-[var(--muted-foreground)]">Updated today</span>
         </div>
-        <div className="h-3" />
+        <div className="h-2" />
       </div>
     </AppShell>
   )

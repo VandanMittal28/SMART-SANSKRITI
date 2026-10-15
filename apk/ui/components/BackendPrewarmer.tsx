@@ -1,12 +1,12 @@
 'use client'
 import { useEffect } from 'react'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
 export function BackendPrewarmer() {
   useEffect(() => {
     // The Android APK and iOS bundled build use local/offline fallbacks. Do
     // not make a startup request to the remote backend from those runtimes;
     // it creates noisy DownloadFailed WebKit errors and can delay first paint.
-    if (!isBundledAndroidApp()) {
+    if (!isBundledNativeApp()) {
       fetch('https://heritageai-backend.onrender.com/').catch(() => {})
     }
 
