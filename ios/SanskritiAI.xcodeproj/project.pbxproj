@@ -8,21 +8,32 @@
 
 /* Begin PBXBuildFile section */
 		A00000000000000000000010 /* SanskritiAI/SanskritiAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */; };
-		A00000000000000000000011 /* SanskritiAI/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* SanskritiAI/Models.swift */; };
-		A00000000000000000000012 /* SanskritiAI/Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* SanskritiAI/Services.swift */; };
 		A00000000000000000000013 /* SanskritiAI/DeviceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */; };
 		A00000000000000000000014 /* SanskritiAI/Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* SanskritiAI/Views.swift */; };
 		A00000000000000000000027 /* SanskritiAI/WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000026 /* SanskritiAI/WebView.swift */; };
+		A00000000000000000000040 /* SanskritiAI/BundledUIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000050 /* SanskritiAI/BundledUIServer.swift */; };
+		A00000000000000000000041 /* SanskritiAI/HTTPMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000051 /* SanskritiAI/HTTPMessage.swift */; };
+		A00000000000000000000042 /* SanskritiAI/ARNavigationMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000052 /* SanskritiAI/ARNavigationMath.swift */; };
+		A00000000000000000000043 /* SanskritiAI/ARNavigationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000053 /* SanskritiAI/ARNavigationService.swift */; };
+		A00000000000000000000044 /* SanskritiAI/NvidiaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000054 /* SanskritiAI/NvidiaService.swift */; };
+		A00000000000000000000045 /* SanskritiAI/NativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000055 /* SanskritiAI/NativeBridge.swift */; };
+		A00000000000000000000066 /* Tests/NavigationMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000067 /* Tests/NavigationMathTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A00000000000000000000001 /* SanskritiAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = SanskritiAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/SanskritiAIApp.swift; sourceTree = "<group>"; };
-		A00000000000000000000005 /* SanskritiAI/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Models.swift; sourceTree = "<group>"; };
-		A00000000000000000000006 /* SanskritiAI/Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Services.swift; sourceTree = "<group>"; };
 		A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/DeviceServices.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* SanskritiAI/Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/Views.swift; sourceTree = "<group>"; };
 		A00000000000000000000026 /* SanskritiAI/WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/WebView.swift; sourceTree = "<group>"; };
+		A00000000000000000000050 /* SanskritiAI/BundledUIServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/BundledUIServer.swift; sourceTree = "<group>"; };
+		A00000000000000000000051 /* SanskritiAI/HTTPMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/HTTPMessage.swift; sourceTree = "<group>"; };
+		A00000000000000000000052 /* SanskritiAI/ARNavigationMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/ARNavigationMath.swift; sourceTree = "<group>"; };
+		A00000000000000000000053 /* SanskritiAI/ARNavigationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/ARNavigationService.swift; sourceTree = "<group>"; };
+		A00000000000000000000054 /* SanskritiAI/NvidiaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/NvidiaService.swift; sourceTree = "<group>"; };
+		A00000000000000000000055 /* SanskritiAI/NativeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SanskritiAI/NativeBridge.swift; sourceTree = "<group>"; };
+		A00000000000000000000067 /* Tests/NavigationMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/NavigationMathTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000061 /* SanskritiAITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SanskritiAITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,19 +44,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A0000000000000000000006A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		A00000000000000000000028 /* Copy Android UI bundle */ = {
+		A00000000000000000000028 /* Bundle visitor UI */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
 			inputPaths = ("$(SRCROOT)/../apk/app/src/main/assets/www");
-			name = "Copy Android UI bundle";
+			name = "Bundle visitor UI";
 			outputPaths = ("$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/www");
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nSOURCE=\"$SRCROOT/../apk/app/src/main/assets/www\"\nDEST=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/www\"\nif [ ! -d \"$SOURCE\" ]; then echo \"Missing Android UI bundle: $SOURCE\"; exit 1; fi\nrm -rf \"$DEST\"\nmkdir -p \"$DEST\"\ncp -R \"$SOURCE/\" \"$DEST/\"";
+			shellScript = "set -e\n\"$SRCROOT/scripts/bundle-visitor-ui.sh\"";
+		};
+		A00000000000000000000029 /* Generate Sanskriti config */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ();
+			name = "Generate Sanskriti config";
+			outputPaths = ("$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Sanskriti-Generated.plist");
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\"$SRCROOT/scripts/generate-config.sh\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -61,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000001 /* SanskritiAI.app */,
+				A00000000000000000000061 /* SanskritiAITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,11 +108,16 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000004 /* SanskritiAI/SanskritiAIApp.swift */,
-				A00000000000000000000005 /* SanskritiAI/Models.swift */,
-				A00000000000000000000006 /* SanskritiAI/Services.swift */,
 				A00000000000000000000007 /* SanskritiAI/DeviceServices.swift */,
 				A00000000000000000000008 /* SanskritiAI/Views.swift */,
 				A00000000000000000000026 /* SanskritiAI/WebView.swift */,
+				A00000000000000000000067 /* Tests/NavigationMathTests.swift */,
+				A00000000000000000000050 /* SanskritiAI/BundledUIServer.swift */,
+				A00000000000000000000051 /* SanskritiAI/HTTPMessage.swift */,
+				A00000000000000000000052 /* SanskritiAI/ARNavigationMath.swift */,
+				A00000000000000000000053 /* SanskritiAI/ARNavigationService.swift */,
+				A00000000000000000000054 /* SanskritiAI/NvidiaService.swift */,
+				A00000000000000000000055 /* SanskritiAI/NativeBridge.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -94,7 +129,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A00000000000000000000021 /* Build configuration list for PBXNativeTarget "SanskritiAI" */;
 			buildPhases = (
-				A00000000000000000000028 /* Copy Android UI bundle */,
+				A00000000000000000000028 /* Bundle visitor UI */,
+				A00000000000000000000029 /* Generate Sanskriti config */,
 				A00000000000000000000015 /* Sources */,
 				A00000000000000000000017 /* Frameworks */,
 				A00000000000000000000016 /* Resources */,
@@ -108,7 +144,43 @@
 			productReference = A00000000000000000000001 /* SanskritiAI.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A00000000000000000000060 /* SanskritiAITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000065 /* Build configuration list for PBXNativeTarget "SanskritiAITests" */;
+			buildPhases = (
+				A00000000000000000000062 /* Sources */,
+				A0000000000000000000006A /* Frameworks */,
+				A0000000000000000000006B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000068 /* PBXTargetDependency */,
+			);
+			name = SanskritiAITests;
+			productName = SanskritiAITests;
+			productReference = A00000000000000000000061 /* SanskritiAITests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A00000000000000000000069 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000019 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000018;
+			remoteInfo = SanskritiAI;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000068 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000018 /* SanskritiAI */;
+			targetProxy = A00000000000000000000069 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		A00000000000000000000019 /* Project object */ = {
@@ -136,12 +208,20 @@
 			projectRoot = "";
 			targets = (
 				A00000000000000000000018 /* SanskritiAI */,
+				A00000000000000000000060 /* SanskritiAITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A00000000000000000000016 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0000000000000000000006B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -156,11 +236,23 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000010 /* SanskritiAI/SanskritiAIApp.swift in Sources */,
-				A00000000000000000000011 /* SanskritiAI/Models.swift in Sources */,
-				A00000000000000000000012 /* SanskritiAI/Services.swift in Sources */,
 				A00000000000000000000013 /* SanskritiAI/DeviceServices.swift in Sources */,
 				A00000000000000000000014 /* SanskritiAI/Views.swift in Sources */,
 				A00000000000000000000027 /* SanskritiAI/WebView.swift in Sources */,
+				A00000000000000000000040 /* SanskritiAI/BundledUIServer.swift in Sources */,
+				A00000000000000000000041 /* SanskritiAI/HTTPMessage.swift in Sources */,
+				A00000000000000000000042 /* SanskritiAI/ARNavigationMath.swift in Sources */,
+				A00000000000000000000043 /* SanskritiAI/ARNavigationService.swift in Sources */,
+				A00000000000000000000044 /* SanskritiAI/NvidiaService.swift in Sources */,
+				A00000000000000000000045 /* SanskritiAI/NativeBridge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000062 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000066 /* Tests/NavigationMathTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +303,36 @@
 			};
 			name = Release;
 		};
+		A00000000000000000000063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sanskriti.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SanskritiAI.app/SanskritiAI";
+			};
+			name = Debug;
+		};
+		A00000000000000000000064 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sanskriti.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SanskritiAI.app/SanskritiAI";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -228,6 +350,15 @@
 			buildConfigurations = (
 				A00000000000000000000024 /* Debug */,
 				A00000000000000000000025 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000065 /* Build configuration list for PBXNativeTarget "SanskritiAITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000063 /* Debug */,
+				A00000000000000000000064 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

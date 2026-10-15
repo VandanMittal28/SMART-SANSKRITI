@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 import SanskritiLogo from '@/components/SanskritiLogo'
 import { normalizeUsername } from '@/lib/authClient'
 import { useAuth } from '@/lib/authContext'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
+import { usesLocalProfiles } from '@/lib/nativePlatform'
 import { LanguageSelect } from '@/components/language-select'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -23,7 +24,7 @@ export default function LoginPage() {
   const normalizedUsername = normalizeUsername(username)
 
   useEffect(() => {
-    setStandaloneApp(isBundledAndroidApp())
+    setStandaloneApp(usesLocalProfiles())
   }, [])
 
   async function openProfile(profileUsername: string) {
@@ -32,7 +33,7 @@ export default function LoginPage() {
 
     try {
       await signIn(profileUsername)
-      if (isBundledAndroidApp()) {
+      if (isBundledNativeApp()) {
         window.location.replace(new URL('/', window.location.href).toString())
         return
       }

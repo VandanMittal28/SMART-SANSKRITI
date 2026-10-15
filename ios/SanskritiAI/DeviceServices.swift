@@ -1,31 +1,186 @@
-import SwiftUI
 import AVFoundation
-@preconcurrency import CoreLocation
-@preconcurrency import CoreMotion
+import Foundation
 
-@MainActor final class HeadingLocationService: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
-    @Published var location: CLLocation?; @Published var heading: CLHeading?; @Published var authorization: CLAuthorizationStatus = .notDetermined
-    private let manager = CLLocationManager()
-    override init() { super.init(); manager.delegate = self; manager.desiredAccuracy = kCLLocationAccuracyBest; manager.headingFilter = 2 }
-    func start() { manager.requestWhenInUseAuthorization(); manager.startUpdatingLocation(); if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() } }
-    func stop() { manager.stopUpdatingLocation(); manager.stopUpdatingHeading() }
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) { location = locations.last }
-    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) { heading = newHeading }
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) { authorization = manager.authorizationStatus }
+/// Native text-to-speech for Yatrik, Chat, Audio Guide, Heritage Stories and
+/// Hunt narration.
+///
+/// The bundled UI drives this through a `window.speechSynthesis` shim that the
+/// native shell installs, so the web code is unchanged from Android. Utterance
+/// ids flow back as start/end/error events.
+final class SpeechService: NSObject {
+    /// (utteranceId, "start" | "end" | "error")
+    var onEvent: ((String, String) -> Void)?
+
+    private let synthesizer = AVSpeechSynthesizer()
+    private var identifiers: [AVSpeechUtterance: String] = [:]
+
+    override init() {
+        super.init()
+        synthesizer.delegate = self
+    }
+
+    func speak(
+        utteranceId: String,
+        text: String,
+        languageTag: String,
+        rate: Double,
+        pitch: Double,
+        volume: Double
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            onEvent?(utteranceId, "end")
+            return
+        }
+
+        activatePlaybackSession()
+
+        let utterance = AVSpeechUtterance(string: trimmed)
+        utterance.voice = Self.voice(for: languageTag)
+
+        // The Web Speech API treats 1.0 as normal; AVSpeechUtterance uses its
+        // own default constant, so scale rather than assign.
+        let scaled = Float(rate.isFinite && rate > 0 ? rate : 1) * AVSpeechUtteranceDefaultSpeechRate
+        utterance.rate = min(max(scaled, AVSpeechUtteranceMinimumSpeechRate), AVSpeechUtteranceMaximumSpeechRate)
+        utterance.pitchMultiplier = Float(min(max(pitch.isFinite && pitch > 0 ? pitch : 1, 0.5), 2.0))
+        utterance.volume = Float(min(max(volume.isFinite ? volume : 1, 0), 1))
+
+        identifiers[utterance] = utteranceId
+        synthesizer.speak(utterance)
+    }
+
+    func stop() {
+        synthesizer.stopSpeaking(at: .immediate)
+        identifiers.removeAll()
+    }
+
+    /// Picks the closest installed voice, falling back through the language
+    /// prefix (hi-IN -> hi) before letting the system choose.
+    private static func voice(for languageTag: String) -> AVSpeechSynthesisVoice? {
+        let tag = languageTag.isEmpty ? "en-US" : languageTag
+        if let exact = AVSpeechSynthesisVoice(language: tag) { return exact }
+        if let prefix = tag.split(separator: "-").first,
+           let partial = AVSpeechSynthesisVoice(language: String(prefix)) { return partial }
+        return AVSpeechSynthesisVoice(language: "en-US")
+    }
+
+    private func activatePlaybackSession() {
+        let session = AVAudioSession.sharedInstance()
+        // Keep narration audible when the ringer switch is silent, which is how
+        // visitors usually hold a phone at a monument.
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true, options: [])
+    }
 }
 
-@MainActor final class ARNavigationController: ObservableObject {
-    @Published private(set) var state = NativeARState(); private let sensors = HeadingLocationService(); private var target: Monument?
-    func start(target: Monument) { self.target = target; state.mode = .requesting; sensors.start(); state.mode = .live }
-    func stop() { sensors.stop(); target = nil; state = .init() }
-    func refresh() { guard let target, let current = sensors.location else { state.mode = .fallback; state.fallbackReason = "Waiting for a location fix."; return }; let destination = CLLocation(latitude: target.latitude, longitude: target.longitude); let distance = current.distance(from: destination); let bearing = current.coordinate.bearing(to: destination.coordinate); let heading = sensors.heading?.trueHeading ?? sensors.heading?.magneticHeading ?? 0; state.relativeAngle = (bearing - heading + 540).truncatingRemainder(dividingBy: 360) - 180; state.distance = distance; state.bearing = bearing; state.heading = heading; state.waypointVisible = true; state.arrivalUnlocked = distance <= 40 }
+extension SpeechService: AVSpeechSynthesizerDelegate {
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        guard let id = identifiers[utterance] else { return }
+        onEvent?(id, "start")
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        guard let id = identifiers.removeValue(forKey: utterance) else { return }
+        onEvent?(id, "end")
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        guard let id = identifiers.removeValue(forKey: utterance) else { return }
+        // A cancel is a deliberate stop, not a failure; the shim treats "end"
+        // as "this utterance is over", which is what the UI needs.
+        onEvent?(id, "end")
+    }
 }
 
-extension CLLocationCoordinate2D { func bearing(to other: CLLocationCoordinate2D) -> Double { let lat1 = latitude * .pi / 180, lat2 = other.latitude * .pi / 180, delta = (other.longitude - longitude) * .pi / 180; let value = atan2(sin(delta) * cos(lat2), cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta)) * 180 / .pi; return (value + 360).truncatingRemainder(dividingBy: 360) } }
+/// Records a fixed-length clip for voice questions and hands it back as base64
+/// WAV, matching Android's 16 kHz mono PCM-16 output so the same NVIDIA
+/// transcription request works on both platforms.
+final class MicrophoneService {
+    private var recorder: AVAudioRecorder?
+    private var fileURL: URL?
 
-struct CameraPreview: UIViewRepresentable {
-    final class Coordinator { let session = AVCaptureSession() }
-    func makeCoordinator() -> Coordinator { Coordinator() }
-    func makeUIView(context: Context) -> UIView { let view = UIView(); let session = context.coordinator.session; session.beginConfiguration(); guard let camera = AVCaptureDevice.default(for: .video), let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) else { return view }; session.addInput(input); let output = AVCaptureVideoPreviewLayer(session: session); output.videoGravity = .resizeAspectFill; output.frame = UIScreen.main.bounds; view.layer.addSublayer(output); session.commitConfiguration(); DispatchQueue.global(qos: .userInitiated).async { session.startRunning() }; return view }
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    /// (base64 WAV, errorMessage) — exactly one is non-empty.
+    func record(durationMs: Int, completion: @escaping (String, String) -> Void) {
+        let clamped = min(max(durationMs, 1_000), 8_000)
+
+        requestPermission { [weak self] granted in
+            guard let self else { return }
+            guard granted else {
+                completion("", "Microphone access was denied.")
+                return
+            }
+            self.beginRecording(durationMs: clamped, completion: completion)
+        }
+    }
+
+    private func requestPermission(_ completion: @escaping (Bool) -> Void) {
+        switch AVAudioApplication.shared.recordPermission {
+        case .granted:
+            completion(true)
+        case .denied:
+            completion(false)
+        case .undetermined:
+            AVAudioApplication.requestRecordPermission { granted in
+                DispatchQueue.main.async { completion(granted) }
+            }
+        @unknown default:
+            completion(false)
+        }
+    }
+
+    private func beginRecording(durationMs: Int, completion: @escaping (String, String) -> Void) {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setActive(true, options: [])
+        } catch {
+            completion("", "The microphone could not be prepared: \(error.localizedDescription)")
+            return
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sanskriti-voice-\(UUID().uuidString).wav")
+        // Linear PCM into a .wav container gives a file the NVIDIA speech model
+        // accepts directly, with no hand-written RIFF header.
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatLinearPCM),
+            AVSampleRateKey: 16_000.0,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false,
+        ]
+
+        do {
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.prepareToRecord()
+            guard recorder.record() else {
+                completion("", "The microphone could not start recording.")
+                return
+            }
+            self.recorder = recorder
+            self.fileURL = url
+        } catch {
+            completion("", "The microphone could not start: \(error.localizedDescription)")
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(durationMs)) { [weak self] in
+            guard let self else { return }
+            self.recorder?.stop()
+            self.recorder = nil
+            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+
+            defer {
+                if let fileURL = self.fileURL { try? FileManager.default.removeItem(at: fileURL) }
+                self.fileURL = nil
+            }
+            guard let fileURL = self.fileURL,
+                  let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
+                completion("", "The recording was empty.")
+                return
+            }
+            completion(data.base64EncodedString(), "")
+        }
+    }
 }

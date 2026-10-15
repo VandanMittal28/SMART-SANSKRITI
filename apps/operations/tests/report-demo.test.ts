@@ -47,3 +47,25 @@ test('missing key, unsupported photo and invalid model result require admin revi
  assert.equal(result.value,'unavailable');
  const {data,report}=fixture();report.assessment=result.value;report.status='review';dispatch(data,report,at);assert.equal(report.assigneeId,null);
 });
+test('an automated camera detection waits for a human even when triage says relevant',()=>{
+ const {data,report}=fixture();
+ // Worst case for the guard: the independent triage is confident, staff are
+ // free, and GPS is fresh. An unconfirmed machine guess must still not move
+ // anyone until an admin confirms it.
+ report.origin='automated';report.status='review';report.assessment='relevant';
+ data.duties[0].point={latitude:27,longitude:78.001};data.duties[0].locationAt=at;
+ dispatch(data,report,at);
+ assert.equal(report.assigneeId,null);
+ assert.equal(report.status,'review');
+ // Admin confirmation is what releases it, exactly as for a visitor report.
+ report.status='unassigned';
+ dispatch(data,report,at);
+ assert.equal(report.assigneeId,data.duties[0].id);
+ assert.equal(report.status,'assigned');
+});
+test('a visitor report with no origin keeps dispatching as before',()=>{
+ const {data,report}=fixture();
+ assert.equal(report.origin,undefined);
+ dispatch(data,report,at);
+ assert.equal(report.status,'assigned');
+});

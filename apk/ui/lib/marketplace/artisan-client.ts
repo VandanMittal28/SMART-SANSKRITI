@@ -1,6 +1,6 @@
 'use client'
 
-import { isBundledAndroidApp, supabase } from '@/lib/supabase/client'
+import { isBundledNativeApp, supabase } from '@/lib/supabase/client'
 import { isLocalUserId } from '@/lib/localSession'
 import {
   getLocalArtisanApplication,
@@ -53,7 +53,7 @@ export interface ArtisanWorkspace {
   demo: boolean
 }
 
-const isLocal = (userId: string) => isBundledAndroidApp() || isLocalUserId(userId)
+const isLocal = (userId: string) => isBundledNativeApp() || isLocalUserId(userId)
 
 export async function loadArtisanWorkspace(userId: string): Promise<ArtisanWorkspace> {
   if (isLocal(userId)) {
@@ -183,7 +183,7 @@ export async function updateArtisanListing(
 }
 
 export async function loadMarketplaceModeration() {
-  if (isBundledAndroidApp()) return { applications: getLocalArtisanApplication() ? [getLocalArtisanApplication()!] : [], listings: getLocalArtisanListings(), reservations: getLocalReservations(), demo: true }
+  if (isBundledNativeApp()) return { applications: getLocalArtisanApplication() ? [getLocalArtisanApplication()!] : [], listings: getLocalArtisanListings(), reservations: getLocalReservations(), demo: true }
   const { data, error } = await supabase.functions.invoke('marketplace-admin-dashboard')
   if (error) throw error
   const dashboard = data && typeof data === 'object' ? data as Record<string, unknown> : {}

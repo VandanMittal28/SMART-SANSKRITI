@@ -1,5 +1,6 @@
 .data/
 .next/
+.next-build/
 node_modules/
 next-env.d.ts
 *.tsbuildinfo

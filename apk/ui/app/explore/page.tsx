@@ -12,7 +12,7 @@ import { useLang } from "@/lib/languageContext"
 import { SupportedLanguage, getLanguageConfig } from "@/lib/languages"
 import { hasNativeNvidia, synthesizeNarrationNative, translateExploreGuideNative } from "@/lib/nativeNvidia"
 import { getNvidiaNarrationVoice } from "@/lib/narrationProfiles"
-import { isBundledAndroidApp } from "@/lib/supabase/client"
+import { isBundledNativeApp } from "@/lib/supabase/client"
 import { emitYatrikEvent } from "@/lib/yatrik/events"
 import {
   ExploreARHud,
@@ -22,6 +22,8 @@ import {
   type ExploreViewMode,
 } from "@/components/explore/explore-ar-hud"
 import { useYatrikControls } from "@/components/yatrik/yatrik-provider"
+import { HeritageWatchPanel } from "@/components/explore/heritage-watch-panel"
+import { useHeritageWatch } from "@/hooks/useHeritageWatch"
 
 import { saveMonument } from "@/lib/monumentStore"
 import { useARNavigation } from "@/hooks/useARNavigation"
@@ -49,6 +51,7 @@ interface GuideTranslation {
 }
 
 const GUIDE_TRANSLATION_STORAGE_KEY = 'sanskriti-explore-translations-v5'
+const HERITAGE_WATCH_CONSENT_KEY = 'sanskriti-heritage-watch-consent'
 
 // ── TAJ MAHAL ZONES ──────────────────────────────────────
 const TAJ_ZONES = [
@@ -877,6 +880,11 @@ export default function ExplorePage() {
   const activeNarrationKeyRef = useRef<string | null>(null)
   const translationCacheRef = useRef<Record<string, GuideTranslation>>({})
 
+  // Heritage Watch is opt-in and starts off. `null` consent means the visitor
+  // has not been asked yet; the panel shows the opt-in card in that state.
+  const [watchConsent, setWatchConsent] = useState<boolean | null>(null)
+  const [watchRequested, setWatchRequested] = useState(false)
+
   const [exploreMonumentId, setExploreMonumentId] = useState('taj-mahal')
   const monumentSelected = true // always start directly into explore
   const [customMonumentName, setCustomMonumentName] = useState<string | null>(null)
@@ -913,6 +921,24 @@ export default function ExplorePage() {
     demoHeadingReference: DEMO_ANCHOR,
   })
 
+  // Heritage Watch borrows the camera Explore has already opened rather than
+  // opening a second one; it is inert in both map modes.
+  const cameraModeActive = viewMode === 'demo-camera' || viewMode === 'live-camera'
+  const watchStatus = useHeritageWatch({
+    enabled: watchRequested && watchConsent === true && cameraModeActive,
+    stream: cameraModeActive ? arNav.cameraStream : null,
+    context: {
+      monumentName: customMonumentName && exploreMonumentId === DEMO_MONUMENT_ID
+        ? customMonumentName
+        : MONUMENT_NAMES[exploreMonumentId] || exploreMonumentId,
+      waypointName: liveZone.name,
+      point: arNav.userPosition
+        ? { latitude: arNav.userPosition.lat, longitude: arNav.userPosition.lng }
+        : null,
+      keyframeBase64: null,
+    },
+  })
+
   useEffect(() => {
     setHasMounted(true)
     try {
@@ -920,6 +946,16 @@ export default function ExplorePage() {
       if (cached) translationCacheRef.current = JSON.parse(cached)
     } catch {
       translationCacheRef.current = {}
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(HERITAGE_WATCH_CONSENT_KEY)
+      if (saved === 'granted') { setWatchConsent(true); setWatchRequested(true) }
+      else if (saved === 'declined') setWatchConsent(false)
+    } catch {
+      // A blocked storage API just means we ask again this session.
     }
   }, [])
 
@@ -1118,7 +1154,7 @@ export default function ExplorePage() {
     // /api/narrate (ElevenLabs/Chatterbox) to reach — narrate via the
     // native NVIDIA bridge instead, falling back to on-device speech
     // synthesis (tagged as the Android system voice) if that fails.
-    if (isBundledAndroidApp()) {
+    if (isBundledNativeApp()) {
       const speakWithAndroidVoice = () => {
         if (typeof window === 'undefined' || !window.speechSynthesis) return
         const utterance = new SpeechSynthesisUtterance(text)
@@ -1533,6 +1569,7 @@ export default function ExplorePage() {
   }
 
   return (
+    <>
     <ExploreARHud
       monumentId={exploreMonumentId}
       monuments={monumentsList}
@@ -1597,5 +1634,31 @@ export default function ExplorePage() {
         zoneIndex: currentZoneIndex,
       }}
     />
+    {cameraModeActive ? (
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[72px] z-[80] mx-auto flex w-full max-w-[420px] flex-col">
+        {/* Mirrors ExploreARHud's header band so the panel is positioned
+            against the camera pane, exactly like the HUD's own chips. */}
+        <div className="h-1/4 min-h-[176px] shrink-0" aria-hidden />
+        <div className="relative min-h-0 flex-1">
+          <HeritageWatchPanel
+            consented={watchConsent}
+            onConsent={(allow) => {
+              setWatchConsent(allow)
+              setWatchRequested(allow)
+              try {
+                localStorage.setItem(HERITAGE_WATCH_CONSENT_KEY, allow ? 'granted' : 'declined')
+              } catch {
+                // Declining storage only costs us the answer next session.
+              }
+            }}
+            onDismissError={watchStatus.clearError}
+            onToggle={setWatchRequested}
+            requested={watchRequested}
+            status={watchStatus}
+          />
+        </div>
+      </div>
+    ) : null}
+    </>
   )
 }

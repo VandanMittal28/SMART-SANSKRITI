@@ -1,7 +1,8 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isBundledAndroidApp, isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
+import { isSupabaseAuthReachable, supabase } from '@/lib/supabase/client'
+import { usesLocalProfiles } from '@/lib/nativePlatform'
 import {
   getUserProfile,
   normalizeUsername,
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        if (isBundledAndroidApp()) {
+        if (usesLocalProfiles()) {
           const localSession = readLocalSession()
           const savedProfiles = listLocalSessions()
           if (!active) return
@@ -222,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   const signIn = useCallback(async (username: string) => {
-    if (isBundledAndroidApp()) {
+    if (usesLocalProfiles()) {
       const normalized = normalizeUsername(username)
       if (!/^[a-z0-9_]{3,24}$/.test(normalized)) {
         throw new Error('Use 3–24 letters, numbers, or underscores for your username.')

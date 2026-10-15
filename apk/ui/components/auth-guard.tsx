@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/authContext'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
 
 const PUBLIC_PATHS = new Set(['/login', '/auth', '/report'])
 
@@ -27,7 +27,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (loading) return
     if (!user && !isPublicPath) router.replace('/login')
     if (user && isPublicPath && normalizedPathname !== '/report') {
-      if (isBundledAndroidApp()) {
+      if (isBundledNativeApp()) {
         window.location.replace(new URL('/', window.location.href).toString())
       } else {
         router.replace('/')

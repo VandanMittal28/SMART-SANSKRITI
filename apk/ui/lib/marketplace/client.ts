@@ -1,6 +1,6 @@
 'use client'
 
-import { isBundledAndroidApp, supabase } from '@/lib/supabase/client'
+import { isBundledNativeApp, supabase } from '@/lib/supabase/client'
 import { isLocalUserId } from '@/lib/localSession'
 import { isSupportedLanguage } from '@/lib/languages'
 import { getDemoMarketplaceListings } from '@/lib/marketplace/demo-data'
@@ -71,7 +71,7 @@ function mapCloudListing(row: DbRecord): MarketplaceListing {
 }
 
 export async function loadMarketplaceListings(): Promise<{ listings: MarketplaceListing[]; demo: boolean }> {
-  if (isBundledAndroidApp()) return { listings: getDemoMarketplaceListings(), demo: true }
+  if (isBundledNativeApp()) return { listings: getDemoMarketplaceListings(), demo: true }
   try {
     const { data, error } = await supabase
       .from('marketplace_listings')
@@ -140,7 +140,7 @@ export async function reserveMarketplaceListing(args: {
   slotId?: string
   scheduledFor: string
 }): Promise<MarketplaceReservation> {
-  if (isBundledAndroidApp() || isLocalUserId(args.userId) || !isCloudListingId(args.listing.id)) {
+  if (isBundledNativeApp() || isLocalUserId(args.userId) || !isCloudListingId(args.listing.id)) {
     return createLocalReservation(args.listing, args.quantity, args.scheduledFor)
   }
 
@@ -191,7 +191,7 @@ export async function reserveMarketplaceListing(args: {
 }
 
 export async function loadMyMarketplaceReservations(userId?: string): Promise<MarketplaceReservation[]> {
-  if (!userId || isBundledAndroidApp() || isLocalUserId(userId)) return getLocalReservations()
+  if (!userId || isBundledNativeApp() || isLocalUserId(userId)) return getLocalReservations()
   const { data, error } = await supabase.from('marketplace_reservations').select('*, marketplace_listings(*, artisan_accounts!marketplace_listings_artisan_id_fkey(*, artisan_profiles(*)), listing_fulfillment_details(*), heritage_sites(*))').order('created_at', { ascending: false })
   if (error) return getLocalReservations()
   const cloudReservations: MarketplaceReservation[] = (data as DbRecord[]).map((row) => {
@@ -214,7 +214,7 @@ export async function loadMyMarketplaceReservations(userId?: string): Promise<Ma
 }
 
 export async function cancelMarketplaceReservation(userId: string, reservation: MarketplaceReservation) {
-  if (isBundledAndroidApp() || isLocalUserId(userId) || reservation.testMode || !isCloudListingId(reservation.listingId)) {
+  if (isBundledNativeApp() || isLocalUserId(userId) || reservation.testMode || !isCloudListingId(reservation.listingId)) {
     const refundable = new Date(reservation.scheduledFor).getTime() - Date.now() >= 24 * 60 * 60_000
     return updateLocalReservation(reservation.id, { status: refundable ? 'refunded' : 'cancelled' })
   }

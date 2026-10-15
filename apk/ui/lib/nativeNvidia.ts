@@ -1,5 +1,6 @@
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
 import { getLanguageConfig, isSupportedLanguage, type SupportedLanguage } from '@/lib/languages'
+import { buildSceneRequestBody, parseSceneAssessment, type SceneAssessment, type SceneRequestInput } from '@/lib/vision/prompt'
 
 type NvidiaTask = 'chat' | 'translation' | 'vision' | 'speech'
 
@@ -28,7 +29,7 @@ type NvidiaResponse = {
 }
 
 function bridge(): NativeNvidiaBridge | null {
-  if (!isBundledAndroidApp()) return null
+  if (!isBundledNativeApp()) return null
   return (window as unknown as { SanskritiAndroid?: NativeNvidiaBridge }).SanskritiAndroid ?? null
 }
 
@@ -323,4 +324,18 @@ export async function translateExploreGuideNative(
     arrivalFact: translated.arrivalFact.trim(),
     miniFact: translated.miniFact.trim(),
   }
+}
+
+/**
+ * Heritage Watch scene assessment over the in-APK NVIDIA bridge.
+ *
+ * Uses the same `vision` model slot as monument recognition. The prompt and
+ * the response validation live in `@/lib/vision/prompt` so this path and the
+ * browser `/api/heritage-watch` path cannot disagree about what was asked.
+ */
+export async function assessHeritageSceneNative(
+  input: SceneRequestInput | string,
+): Promise<SceneAssessment> {
+  const raw = await requestNvidia('vision', buildSceneRequestBody(input))
+  return parseSceneAssessment(raw)
 }

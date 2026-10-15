@@ -33,7 +33,7 @@ import {
 } from '@/lib/localProfile'
 import { buildSyntheticLeaderboard } from '@/lib/syntheticLeaderboard'
 import { updateUserProfile } from '@/lib/authClient'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
 
 const LEVELS = [
   { min: 0, max: 499, title: 'Heritage Explorer', next: 500 },
@@ -296,7 +296,7 @@ export default function ProfilePage() {
     setLeavingProfile(true)
     try {
       await signOut()
-      if (isBundledAndroidApp()) {
+      if (isBundledNativeApp()) {
         window.location.replace(new URL('/login', window.location.href).toString())
       } else {
         router.replace('/login')

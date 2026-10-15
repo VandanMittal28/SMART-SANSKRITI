@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Camera, MapPin, RefreshCw, ShieldAlert } from 'lucide-react'
-import { isBundledAndroidApp } from '@/lib/supabase/client'
+import { isBundledNativeApp } from '@/lib/supabase/client'
+import { operationsBaseUrl } from '@/lib/nativePlatform'
 
 type Point={latitude:number;longitude:number;accuracy:number}
 type Draft={id:string;token:string;category:string;note:string;zoneId:string;point:Point|null;photo:string|null}
@@ -10,8 +11,8 @@ const categories=['Property damage','Littering','Restricted access','Harassment'
 const zones=[['entrance','Entrance court'],['garden','Heritage gardens'],['gallery','Stone gallery'],['courtyard','Central courtyard']]
 async function demoRequest(method:'GET'|'POST',path:string,body?:unknown):Promise<any>{
  const bridge=(window as typeof window & {SanskritiAndroid?:{demoReportRequest?:(method:string,path:string,body:string)=>string}}).SanskritiAndroid
- if(isBundledAndroidApp()&&bridge?.demoReportRequest){const result=JSON.parse(bridge.demoReportRequest(method,path,body?JSON.stringify(body):''));if(!result.ok)throw new Error(result.body?.error||result.error||'Local MMS unavailable');return result.body}
- const response=await fetch(`${isBundledAndroidApp()?'http://127.0.0.1:3100':''}${path}`,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed');return result
+ if(isBundledNativeApp()&&bridge?.demoReportRequest){const result=JSON.parse(bridge.demoReportRequest(method,path,body?JSON.stringify(body):''));if(!result.ok)throw new Error(result.body?.error||result.error||'Local MMS unavailable');return result.body}
+ const response=await fetch(`${operationsBaseUrl()}${path}`,{method,headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed');return result
 }
 const key='sanskriti-report-draft'; const receiptKey='sanskriti-report-receipt'
 function createDraft():Draft { const bytes=new Uint8Array(32);crypto.getRandomValues(bytes); return {id:crypto.randomUUID(),token:Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''),category:categories[0],note:'',zoneId:'entrance',point:null,photo:null} }

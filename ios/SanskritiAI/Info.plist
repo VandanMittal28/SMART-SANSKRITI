@@ -8,13 +8,40 @@
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>1.1</string>
 <key>CFBundleVersion</key><string>2</string>
+
 <key>UIRequiresFullScreen</key><true/>
 <key>UISupportedInterfaceOrientations</key>
 <array><string>UIInterfaceOrientationPortrait</string></array>
-<key>NSCameraUsageDescription</key><string>Sanskriti uses the camera to recognize monuments and guide your heritage walk.</string>
+<!-- Without this key iOS renders the app at a legacy screen size and
+     letterboxes it on modern devices. An empty dict takes the default. -->
+<key>UILaunchScreen</key><dict/>
+<key>UIViewControllerBasedStatusBarAppearance</key><true/>
+
+<key>NSCameraUsageDescription</key><string>Sanskriti uses the camera to recognise monuments, guide your heritage walk, and — only if you turn it on — to watch for damage to the site.</string>
 <key>NSMicrophoneUsageDescription</key><string>Sanskriti uses the microphone for voice questions to Yatrik.</string>
 <key>NSLocationWhenInUseUsageDescription</key><string>Sanskriti uses your location to show nearby monuments and guide your walk.</string>
 <key>NSPhotoLibraryUsageDescription</key><string>Choose a monument photo for recognition.</string>
+
+<!-- The visitor UI is served by a loopback HTTP server inside the app, so the
+     only insecure origin is 127.0.0.1. A blanket NSAllowsArbitraryLoads is not
+     needed and is a flag during App Store review. -->
 <key>NSAppTransportSecurity</key>
-<dict><key>NSAllowsLocalNetworking</key><true/><key>NSAllowsArbitraryLoads</key><true/></dict>
+<dict>
+  <key>NSAllowsLocalNetworking</key><true/>
+  <key>NSExceptionDomains</key>
+  <dict>
+    <key>127.0.0.1</key>
+    <dict>
+      <key>NSExceptionAllowsInsecureHTTPLoads</key><true/>
+      <key>NSIncludesSubdomains</key><false/>
+    </dict>
+    <key>localhost</key>
+    <dict>
+      <key>NSExceptionAllowsInsecureHTTPLoads</key><true/>
+      <key>NSIncludesSubdomains</key><false/>
+    </dict>
+  </dict>
+</dict>
+
+<key>ITSAppUsesNonExemptEncryption</key><false/>
 </dict></plist>
