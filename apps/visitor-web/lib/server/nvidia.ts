@@ -25,6 +25,7 @@ const DEFAULT_NVIDIA_VISION_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoni
 const DEFAULT_NVIDIA_SPEECH_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
 const NVIDIA_CHAT_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const NVIDIA_STATUS_URL = "https://integrate.api.nvidia.com/v1/status";
+const NVIDIA_TTS_URL = "https://877104f7-e885-42b9-8de8-f6e4c6303969.invocation.api.nvcf.nvidia.com/v1/audio/synthesize";
 
 interface NvidiaResponse {
   choices?: Array<{ message?: { content?: string; reasoning_content?: string } }>;
@@ -272,4 +273,46 @@ export async function transcribeAudio(audioBase64: string, language: Language = 
     stream: false,
   });
   return getAnswer(data).replace(/^["']|["']$/g, "").trim();
+}
+
+export async function translateMobileTexts(texts: string[], language: string): Promise<string[]> {
+  const supported = new Set(["ar", "da", "de", "el", "es", "fi", "fr", "hi", "it", "ja", "ko", "nb", "nl", "pl", "pt", "ru", "sv", "tr", "zh"]);
+  if (!supported.has(language)) throw new HttpError(400, "invalid", "Choose a supported translation language.");
+  if (texts.length < 1 || texts.length > 40 || texts.some((item) => typeof item !== "string" || item.length > 2_000)) {
+    throw new HttpError(413, "too_large", "Keep translation requests to 40 short lines.");
+  }
+  const data = await requestNvidia({
+    model: process.env.NVIDIA_MODEL || DEFAULT_NVIDIA_MODEL,
+    messages: [
+      { role: "system", content: "Translate accurately. Return only a JSON array of strings; preserve order, count, names, numbers, emoji, and URLs." },
+      { role: "user", content: `Translate each string into ${language}. Do not add facts.\n${JSON.stringify(texts)}` },
+    ],
+    temperature: 0.1, max_tokens: 5_000, reasoning_budget: 0,
+    chat_template_kwargs: { enable_thinking: false }, stream: false,
+  });
+  const raw = getAnswer(data).replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  try {
+    const translated = JSON.parse(raw) as unknown;
+    if (Array.isArray(translated) && translated.length === texts.length && translated.every((value) => typeof value === "string")) return translated;
+  } catch { /* A malformed model response is handled below. */ }
+  throw new HttpError(502, "upstream", "The translation service returned an incomplete answer.");
+}
+
+export async function synthesizeNarration(text: string, language: string, voice: string): Promise<string> {
+  if (!text.trim() || text.length > 4_000) throw new HttpError(400, "invalid", "Keep narration under 4,000 characters.");
+  const apiKey = getApiKey();
+  const form = new FormData();
+  form.set("text", text);
+  form.set("language", language.slice(0, 20) || "en-US");
+  form.set("voice", voice.slice(0, 100));
+  form.set("encoding", "LINEAR_PCM");
+  form.set("sample_rate_hz", "22050");
+  let response: Response;
+  try {
+    response = await fetch(NVIDIA_TTS_URL, { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, Accept: "audio/wav" }, body: form, signal: AbortSignal.timeout(60_000) });
+  } catch {
+    throw new HttpError(502, "upstream", "Couldn't reach the narration service.");
+  }
+  if (!response.ok) throw upstreamError(response.status);
+  return Buffer.from(await response.arrayBuffer()).toString("base64");
 }

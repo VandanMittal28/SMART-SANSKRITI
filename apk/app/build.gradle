@@ -49,7 +49,8 @@ android {
         versionName "1.1.0"
 
         buildConfigField "String", "APP_URL", "\"${escapedAppUrl}\""
-        buildConfigField "String", "NVIDIA_API_KEY", "\"${escapeBuildConfig(env["NVIDIA_API_KEY"])}\""
+        // Provider credentials stay on the Vercel server and must never ship in an APK.
+        buildConfigField "String", "NVIDIA_API_KEY", "\"\""
         buildConfigField "String", "NVIDIA_CHAT_MODEL", "\"${escapeBuildConfig(env["NVIDIA_MODEL"] ?: "nvidia/nemotron-3.5-lightning-30b-a3b")}\""
         buildConfigField "String", "NVIDIA_TRANSLATION_MODEL", "\"${escapeBuildConfig(env["NVIDIA_TRANSLATION_MODEL"] ?: "nvidia/riva-translate-4b-instruct-v2")}\""
         buildConfigField "String", "NVIDIA_VISION_MODEL", "\"${escapeBuildConfig(env["NVIDIA_VISION_MODEL"] ?: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")}\""

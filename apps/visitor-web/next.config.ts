@@ -8,6 +8,17 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   outputFileTracingRoot: process.cwd(),
+  async headers() {
+    return [{
+      source: "/api/:path*",
+      headers: [
+        { key: "Access-Control-Allow-Origin", value: "https://appassets.androidplatform.net" },
+        { key: "Access-Control-Allow-Methods", value: "GET, POST, OPTIONS" },
+        { key: "Access-Control-Allow-Headers", value: "Content-Type" },
+        { key: "Vary", value: "Origin" },
+      ],
+    }];
+  },
 };
 
 export default config;
