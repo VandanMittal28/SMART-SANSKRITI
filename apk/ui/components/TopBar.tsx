@@ -35,31 +35,38 @@ export function TopBar() {
   ) return null
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-[#D6A84B]/10 bg-[#080D1D]/95 pt-[env(safe-area-inset-top)] backdrop-blur-lg">
-      <div className="mx-auto flex h-16 w-full max-w-[420px] items-center justify-between px-5">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-[#D6A84B]/20 bg-[#11182B]">
-            <Image src="/sanskriti-logo.svg" alt="Sanskriti AI logo" width={36} height={36} className="h-full w-full object-cover" priority />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate font-heritage text-sm font-bold tracking-tight text-[#F6F1E8]">{lang === 'hi' ? 'संस्कृति AI' : 'Sanskriti AI'}</p>
-            <p className="text-[9px] uppercase tracking-[0.16em] text-[#8891A6]">{lang === 'hi' ? 'जीवित विरासत' : 'Living Heritage'}</p>
-          </div>
+    <header className="fixed top-0 z-50 w-full bg-[var(--background)]/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] w-full max-w-[420px] items-center justify-between px-[22px]">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Sanskriti AI home">
+          {/* The mark carries its own ink tile, which would otherwise disappear
+              against the dark canvas, so it keeps a hairline in both themes. */}
+          <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-[13px] ring-1 ring-[var(--border)] shadow-[var(--shadow-card)]">
+            <Image src="/sanskriti-logo.png" alt="" width={40} height={40} className="h-full w-full object-cover" priority />
+          </span>
+          <span className="min-w-0 leading-none">
+            {/* The brand follows the same rule as every heading: one accent word. */}
+            <span className="block truncate font-display text-[17px] font-semibold tracking-tight text-[var(--foreground)]">
+              {lang === 'hi' ? 'संस्कृति' : 'Sanskriti'}{' '}
+              <span className="text-accent-word">{lang === 'hi' ? 'एआई' : 'AI'}</span>
+            </span>
+            <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
+              {lang === 'hi' ? 'जीवित विरासत' : 'Living Heritage'}
+            </span>
+          </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <LanguageSelect />
           <ThemeToggle />
-
           <Link
             href="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#11182B] text-[#F6F1E8]"
+            className="grid h-10 w-10 place-items-center rounded-full bg-[var(--card)] text-[var(--foreground)] shadow-[var(--shadow-card)] transition-transform active:scale-95"
             aria-label="Open profile"
           >
-            {profile?.full_name ? (
-              <span className="text-[11px] font-bold tracking-tight text-[#F7D88C]">{initials}</span>
+            {profile?.full_name || profile?.username ? (
+              <span className="font-display text-[12px] font-semibold tracking-tight">{initials}</span>
             ) : (
-              <UserRound className="h-4 w-4 text-[#D9C7AA]" />
+              <UserRound className="h-[18px] w-[18px]" />
             )}
           </Link>
         </div>

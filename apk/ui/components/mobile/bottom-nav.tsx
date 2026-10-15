@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Compass, Luggage, ScanLine, UserRound } from 'lucide-react'
-import { ScanButton } from './scan-button'
 import { cn } from '@/lib/utils'
 
 const tabs = [
@@ -14,35 +13,55 @@ const tabs = [
   { href: '/profile', label: 'Profile', icon: UserRound },
 ]
 
+/**
+ * A floating pill rather than a full-width bar: it lets the content scroll
+ * under it and keeps the screen feeling lighter, which is the whole point of
+ * the light canvas.
+ */
 export function BottomNav() {
   const pathname = usePathname()
   if (pathname.startsWith('/hunt') || pathname.startsWith('/explore')) return null
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
-      <nav className="pointer-events-auto flex min-h-[72px] w-full max-w-[420px] items-end justify-between border-t border-[#D6A84B]/12 bg-[#0B1122]/98 px-3 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.22)]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[calc(env(safe-area-inset-bottom)+14px)]">
+      <nav
+        aria-label="Primary"
+        className="pointer-events-auto flex w-[min(360px,calc(100%-32px))] items-center justify-between gap-1 rounded-[26px] bg-[var(--card)] px-2.5 py-2.5 shadow-[var(--shadow-raised)]"
+      >
         {tabs.map((tab) => {
-          if (tab.special) {
-            return <ScanButton key={tab.href} />
-          }
-
-          const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`) || (tab.href === '/tickets' && (pathname.startsWith('/itinerary') || pathname.startsWith('/marketplace')))
+          const active =
+            pathname === tab.href ||
+            pathname?.startsWith(`${tab.href}/`) ||
+            (tab.href === '/tickets' && (pathname.startsWith('/itinerary') || pathname.startsWith('/marketplace')))
           const Icon = tab.icon
+
+          if (tab.special) {
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-label="Scan a monument"
+                className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[20px] bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[var(--shadow-amber)] transition-transform active:scale-95"
+              >
+                <Icon className="h-[22px] w-[22px]" strokeWidth={2.2} />
+              </Link>
+            )
+          }
 
           return (
             <Link
               key={tab.href}
               href={tab.href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-w-[54px] flex-1 flex-col items-center gap-1 px-2 py-1 text-[10px] font-semibold transition-colors duration-200',
-                active ? 'text-[#F3DFC0]' : 'text-[#8891A6]'
+                'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[18px] px-1 py-1.5 transition-colors',
+                active ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]',
               )}
             >
-              <span className={cn('flex h-8 w-8 items-center justify-center rounded-xl transition-colors duration-200', active ? 'bg-[#D6A84B]/14 text-[#D6A84B]' : 'text-[#8891A6]')}>
-                <Icon className="h-4 w-4" />
+              <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.4 : 1.9} />
+              <span className={cn('text-[10px] leading-none', active ? 'font-bold' : 'font-medium')}>
+                {tab.label}
               </span>
-              <span>{tab.label}</span>
-              <span className={cn('h-0.5 w-4 rounded-full bg-[#D6A84B] transition-opacity', active ? 'opacity-100' : 'opacity-0')} />
             </Link>
           )
         })}

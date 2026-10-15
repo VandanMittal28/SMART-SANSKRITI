@@ -109,16 +109,16 @@ export default function CreateZonesPage() {
   return (
     <AppShell>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: 20 }}>
-        <h1 style={{ color: "#D6A84B", fontFamily: "var(--font-literata), Georgia, serif", fontSize: 24, marginBottom: 4 }}>
+        <h1 style={{ color: "#8A6A05", fontFamily: "var(--font-literata), Georgia, serif", fontSize: 24, marginBottom: 4 }}>
           🎓 Create Demo Zones
         </h1>
-        <p style={{ color: "#AEB6C8", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+        <p style={{ color: "#494B45", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
           Walk to each spot on your route, capture it, describe it — these become live AR
           waypoints. Everything is saved on this device only.
         </p>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+          <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
             Campus / location name
           </label>
           <input
@@ -127,14 +127,14 @@ export default function CreateZonesPage() {
             placeholder="e.g. XYZ College of Engineering"
             style={{
               width: "100%", background: "rgba(28,22,56,0.9)", border: "1px solid rgba(201,168,76,0.3)",
-              borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14,
+              borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14,
             }}
           />
         </div>
 
         {zones.length > 0 && (
           <div style={{ marginBottom: 24 }}>
-            <h2 style={{ color: "#D6A84B", fontSize: 15, marginBottom: 10 }}>
+            <h2 style={{ color: "#8A6A05", fontSize: 15, marginBottom: 10 }}>
               Captured zones ({zones.length})
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -148,10 +148,10 @@ export default function CreateZonesPage() {
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#F6F1E8", fontSize: 14, fontWeight: 600 }}>
+                    <div style={{ color: "#181A13", fontSize: 14, fontWeight: 600 }}>
                       {i + 1}. {z.emoji} {z.name}
                     </div>
-                    <div style={{ color: "#AEB6C8", fontSize: 11 }}>
+                    <div style={{ color: "#494B45", fontSize: 11 }}>
                       {z.lat.toFixed(5)}, {z.lng.toFixed(5)} · {z.radius}m radius · +{z.xp} XP
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export default function CreateZonesPage() {
           background: "rgba(28,22,56,0.9)", border: "1px solid rgba(201,168,76,0.2)",
           borderRadius: 16, padding: 20, marginBottom: 20,
         }}>
-          <h2 style={{ color: "#D6A84B", fontSize: 16, marginBottom: 14 }}>
+          <h2 style={{ color: "#8A6A05", fontSize: 16, marginBottom: 14 }}>
             + Capture this spot
           </h2>
 
@@ -186,7 +186,7 @@ export default function CreateZonesPage() {
               width: "100%", background: capture.status === "captured"
                 ? "linear-gradient(135deg,#63C7BA,#3a7a6e)"
                 : "linear-gradient(135deg,#D6A84B,#C66B4E)",
-              borderRadius: 12, padding: "12px 20px", color: capture.status === "captured" ? "white" : "#080D1D",
+              borderRadius: 12, padding: "12px 20px", color: capture.status === "captured" ? "white" : "#FFFFFF",
               fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", marginBottom: 12,
             }}
           >
@@ -201,7 +201,7 @@ export default function CreateZonesPage() {
             <p style={{ color: "#F87171", fontSize: 12, marginBottom: 12 }}>{capture.message}</p>
           )}
 
-          <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+          <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
             Zone name
           </label>
           <input
@@ -210,11 +210,11 @@ export default function CreateZonesPage() {
             placeholder="e.g. Main Auditorium"
             style={{
               width: "100%", background: "rgba(15,11,30,0.6)", border: "1px solid rgba(201,168,76,0.3)",
-              borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14, marginBottom: 12,
+              borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14, marginBottom: 12,
             }}
           />
 
-          <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+          <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
             What should the narrator say on arrival?
           </label>
           <textarea
@@ -224,12 +224,12 @@ export default function CreateZonesPage() {
             rows={3}
             style={{
               width: "100%", background: "rgba(15,11,30,0.6)", border: "1px solid rgba(201,168,76,0.3)",
-              borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14, marginBottom: 12,
+              borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14, marginBottom: 12,
               resize: "vertical",
             }}
           />
 
-          <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+          <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
             Direction hint (optional)
           </label>
           <input
@@ -238,13 +238,13 @@ export default function CreateZonesPage() {
             placeholder="e.g. Walk past the fountain toward the big glass entrance."
             style={{
               width: "100%", background: "rgba(15,11,30,0.6)", border: "1px solid rgba(201,168,76,0.3)",
-              borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14, marginBottom: 12,
+              borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14, marginBottom: 12,
             }}
           />
 
           <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+              <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
                 Emoji
               </label>
               <input
@@ -253,12 +253,12 @@ export default function CreateZonesPage() {
                 maxLength={2}
                 style={{
                   width: "100%", background: "rgba(15,11,30,0.6)", border: "1px solid rgba(201,168,76,0.3)",
-                  borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14, textAlign: "center",
+                  borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14, textAlign: "center",
                 }}
               />
             </div>
             <div style={{ flex: 2 }}>
-              <label style={{ color: "#F6F1E8", fontSize: 13, display: "block", marginBottom: 6 }}>
+              <label style={{ color: "#181A13", fontSize: 13, display: "block", marginBottom: 6 }}>
                 Arrival radius (meters)
               </label>
               <input
@@ -267,7 +267,7 @@ export default function CreateZonesPage() {
                 onChange={(e) => setRadius(Math.max(5, Math.min(100, Number(e.target.value) || DEFAULT_RADIUS)))}
                 style={{
                   width: "100%", background: "rgba(15,11,30,0.6)", border: "1px solid rgba(201,168,76,0.3)",
-                  borderRadius: 10, padding: "10px 12px", color: "#F6F1E8", fontSize: 14,
+                  borderRadius: 10, padding: "10px 12px", color: "#181A13", fontSize: 14,
                 }}
               />
             </div>

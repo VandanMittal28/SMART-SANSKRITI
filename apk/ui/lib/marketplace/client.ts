@@ -159,7 +159,7 @@ export async function reserveMarketplaceListing(args: {
     const checkout = new window.Razorpay!({
       key: text(order.keyId), amount: number(order.amount), currency: 'INR', name: 'Sanskriti AI',
       description: `Advance for ${args.listing.title}`, order_id: text(order.orderId),
-      theme: { color: '#D6A84B' }, modal: { ondismiss: () => reject(new Error('Payment was cancelled.')) },
+      theme: { color: '#8A6A05' }, modal: { ondismiss: () => reject(new Error('Payment was cancelled.')) },
       handler: async (result) => {
         const { error } = await supabase.functions.invoke('verify-razorpay-payment', {
           body: { reservationId, orderId: result.razorpay_order_id, paymentId: result.razorpay_payment_id, signature: result.razorpay_signature },

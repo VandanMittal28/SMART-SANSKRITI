@@ -20,6 +20,7 @@ import {
   UserRoundPlus,
   X,
 } from 'lucide-react'
+import Link from 'next/link'
 import { AppShell } from '@/components/app-shell'
 import { AppCard } from '@/components/mobile/app-card'
 import { Button } from '@/components/ui/button'
@@ -105,10 +106,10 @@ const ACTIVITY_META: Record<
   ProfileActivity['type'],
   { icon: string; color: string }
 > = {
-  scan: { icon: '🏛️', color: '#63C7BA' },
+  scan: { icon: '🏛️', color: '#2F7D63' },
   quiz: { icon: '🧠', color: '#534AB7' },
   hunt: { icon: '🏆', color: '#C66B4E' },
-  explore: { icon: '🗺️', color: '#D6A84B' },
+  explore: { icon: '🗺️', color: '#8A6A05' },
   chat: { icon: '💬', color: '#7ECDC0' },
 }
 
@@ -253,7 +254,7 @@ export default function ProfilePage() {
       label: 'Monuments',
       value: safeProfile.monuments_visited.length,
       icon: MapPinned,
-      color: '#63C7BA',
+      color: '#2F7D63',
     },
     {
       label: 'Correct answers',
@@ -307,427 +308,205 @@ export default function ProfilePage() {
     }
   }
 
+  /** One row of the settings list: icon, label, optional value, chevron. */
+  function Row({
+    icon: Icon, label, detail, value, href, onClick, danger,
+  }: {
+    icon: typeof Globe
+    label: string
+    detail?: string
+    value?: string
+    href?: string
+    onClick?: () => void
+    danger?: boolean
+  }) {
+    const inner = (
+      <>
+        <span className={`grid size-11 shrink-0 place-items-center rounded-full ${danger ? 'bg-[var(--destructive)]/10 text-[var(--destructive)]' : 'bg-[var(--muted)] text-[var(--foreground)]'}`}>
+          <Icon className="size-[19px]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className={`block truncate text-[16px] font-semibold ${danger ? 'text-[var(--destructive)]' : 'text-[var(--foreground)]'}`}>
+            {label}
+          </span>
+          {detail && <span className="mt-0.5 block truncate text-[13px] text-[var(--muted-foreground)]">{detail}</span>}
+        </span>
+        {value && <span className="shrink-0 text-[14px] font-medium text-[var(--muted-foreground)]">{value}</span>}
+        <ChevronRight className="size-[18px] shrink-0 text-[var(--muted-foreground)]" />
+      </>
+    )
+    const className = 'flex w-full items-center gap-3.5 px-[22px] py-3 text-left transition-colors active:bg-[var(--muted)]'
+    if (href) return <Link className={className} href={href}>{inner}</Link>
+    return <button className={className} onClick={onClick} type="button">{inner}</button>
+  }
+
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+    <h2 className="px-[22px] pb-1.5 pt-6 text-[15px] font-bold text-[var(--muted-foreground)]">{children}</h2>
+  )
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-[420px] space-y-4 px-5 py-5 pb-8">
-        <div className="flex items-center justify-between">
-          <h1 className="font-heritage text-[28px] font-bold text-[#F6F1E8]">Profile</h1>
-        </div>
-        <AppCard className="overflow-hidden p-0">
-          <div className="bg-[#11182B] p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6A84B]/25 bg-[#D6A84B]/10 text-lg font-bold text-[#F3DFC0]">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#8891A6]">
-                    {level.title}
-                  </p>
-                  {editingName ? (
-                    <div className="mt-1 flex items-center gap-2">
-                      <input
-                        value={nameDraft}
-                        onChange={(event) => setNameDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') saveName()
-                          if (event.key === 'Escape') setEditingName(false)
-                        }}
-                        autoFocus
-                        maxLength={50}
-                        className="min-w-0 rounded-xl border border-[#D6A84B]/35 bg-black/25 px-3 py-2 text-lg font-semibold text-[#F6F1E8] outline-none focus:border-[#D6A84B]"
-                        aria-label="Profile name"
-                      />
-                      <button
-                        type="button"
-                        onClick={saveName}
-                        aria-label="Save profile name"
-                        className="rounded-lg p-2 text-[#7ECDC0] hover:bg-white/5"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingName(false)}
-                        aria-label="Cancel editing"
-                        className="rounded-lg p-2 text-[#AEB6C8] hover:bg-white/5"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-1 flex items-center gap-2">
-                      <h2 className="break-all text-lg font-bold leading-6 text-[#F6F1E8]">
-                        {safeProfile.full_name || t('explorer')}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={beginNameEdit}
-                        aria-label="Edit profile name"
-                        className="rounded-lg p-2 text-[#8891A6] transition hover:bg-white/5 hover:text-[#F7D88C]"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                  <p data-no-translate className="mt-1 text-xs text-[#AEB6C8]">@{safeProfile.username || 'explorer'}</p>
-                </div>
-              </div>
-            </div>
+      <div className="mx-auto max-w-[420px] pb-10">
+        {/* ── XP section ─────────────────────────────────────────────────
+            Kept from the existing app: identity, XP, rank, the four counters
+            and level progress. Everything below it is the minimal list. */}
+        <div className="px-[22px] pt-5">
+          <h1 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-[var(--foreground)]">Profile</h1>
 
-            <div className="mt-4 flex gap-2">
-              <span className="rounded-lg border border-[#D6A84B]/20 bg-[#D6A84B]/10 px-3 py-1.5 text-xs font-bold text-[#F3DFC0]">{safeProfile.total_xp.toLocaleString()} XP</span>
-              <span className="rounded-lg border border-[#63C7BA]/20 bg-[#63C7BA]/10 px-3 py-1.5 text-xs font-bold text-[#8DE0D6]">Rank #{rank}</span>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {[
-                {
-                  label: t('visited_label'),
-                  value: safeProfile.monuments_visited.length,
-                  icon: MapPinned,
-                },
-                {
-                  label: 'Quiz XP',
-                  value: quizXP,
-                  icon: Brain,
-                },
-                {
-                  label: t('badges_label'),
-                  value: safeProfile.badges.length,
-                  icon: BadgeCheck,
-                },
-                {
-                  label: 'AI questions',
-                  value: questionsAsked,
-                  icon: MessageCircle,
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="min-h-[88px] rounded-xl border border-white/8 bg-[#171F34] p-3"
-                >
-                  <item.icon className="h-4 w-4 text-[#F7D88C]" />
-                  <p className="mt-2 text-[10px] uppercase tracking-[0.15em] text-[#8891A6]">
-                    {item.label}
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-[#F6F1E8]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </AppCard>
-
-        <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-          <AppCard>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#8891A6]">
-                  {t('current_level')}
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-[#F6F1E8]">
-                  {level.title}
-                </h2>
-                <p className="mt-1 text-sm text-[#AEB6C8]">
-                  {level.next
-                    ? `${xpToNext} XP until your next level`
-                    : 'You reached the highest heritage level'}
-                </p>
-              </div>
-              <div className="rounded-full border border-[#D6A84B]/20 bg-[#D6A84B]/12 px-3 py-1 text-sm font-semibold text-[#F7D88C]">
-                {progress}%
-              </div>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-white/8">
-              <div
-                className="h-full rounded-full bg-[linear-gradient(135deg,#D6A84B,#C66B4E)] transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </AppCard>
-
-          <AppCard>
-            <div className="flex items-center gap-3">
-              <Flame className="h-5 w-5 text-[#C66B4E]" />
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#8891A6]">
-                  Journey signal
-                </p>
-                <p className="mt-1 text-sm font-semibold text-[#F6F1E8]">
-                  {recentActivity.length > 0
-                    ? `${recentActivity.length} recent learning moments`
-                    : 'Ready for your first discovery'}
-                </p>
-              </div>
-            </div>
-          </AppCard>
-        </div>
-
-        <AppCard className="border-[#D6A84B]/25 bg-[linear-gradient(135deg,rgba(201,168,76,0.11),rgba(75,155,142,0.08))]">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="surface mt-4 p-5">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-2xl">
-                {nextStep.icon}
+              <div className="grid size-16 shrink-0 place-items-center rounded-full bg-[var(--primary)] font-display text-[20px] font-semibold text-[var(--primary-foreground)]">
+                {initials}
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#D6A84B]">
-                  {nextStep.eyebrow}
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-[#F6F1E8]">
-                  {nextStep.title}
-                </h2>
-                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#AEB6C8]">
-                  {nextStep.description}
-                </p>
-              </div>
-            </div>
-            <Button
-              asChild
-              className="shrink-0 rounded-xl bg-[#D6A84B] text-[#0E0916]"
-            >
-              <a href={nextStep.href}>{nextStep.action}</a>
-            </Button>
-          </div>
-        </AppCard>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <AppCard>
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-[#F7D88C]" />
-              <div>
-                <h2 className="font-semibold text-[#F6F1E8]">Learning pattern</h2>
-                <p className="text-xs text-[#8891A6]">
-                  Calculated from your real app activity
-                </p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {activityCounts.map((item) => (
-                <div key={item.label}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-[#AEB6C8]">
-                      <item.icon className="h-4 w-4" style={{ color: item.color }} />
-                      {item.label}
-                    </span>
-                    <span className="font-semibold text-[#F6F1E8]">{item.value}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/8">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(item.value / activityMaximum) * 100}%`,
-                        backgroundColor: item.color,
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow">{level.title}</p>
+                {editingName ? (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <input
+                      value={nameDraft}
+                      onChange={(event) => setNameDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') saveName()
+                        if (event.key === 'Escape') setEditingName(false)
                       }}
+                      autoFocus
+                      maxLength={50}
+                      className="min-w-0 flex-1 rounded-full bg-[var(--muted)] px-4 py-2 text-[17px] font-semibold text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      aria-label="Profile name"
                     />
+                    <button aria-label="Save name" className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)]" onClick={saveName} type="button">
+                      <Check className="size-4" />
+                    </button>
+                    <button aria-label="Cancel" className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--muted)]" onClick={() => setEditingName(false)} type="button">
+                      <X className="size-4" />
+                    </button>
                   </div>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <h2 className="min-w-0 truncate font-display text-[22px] font-semibold tracking-[-0.025em] text-[var(--foreground)]">
+                      {safeProfile.full_name || safeProfile.username}
+                    </h2>
+                    <button aria-label="Edit name" className="shrink-0 text-[var(--muted-foreground)]" onClick={() => { setNameDraft(safeProfile.full_name || ''); setEditingName(true) }} type="button">
+                      <Pencil className="size-4" />
+                    </button>
+                  </div>
+                )}
+                <p className="mt-0.5 truncate text-[13px] text-[var(--muted-foreground)]">@{safeProfile.username}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full bg-[var(--primary)]/18 px-3.5 py-1.5 text-[12px] font-bold text-[var(--on-tint)]">
+                {safeProfile.total_xp.toLocaleString()} XP
+              </span>
+              <span className="rounded-full bg-[var(--muted)] px-3.5 py-1.5 text-[12px] font-bold text-[var(--foreground)]">
+                Rank #{rank}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              {[
+                { label: t('visited_label'), value: safeProfile.monuments_visited.length, icon: MapPinned },
+                { label: 'Quiz XP', value: quizXP, icon: Brain },
+                { label: t('badges_label'), value: safeProfile.badges.length, icon: BadgeCheck },
+                { label: 'AI questions', value: questionsAsked, icon: MessageCircle },
+              ].map((item) => (
+                <div key={item.label} className="rounded-[20px] bg-[var(--muted)] p-3.5">
+                  <item.icon className="size-[17px] text-[var(--muted-foreground)]" />
+                  <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">{item.label}</p>
+                  <p className="mt-0.5 font-display text-[22px] font-semibold text-[var(--foreground)]">{item.value}</p>
                 </div>
               ))}
             </div>
-          </AppCard>
 
-          <AppCard>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Compass className="h-5 w-5 text-[#7ECDC0]" />
-                <div>
-                  <h2 className="font-semibold text-[#F6F1E8]">Recent journey</h2>
-                  <p className="text-xs text-[#8891A6]">Your latest discoveries</p>
-                </div>
+            <div className="mt-4">
+              <div className="mb-2 flex items-end justify-between">
+                <p className="text-[13px] text-[var(--muted-foreground)]">
+                  {level.next ? `${xpToNext} XP until your next level` : 'Highest heritage level reached'}
+                </p>
+                <span className="font-display text-[15px] font-semibold text-[var(--foreground)]">{progress}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[var(--muted)]">
+                <div className="h-full rounded-full bg-[var(--primary)] transition-all duration-500" style={{ width: `${progress}%` }} />
               </div>
             </div>
-            {recentActivity.length > 0 ? (
-              <div className="space-y-2">
-                {recentActivity.map((item) => {
-                  const meta = ACTIVITY_META[item.type]
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-2xl border border-white/7 bg-black/15 p-3"
-                    >
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                        style={{ backgroundColor: `${meta.color}18` }}
-                      >
-                        {meta.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#F6F1E8]">
-                          {item.title}
-                        </p>
-                        {!!item.detail && (
-                          <p className="truncate text-xs text-[#8891A6]">
-                            {item.detail}
-                          </p>
-                        )}
-                      </div>
-                      {!!item.xp && (
-                        <span className="shrink-0 text-xs font-semibold text-[#D6A84B]">
-                          +{item.xp} XP
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center">
-                <p className="text-2xl">🏛️</p>
-                <p className="mt-2 text-sm font-semibold text-[#F6F1E8]">
-                  Your journey starts here
-                </p>
-                <p className="mt-1 text-xs text-[#8891A6]">
-                  Scans, quizzes, hunts, and questions will appear here.
-                </p>
-              </div>
-            )}
-          </AppCard>
+          </div>
         </div>
 
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-[#F6F1E8]">
-                Badge progress
-              </h2>
-              <p className="text-xs text-[#8891A6]">
-                Every badge reflects your actual journey
-              </p>
-            </div>
-            <a
-              href="/badges"
-              className="text-xs font-semibold text-[#D6A84B] hover:text-[#F7D88C]"
-            >
-              View all
-            </a>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {BADGES.map((badge) => {
-              const earned = safeProfile.badges.includes(badge.id)
-              const badgeProgress = badge.progress(safeProfile)
-              return (
-                <div
-                  key={badge.id}
-                  className={`app-card rounded-[20px] p-4 ${
-                    earned ? 'border-[#D6A84B]/30 bg-[#D6A84B]/10' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{earned ? badge.icon : '🔒'}</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-[#F6F1E8]">{badge.title}</p>
-                        <span className="text-xs text-[#8891A6]">
-                          {Math.min(badge.current(safeProfile), badge.target)}/{badge.target}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#AEB6C8]">{badge.desc}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-[#8891A6]" />
-                  </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
-                    <div
-                      className="h-full rounded-full bg-[#D6A84B] transition-all duration-500"
-                      style={{ width: `${badgeProgress * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div
-            className="app-card flex items-center justify-between rounded-[20px] px-4 py-3 text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Globe className="h-5 w-5 text-[#F7D88C]" />
-              <div>
-                <p className="text-sm font-semibold text-[#F6F1E8]">
-                  {t('language_label')}
-                </p>
-                <p data-no-translate className="text-xs text-[#AEB6C8]">
-                  {getLanguageConfig(lang).nativeName}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              setUserType(userType === 'student' ? 'tourist' : 'student')
-            }
-            className="app-card flex items-center justify-between rounded-[20px] px-4 py-3 text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-[#7ECDC0]" />
-              <div>
-                <p className="text-sm font-semibold text-[#F6F1E8]">
-                  {t('mode_title')}
-                </p>
-                <p className="text-xs text-[#AEB6C8]">
-                  {userType === 'student' ? 'Student mode' : 'Tourist mode'}
-                </p>
-              </div>
-            </div>
-            <span className="text-xs font-semibold text-[#D6A84B]">
-              {t('mode_switch')}
-            </span>
-          </button>
+        {/* ── Minimal list ──────────────────────────────────────────────── */}
+        <SectionLabel>Your journey</SectionLabel>
+        <div className="surface mx-[14px] overflow-hidden py-1.5">
+          <Row icon={BadgeCheck} label={t('badges_label')} detail="Achievements you have earned" value={String(safeProfile.badges.length)} href="/badges" />
+          <Row icon={Trophy} label="Leaderboard" detail={`You are ranked #${rank}`} href="/leaderboard" />
+          <Row icon={Flame} label="Journey signal" detail={recentActivity.length > 0 ? `${recentActivity.length} recent learning moments` : 'Ready for your first discovery'} href="/explore" />
         </div>
 
-        <AppCard className="border-[#7ECDC0]/20 bg-[linear-gradient(135deg,rgba(75,155,142,0.1),rgba(9,13,25,0.96))]">
-          <div className="flex items-start gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#7ECDC0]/12 text-[#7ECDC0]">
-              <UserRoundPlus className="size-5" />
+        {recentActivity.length > 0 && (
+          <>
+            <SectionLabel>Recent</SectionLabel>
+            <div className="surface mx-[14px] overflow-hidden py-1.5">
+              {recentActivity.slice(0, 5).map((item) => {
+                const meta = ACTIVITY_META[item.type]
+                return (
+                  <div key={item.id} className="flex items-center gap-3.5 px-[22px] py-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full" style={{ backgroundColor: `${meta.color}22` }}>
+                      {meta.icon}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[16px] font-semibold text-[var(--foreground)]">{item.title}</span>
+                      {!!item.detail && <span className="mt-0.5 block truncate text-[13px] text-[var(--muted-foreground)]">{item.detail}</span>}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[#F6F1E8]">Profiles on this device</p>
-              <p className="mt-1 text-sm text-[#9CBAB4]">
-                {availableProfiles.length} profile{availableProfiles.length === 1 ? '' : 's'} saved. Each profile keeps separate XP, badges, chats, and journey history.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button
-              className="h-11 rounded-xl bg-[#7ECDC0] text-[#07131A] hover:bg-[#9BE5D9]"
-              disabled={leavingProfile}
-              onClick={() => void leaveCurrentProfile()}
-              type="button"
-            >
-              <UserRoundPlus className="size-4" />
-              Switch / add
-            </Button>
-            <Button
-              className="h-11 rounded-xl border border-red-300/20 bg-red-950/25 text-red-200 hover:bg-red-950/40"
-              disabled={leavingProfile}
-              onClick={() => void leaveCurrentProfile()}
-              type="button"
-              variant="outline"
-            >
-              <LogOut className="size-4" />
-              Log out
-            </Button>
-          </div>
-        </AppCard>
+          </>
+        )}
 
-        <AppCard className="safe-bottom-space">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-5 w-5 text-[#F7D88C]" />
-            <div className="flex-1">
-              <p className="font-semibold text-[#F6F1E8]">
-                Your progress belongs to you
-              </p>
-              <p className="text-sm text-[#AEB6C8]">
-                XP and activity update automatically as you use recognition,
-                quizzes, hunts, exploration, and chat.
-              </p>
+        <SectionLabel>Learning pattern</SectionLabel>
+        <div className="surface mx-[14px] space-y-3.5 px-[22px] py-4">
+          {activityCounts.map((item) => (
+            <div key={item.label}>
+              <div className="mb-1.5 flex items-center justify-between text-[14px]">
+                <span className="flex items-center gap-2.5 text-[var(--muted-foreground)]">
+                  <item.icon className="size-4" style={{ color: item.color }} />
+                  {item.label}
+                </span>
+                <span className="font-semibold text-[var(--foreground)]">{item.value}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--muted)]">
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(item.value / activityMaximum) * 100}%`, backgroundColor: item.color }} />
+              </div>
             </div>
-          </div>
-        </AppCard>
+          ))}
+        </div>
+
+        <SectionLabel>Preferences</SectionLabel>
+        <div className="surface mx-[14px] overflow-hidden py-1.5">
+          <Row icon={Globe} label={t('language_label')} value={getLanguageConfig(lang).nativeName} href="/profile" />
+          <Row
+            icon={Target}
+            label={t('mode_title')}
+            detail={userType === 'student' ? 'Student mode' : 'Tourist mode'}
+            value={t('mode_switch')}
+            onClick={() => setUserType(userType === 'student' ? 'tourist' : 'student')}
+          />
+        </div>
+
+        <SectionLabel>Account</SectionLabel>
+        <div className="surface mx-[14px] overflow-hidden py-1.5">
+          <Row
+            icon={UserRoundPlus}
+            label="Switch or add profile"
+            detail={`${availableProfiles.length} profile${availableProfiles.length === 1 ? '' : 's'} on this device`}
+            onClick={() => void leaveCurrentProfile()}
+          />
+          <Row icon={LogOut} label="Log out" danger onClick={() => void leaveCurrentProfile()} />
+        </div>
+
+        <p className="px-[22px] pt-6 text-center text-[12px] leading-5 text-[var(--muted-foreground)]">
+          XP and activity update automatically as you use recognition, quizzes, hunts, exploration and chat.
+        </p>
       </div>
     </AppShell>
   )

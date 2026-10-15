@@ -49,9 +49,9 @@ function daysBadgeColor(days: number) {
 
 function typeColor(t: string) {
   const map: Record<string, string> = {
-    'National': '#63C7BA', 'Religious': '#D6A84B', 'Cultural': '#C66B4E', 'Religious & Cultural': '#D6A84B', 'Cultural & Trade': '#AE8A5E'
+    'National': '#2F7D63', 'Religious': '#F6C00A', 'Cultural': '#C66B4E', 'Religious & Cultural': '#F6C00A', 'Cultural & Trade': '#AE8A5E'
   }
-  return map[t] || '#AEB6C8'
+  return map[t] || '#494B45'
 }
 
 export default function FestivalsPage() {
@@ -116,7 +116,9 @@ export default function FestivalsPage() {
                       <span className="text-sm font-bold text-[#F6F1E8]">{fest.name}</span>
                       <span
                         className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                        style={{ background: `${typeColor(fest.type)}20`, color: typeColor(fest.type) }}
+                        /* The tint carries the category; the label stays ink so
+                           it is legible on every one of them. */
+                        style={{ background: `${typeColor(fest.type)}28`, color: 'var(--foreground)' }}
                       >
                         {fest.type}
                       </span>

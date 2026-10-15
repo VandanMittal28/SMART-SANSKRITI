@@ -26,21 +26,34 @@ export function YatrikWelcome({
   state,
 }: YatrikWelcomeProps) {
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[#050816]/55 px-5 backdrop-blur-xl">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(39,199,177,0.20),transparent_28%),radial-gradient(circle_at_50%_70%,rgba(221,171,65,0.17),transparent_32%)]" />
+    <div className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[rgba(14,16,11,0.45)] px-5 backdrop-blur-xl">
+      {/* A single warm halo behind the character, taking its hue from the
+          accent rather than the old teal/gold pair. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(246,192,10,0.22),transparent_34%)]" />
       <section className="relative flex w-full max-w-sm flex-col items-center text-center">
         <div className={`yatrik-welcome-art yatrik-welcome-art--${state}`}>
           <YatrikArtwork manifest={manifest} size={220} state={muted ? 'muted' : state} />
         </div>
-        <div className="mt-1 w-full rounded-[28px] border border-[#f1c66f]/25 bg-[#10162a]/90 p-5 shadow-[0_28px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#78dccd]">Your heritage companion</p>
-          <h1 className="mt-2 font-serif text-3xl text-[#fff0ce]">Hi, I&apos;m Yatrik.</h1>
-          <p className="mt-2 text-base leading-6 text-[#ddc7a7]">Your travel buddy for stories, routes, and discoveries.</p>
-          {error && <p className="mt-3 rounded-xl border border-red-400/25 bg-red-950/30 p-2.5 text-sm text-red-100" role="alert">{error}</p>}
-          <div className="mt-5 flex items-center gap-2">
+
+        <div className="surface mt-1 w-full p-6 shadow-[var(--shadow-raised)]">
+          <p className="eyebrow">Your heritage companion</p>
+          <h1 className="mt-2.5 font-display text-[30px] font-semibold leading-tight tracking-[-0.03em] text-[var(--foreground)]">
+            Hi, I&apos;m <span className="text-accent-word">Yatrik.</span>
+          </h1>
+          <p className="mt-2.5 text-[14px] leading-6 text-[var(--muted-foreground)]">
+            Your travel buddy for stories, routes and discoveries.
+          </p>
+
+          {error && (
+            <p className="mt-3.5 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-[var(--destructive)]" role="alert">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-5 flex items-center gap-2.5">
             <button
               aria-label={muted ? 'Unmute Yatrik' : 'Mute Yatrik'}
-              className="grid size-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-[#f2ca50] disabled:cursor-wait disabled:opacity-50"
+              className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--muted)] text-[var(--foreground)] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-50"
               disabled={saving}
               onClick={onToggleMute}
               type="button"
@@ -48,15 +61,18 @@ export function YatrikWelcome({
               {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
             </button>
             <button
-              className="h-12 flex-1 rounded-2xl bg-gradient-to-r from-[#d99b3c] to-[#f1ca78] font-bold text-[#241508] shadow-[0_14px_34px_rgba(224,160,68,0.22)] disabled:cursor-wait disabled:opacity-55"
+              className="btn-primary flex-1 disabled:cursor-wait"
               disabled={!ready || saving}
               onClick={onContinue}
               type="button"
             >
-              {saving ? 'Yatrik is speaking...' : ready ? 'Continue' : 'Yatrik is landing...'}
+              {saving ? 'Yatrik is speaking…' : ready ? 'Continue' : 'Yatrik is landing…'}
             </button>
           </div>
-          <p className="mt-3 text-[11px] leading-4 text-[#9f8c71]">Continue plays Yatrik&apos;s warm NVIDIA voice before opening the app.</p>
+
+          <p className="mt-3.5 text-[11px] leading-4 text-[var(--muted-foreground)]">
+            Continue plays Yatrik&apos;s warm NVIDIA voice before opening the app.
+          </p>
         </div>
       </section>
     </div>
