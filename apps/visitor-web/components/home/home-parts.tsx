@@ -36,7 +36,7 @@ export function ServiceNote() {
   if (status !== "ready") return null;
   const items: string[] = [];
   if (live === false) items.push("Live recognition, Yatrik's AI answers and voice questions aren't switched on yet. Yatrik answers from saved notes, and the monument guide and audio stories work as normal.");
-  if (reportsReachable === false) items.push("Reporting uses a local operations demo that isn't running on this computer right now.");
+  if (reportsReachable === false) items.push("Online issue reporting is temporarily unavailable.");
   if (items.length === 0) return null;
   return (
     <Notice title="Some features are unavailable">

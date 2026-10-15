@@ -13,7 +13,7 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 
 import { useCapabilities } from "@/components/capabilities";
 import { IconCamera, IconCheck, IconPin, IconRefresh, IconTrash } from "@/components/icons";
 import { Notice } from "@/components/ui/notice";
-import { ApiError, getReportStatus, submitReport } from "@/lib/api";
+import { ApiError, getReportCatalog, getReportStatus, submitReport, type ReportCatalog } from "@/lib/api";
 import { ImageProblem, prepareImage } from "@/lib/image";
 import {
   CATEGORY_HINTS,
@@ -23,7 +23,6 @@ import {
   PHOTO_MAX_BYTES,
   RECEIPT_KEY,
   REPORT_CATEGORIES,
-  REPORT_ZONES,
   STATUS_TEXT,
   isDraft,
   isReceipt,
@@ -41,10 +40,11 @@ export function ReportFlow() {
   const capabilities = useCapabilities();
   const id = useId();
   const [draft, setDraft] = useState<ReportDraft>(EMPTY_DRAFT);
+  const [catalog, setCatalog] = useState<ReportCatalog | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ category?: string; zone?: string; form?: string; photo?: string; location?: string }>({});
+  const [errors, setErrors] = useState<{ site?: string; category?: string; zone?: string; form?: string; photo?: string; location?: string }>({});
   const [locating, setLocating] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [draftSaved, setDraftSaved] = useState(true);
@@ -55,6 +55,10 @@ export function ReportFlow() {
     setDraft(readJson(DRAFT_KEY, isDraft) ?? EMPTY_DRAFT);
     setReceipt(readJson(RECEIPT_KEY, isReceipt));
     setLoaded(true);
+    void getReportCatalog().then((value) => {
+      setCatalog(value);
+      setDraft((current) => ({ ...current, siteId: current.siteId ?? value.sites[0]?.id ?? null }));
+    }).catch(() => setCatalog(null));
   }, []);
 
   useEffect(() => {
@@ -103,10 +107,11 @@ export function ReportFlow() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     const next: typeof errors = {};
+    if (!draft.siteId) next.site = "Choose the heritage site.";
     if (!draft.category) next.category = "Choose what kind of issue it is.";
     if (!draft.zoneId) next.zone = "Choose the area where it is.";
     setErrors(next);
-    if (next.category || next.zone || !draft.category || !draft.zoneId) {
+    if (next.site || next.category || next.zone || !draft.siteId || !draft.category || !draft.zoneId) {
       window.setTimeout(() => errorRef.current?.focus(), 0);
       return;
     }
@@ -114,7 +119,7 @@ export function ReportFlow() {
     const token = newReceiptToken();
     const reportId = newReportId();
     try {
-      const response = await submitReport({ id: reportId, token, category: draft.category, zoneId: draft.zoneId, note: draft.note.trim(), point: draft.point, photo: draft.photo });
+      const response = await submitReport({ id: reportId, token, siteId: draft.siteId, category: draft.category, zoneId: draft.zoneId, note: draft.note.trim(), point: draft.point, photo: draft.photo });
       const saved: Receipt = { id: response.id, token, category: draft.category, createdAt: new Date().toISOString() };
       writeJson(RECEIPT_KEY, saved);
       writeJson(DRAFT_KEY, null);
@@ -124,16 +129,12 @@ export function ReportFlow() {
     } catch (error) {
       const message =
         error instanceof ApiError
-          ? error.code === "ops_unavailable"
-            ? "The local operations demo isn't running, so the report wasn't sent."
-            : error.code === "local_only"
-              ? error.message
-              : error.code === "network"
-                ? "You seem to be offline, so the report wasn't sent."
-                : error.message
+          ? error.code === "network"
+            ? "You seem to be offline, so the report wasn't sent."
+            : error.message
           : "The report wasn't sent.";
       setErrors({ form: `${message} Your draft is saved on this device; try again when it's available.` });
-      if (error instanceof ApiError && (error.code === "ops_unavailable" || error.code === "local_only")) capabilities.refresh();
+      if (error instanceof ApiError && error.code === "upstream") capabilities.refresh();
       window.setTimeout(() => errorRef.current?.focus(), 0);
     } finally {
       setSubmitting(false);
@@ -154,7 +155,7 @@ export function ReportFlow() {
     );
   }
 
-  const errorList = [errors.category, errors.zone, errors.form].filter(Boolean);
+  const errorList = [errors.site, errors.category, errors.zone, errors.form].filter(Boolean);
 
   return (
     <form className="report" onSubmit={submit} noValidate>
@@ -164,19 +165,13 @@ export function ReportFlow() {
         <p className="page-head__lede">You don&apos;t need to give your name. If someone needs help urgently, find a member of staff straight away.</p>
       </header>
 
-      <div className="demo-banner">
-        <span className="tag tag--demo">Local demo</span>
-        <p>
-          Reports go to the Sanskriti operations demo on this computer, for a sample site called <strong>Heritage Park</strong>. They don&apos;t reach staff at a real
-          monument.
-        </p>
-      </div>
-
       {capabilities.reportsReachable === false && (
-        <Notice tone="warn" title="The operations demo isn't running">
-          Reports can&apos;t be sent right now. You can still fill in the form; it&apos;s saved on this device until you send it.
+        <Notice tone="warn" title="Online reporting is temporarily unavailable">
+          Your draft is saved on this device. Try sending it again when the connection is available.
         </Notice>
       )}
+
+      {!catalog && <Notice tone="warn" title="Site list could not be loaded">Connect to the internet and reload this page to choose a site.</Notice>}
 
       {errorList.length > 0 && (
         <div ref={errorRef} tabIndex={-1} className="report__errors">
@@ -190,9 +185,20 @@ export function ReportFlow() {
         </div>
       )}
 
+      <fieldset className="report__group" aria-describedby={errors.site ? `${id}-site-err` : undefined}>
+        <legend className="report__legend"><span className="report__step">1</span> Which heritage site?</legend>
+        {errors.site && <p id={`${id}-site-err`} className="field__error">{errors.site}</p>}
+        <label className="field"><span className="visually-hidden">Choose a monument</span>
+          <select value={draft.siteId ?? ""} onChange={(event) => change({ siteId: event.target.value, zoneId: null })} disabled={!catalog}>
+            <option value="">Choose a site</option>
+            {catalog?.sites.map((site) => <option value={site.id} key={site.id}>{site.name} · {site.city}</option>)}
+          </select>
+        </label>
+      </fieldset>
+
       <fieldset className="report__group" aria-describedby={errors.category ? `${id}-cat-err` : undefined}>
         <legend className="report__legend">
-          <span className="report__step">1</span> What&apos;s the issue?
+          <span className="report__step">2</span> What&apos;s the issue?
         </legend>
         {errors.category && (
           <p id={`${id}-cat-err`} className="field__error">
@@ -214,7 +220,7 @@ export function ReportFlow() {
 
       <fieldset className="report__group" aria-describedby={errors.zone ? `${id}-zone-err` : undefined}>
         <legend className="report__legend">
-          <span className="report__step">2</span> Where is it?
+          <span className="report__step">3</span> Where is it?
         </legend>
         {errors.zone && (
           <p id={`${id}-zone-err`} className="field__error">
@@ -222,9 +228,9 @@ export function ReportFlow() {
           </p>
         )}
         <div className="choices choices--grid">
-          {REPORT_ZONES.map((zone) => (
+          {(catalog?.zones.filter((zone) => zone.site_id === draft.siteId) ?? []).map((zone) => (
             <label key={zone.id} className="choice">
-              <input type="radio" name="zone" value={zone.id} checked={draft.zoneId === zone.id} onChange={() => change({ zoneId: zone.id })} />
+              <input type="radio" name="zone" value={zone.zone_key} checked={draft.zoneId === zone.zone_key} onChange={() => change({ zoneId: zone.zone_key })} />
               <span className="choice__text">
                 <span className="choice__title">{zone.name}</span>
               </span>
@@ -251,7 +257,7 @@ export function ReportFlow() {
 
       <fieldset className="report__group">
         <legend className="report__legend">
-          <span className="report__step">3</span> Details <span className="report__optional">optional</span>
+          <span className="report__step">4</span> Details <span className="report__optional">optional</span>
         </legend>
         <div className="field">
           <label className="visually-hidden" htmlFor={`${id}-note`}>
@@ -329,8 +335,8 @@ function ReceiptView({ receipt, onNew }: { receipt: Receipt; onNew: () => void }
     } catch (error) {
       setProblem(
         error instanceof ApiError && error.code === "invalid"
-          ? "The operations demo no longer has this report. Its local data may have been reset."
-          : "The status can't be checked right now. The operations demo may not be running.",
+          ? "No report matches this private receipt. Check that the saved receipt is correct."
+          : "The status can't be checked right now. Try again when the connection is available.",
       );
     }
   }, [receipt]);
@@ -351,7 +357,7 @@ function ReceiptView({ receipt, onNew }: { receipt: Receipt; onNew: () => void }
       <h1 ref={headingRef} tabIndex={-1}>
         Report received
       </h1>
-      <p className="page-head__lede">The operations demo confirmed your report about “{receipt.category}”.</p>
+      <p className="page-head__lede">The site team received your report about “{receipt.category}”.</p>
 
       <dl className="receipt__card">
         <div>
@@ -394,7 +400,7 @@ function ReceiptView({ receipt, onNew }: { receipt: Receipt; onNew: () => void }
           Back to home
         </Link>
       </div>
-      <p className="field__hint">This receipt is saved on this device only. It&apos;s a local demo, so staff at a real monument won&apos;t see it.</p>
+      <p className="field__hint">Keep this receipt on your device to check the report status later.</p>
     </div>
   );
 }

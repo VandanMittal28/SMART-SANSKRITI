@@ -1,6 +1,6 @@
 import { json } from "../../../lib/server/http.ts";
 import { isNvidiaConfigured } from "../../../lib/server/nvidia.ts";
-import { opsReachable } from "../../../lib/server/ops.ts";
+import { getReportCatalog } from "../../../lib/server/visitor-reports.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   let reachable = false;
   try {
-    reachable = await opsReachable();
+    const catalog = await getReportCatalog();
+    reachable = catalog.sites.length === 4 && catalog.zones.length > 0;
   } catch {
     reachable = false;
   }
-  return json({ live: isNvidiaConfigured(), reports: { mode: "local-demo", reachable } });
+  return json({ live: isNvidiaConfigured(), reports: { mode: "hosted-mms", reachable } });
 }

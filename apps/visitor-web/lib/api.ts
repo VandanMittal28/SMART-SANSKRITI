@@ -1,7 +1,7 @@
 // Typed browser calls to this website's own server routes. No third-party
 // service is called from the browser, and no key ever reaches it.
 
-import type { ReportStatus, ReportSubmission } from "./report";
+import type { ReportSite, ReportStatus, ReportSubmission, ReportZone } from "./report";
 
 export type ApiErrorCode =
   | "not_configured"
@@ -64,7 +64,7 @@ async function call<T>(path: string, init: RequestInit & { timeoutMs?: number } 
 
 export type Capabilities = {
   live: boolean;
-  reports: { mode: "local-demo"; reachable: boolean };
+  reports: { mode: "hosted-mms"; reachable: boolean };
 };
 
 export const getCapabilities = () => call<Capabilities>("/api/status", { timeoutMs: 8_000 });
@@ -99,6 +99,10 @@ export const transcribe = (audioBase64: string, language: "en" | "hi") =>
   call<{ text: string }>("/api/transcribe", { method: "POST", body: JSON.stringify({ audio_b64: audioBase64, language }), timeoutMs: 60_000 });
 
 export type ReportReceiptResponse = { id: string; status: ReportStatus; duplicate?: boolean };
+
+export type ReportCatalog = { sites: ReportSite[]; zones: ReportZone[] };
+
+export const getReportCatalog = () => call<ReportCatalog>("/api/reports", { timeoutMs: 10_000 });
 
 export const submitReport = (report: ReportSubmission) =>
   call<ReportReceiptResponse>("/api/reports", { method: "POST", body: JSON.stringify(report), timeoutMs: 45_000 });
