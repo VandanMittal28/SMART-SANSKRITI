@@ -1,2 +1,2 @@
-import { DemoWorkspace } from '../components/demo-workspace';
-export default function Page() { return <DemoWorkspace/>; }
+import { MmsApp } from '../components/mms-app';
+export default function Page() { return <MmsApp/>; }

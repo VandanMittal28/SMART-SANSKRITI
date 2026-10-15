@@ -1,6 +1,14 @@
-# Sanskriti operations foundation
+# Sanskriti Monument Management System
 
-A separate staff console for the monument-management product. The Android and iOS visitor projects are unchanged.
+A separate staff console for monument operations. The visitor website remains a separate Vercel deployment.
+
+## Production workspace
+
+The MMS uses Supabase Auth and site-scoped Postgres tables. Its current workspace covers Taj Mahal, Qutub Minar, Red Fort and Konark Sun Temple, with zone lists specific to each site. Sign-in uses the administrator's email and password; `base` is an administrator username alias. Incident creation and status transitions are recorded with an audit history. Row Level Security and database functions enforce site membership and workflow transitions.
+
+The initial administrator is provisioned only for the verified address authorized in the MMS database migration. After that account verifies its email and signs in, the app grants it access to the four MMS sites. Do not add an administrator by changing client-side code. Staff logins are not provisioned from this screen; additional staff accounts need a verified Supabase Auth account and a site membership before they can use the console.
+
+The `mms_*` tables are separate from the visitor profiles and marketplace tables. Monument site records are read from the existing `heritage_sites` directory. Site zone capacities are intentionally unset until a site operator supplies verified limits.
 
 ## Run locally
 
@@ -13,7 +21,7 @@ npm run dev:operations
 
 Open http://127.0.0.1:3100. The server binds to loopback only. No credentials or database setup are needed for this **local sandbox**.
 
-## Working now
+## Local operations prototype
 
 - Overview with derived incident metrics, review queue and illustrative site layout.
 - Create staff reports; search and filter incidents.
@@ -30,7 +38,7 @@ Synthetic seed data uses a fictional Heritage Park. No live monument, staff, adm
 
 ## Data and boundaries
 
-Data is stored at `.data/operations.json` (git-ignored). Use synthetic, non-sensitive data only. Back up this file to preserve local changes. One Node process must own this store; it is not a shared database and is unsuitable for serverless/multi-instance deployment. Corrupt or incompatible data fails visibly instead of being overwritten.
+The older prototype routes below still use `.data/operations.json` and `.data/report-demo.json`; they are explicitly localhost-only and are not used by the production MMS screen. One Node process must own these local stores. They are unsuitable for serverless/multi-instance deployment.
 
 Local API routes reject remote hostnames and cross-origin requests. Production-mode APIs fail closed unless `OPS_LOCAL_DEMO=true` is deliberately supplied for a local preview. This is **not authentication or role-based access control**. Do not expose the sandbox through a public proxy. The staff selector filters assignments; it does not impersonate or authenticate anyone. Every change is attributed to the local operator.
 
@@ -55,7 +63,7 @@ For a local production-build preview only: `OPS_LOCAL_DEMO=true npm run start --
 5. Integrate authorised ticket entry/exit records. Only then reconcile site occupancy and generate a real daily report.
 6. Validate sustained crowd thresholds, camera alerts and safe-route recommendations at a pilot site before calling them operational.
 
-Not implemented: production login, multi-site access, production evidence storage or notifications, live cameras, NFC website, ticketing, production daily scheduling or cloud deployment. Visitor evidence, GPS assignment and alerts in this workspace are local demo features only.
+Not implemented in the production MMS: visitor report intake/evidence, staff invites and duty tracking, live cameras or occupancy, ticketing, notifications, or production daily scheduling. The old prototype still demonstrates some of these flows locally. Do not treat its sample data, AI triage, or locations as live monument operations.
 
 ## Android visitor report demonstration
 
