@@ -22,13 +22,15 @@
   --accent: #F6C00A;
   --accent-foreground: #181A13;
   --destructive: #C2321B;
+  --destructive-text: #BA301A;
   --destructive-foreground: #FFFFFF;
   --border: rgba(24, 26, 19, 0.08);
   --input: #FFFFFF;
   --ring: #F6C00A;
-  --primary-text: #8A6A05;
+  --primary-text: #7C5F04;
   --on-tint: #181A13;
   --success: #2F7D63;
+  --success-text: #2C745C;
   --success-foreground: #FFFFFF;
   --radius: 1.5rem;
   --sidebar: #FFFFFF;
@@ -47,7 +49,7 @@
 }
 
 html.light {
-  --primary-text: #8A6A05;
+  --primary-text: #7C5F04;
   --on-tint: #181A13;
   --background: #F2F2F4;
   --foreground: #181A13;
@@ -67,6 +69,7 @@ html.light {
   --input: #FFFFFF;
   --ring: #F6C00A;
   --success: #2F7D63;
+  --success-text: #2C745C;
   --success-foreground: #FFFFFF;
   --sidebar: #FFFFFF;
   --sidebar-foreground: #181A13;
@@ -99,11 +102,13 @@ html.dark {
   --accent: #F6C00A;
   --accent-foreground: #181A13;
   --destructive: #E4553B;
+  --destructive-text: #E4553B;
   --destructive-foreground: #FFFFFF;
   --border: rgba(249, 249, 250, 0.10);
   --input: #22251D;
   --ring: #F6C00A;
   --success: #6FC2A2;
+  --success-text: #6FC2A2;
   --success-foreground: #121410;
   --sidebar: #1E211A;
   --sidebar-foreground: #F9F9FA;
@@ -164,15 +169,23 @@ html.dark {
   }
   html {
     background: var(--background);
-    color-scheme: dark;
-  }
-  html.light {
+    /* `:root` holds the light tokens and ThemeProvider defaults to light, so
+       light is also what the very first paint must use. Declaring dark here
+       meant form controls, scrollbars and the web view's own backdrop drew
+       dark until the theme class landed — a dark flash on every cold start. */
     color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground;
     min-height: 100dvh;
     overscroll-behavior: none;
+    /* Packaged-app touch behaviour: no long-press callout over images and
+       links, no grey flash on tap. Text selection is untouched. */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
     font-family: var(--font-manrope), system-ui, sans-serif;
   }
 
@@ -331,6 +344,8 @@ html.light .hero-grid {
 
 html.light [style*="background: rgb(17, 24, 43)"],
 html.light [style*="background-color: rgb(17, 24, 43)"],
+html.light [style*="background: rgba(17, 24, 43"],
+html.light [style*="background-color: rgba(17, 24, 43"],
 html.light [style*="background: #11182B"],
 html.light [style*="background-color: #11182B"] {
   background: var(--card) !important;
@@ -723,6 +738,27 @@ html.light [style*="color: #8891A6"] {
   background-color: var(--muted);
 }
 
+/* Alpha variants of the three families above.
+
+   The `~=` rules deliberately leave tints alone, which is right for the
+   accents: `bg-[#D6A84B]/12` is a pale amber wash and still reads on a light
+   canvas. A navy at 90% is not a tint, it is a dark slab, so these need the
+   same remap as their solid forms. Listed exactly, from a scan of the app, so
+   that a `hover:`-prefixed class cannot be matched into a permanent one. */
+[class~="bg-[#080D1D]/80"], [class~="bg-[#080D1D]/85"], [class~="bg-[#080D1D]/90"],
+[class~="bg-[#07101c]/95"] {
+  background-color: var(--background);
+}
+[class~="bg-[#09101e]/97"] {
+  background-color: var(--card);
+}
+[class~="bg-[#171F34]/90"], [class~="md:bg-[#171F34]/90"] {
+  background-color: var(--muted);
+}
+[class~="from-[#080D1D]/90"] {
+  --tw-gradient-from: var(--background);
+}
+
 /* Primary text */
 [class~="text-[#F6F1E8]"], [class~="text-[#F5E6D3]"], [class~="text-[#fff0cd]"],
 [class~="text-[#ffe7b0]"], [class~="text-[#f8ecd2]"], [class~="text-[#F3DFC0]"],
@@ -765,7 +801,7 @@ html.light [style*="color: #8891A6"] {
 [class~="text-[#63C7BA]"], [class~="text-[#8DE0D6]"], [class~="text-[#7EE4D4]"],
 [class~="text-[#7ECDC0]"], [class~="text-[#79dfd0]"], [class~="text-[#8fbcb6]"],
 [class~="text-[#86cabe]"], [class~="text-[#6fd6c6]"], [class~="text-[#8de0d6]"] {
-  color: var(--success);
+  color: var(--success-text);
 }
 [class~="bg-[#63C7BA]"], [class~="bg-[#55c7b6]"] {
   background-color: var(--success);
@@ -922,7 +958,7 @@ html.light [class*="shadow-[0_0_80px_rgba(0,0,0"] {
 [class~="text-[#8fbcb6]"],
 [class~="text-[#A9E5DB]"],
 [class~="text-[#E9FFF9]"] {
-  color: var(--success);
+  color: var(--success-text);
 }
 
 /* Long tail: one-off literals, classified by their luminance so a colour
