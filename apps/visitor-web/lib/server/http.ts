@@ -10,7 +10,8 @@ export type ErrorCode =
   | "upstream"
   | "ops_unavailable"
   | "local_only"
-  | "reporting_unavailable";
+  | "reporting_unavailable"
+  | "ai_rejected";
 
 export class HttpError extends Error {
   status: number;

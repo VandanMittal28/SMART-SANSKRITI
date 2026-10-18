@@ -5,6 +5,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resetRateLimits } from "../lib/server/http.ts";
+import { aiState, resetAiState } from "../lib/server/nvidia.ts";
+import { GET as status } from "../app/api/status/route.ts";
 import { POST as recognize } from "../app/api/recognize/route.ts";
 
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(400, 9)]).toString("base64");
@@ -89,7 +91,7 @@ test("maps upstream failures to honest errors without leaking NVIDIA's text", as
       const response = await recognize(post({ image_b64: JPEG }));
       assert.equal(response.status, 503);
       const body = await response.json();
-      assert.equal(body.code, "not_configured");
+      assert.equal(body.code, "ai_rejected", "a rejected key is reported as rejected, not as missing");
       assert.doesNotMatch(body.error, /internal upstream detail/);
     },
   );
@@ -101,4 +103,30 @@ test("maps upstream failures to honest errors without leaking NVIDIA's text", as
       assert.equal((await response.json()).code, "upstream");
     },
   );
+});
+
+test("status reports a rejected key until a later call succeeds", async () => {
+  resetAiState();
+  await withMockedNvidia(
+    () => Response.json({ detail: "unauthorised" }, { status: 403 }),
+    async () => {
+      await recognize(post({ image_b64: JPEG }));
+      assert.equal(aiState(), "rejected");
+      const body = await (await status()).json();
+      assert.equal(body.ai, "rejected");
+      assert.equal(body.live, false, "live AI is off while the key is rejected");
+    },
+  );
+  await withMockedNvidia(
+    () => modelReply('{"monument_name":"Unknown","is_unknown":true}'),
+    async () => {
+      assert.equal((await recognize(post({ image_b64: JPEG }))).status, 200);
+      assert.equal(aiState(), "ready", "a successful call clears the rejected state");
+    },
+  );
+  resetAiState();
+  const realKey = process.env.NVIDIA_API_KEY;
+  delete process.env.NVIDIA_API_KEY;
+  assert.equal(aiState(), "missing");
+  if (realKey !== undefined) process.env.NVIDIA_API_KEY = realKey;
 });

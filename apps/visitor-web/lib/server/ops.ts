@@ -12,13 +12,19 @@ import { HttpError } from "./http.ts";
 export type ReportingMode = "local-demo" | "unavailable";
 
 /**
- * "unavailable" on a public Vercel deployment (Vercel sets VERCEL=1 at build
- * and runtime): a hosted site can't reach the operations demo on someone's
- * computer, and there is no public reporting destination yet. Everywhere
- * else reporting keeps working as the local demo.
+ * Reporting goes only to the operations demo on the same computer, so it is
+ * enabled only where that makes sense:
+ *   - never on Vercel (VERCEL=1): a hosted site can't reach anyone's computer;
+ *   - in development (`next dev`), where it is the local demo;
+ *   - in a production build only with an explicit REPORTS_MODE=local-demo
+ *     (e.g. testing `next start` on the same machine as operations).
+ * Everything else is "unavailable": there is no public reporting
+ * destination yet, so production must never send reports to localhost.
  */
 export function reportingMode(env: Record<string, string | undefined> = process.env): ReportingMode {
-  return env.VERCEL === "1" ? "unavailable" : "local-demo";
+  if (env.VERCEL === "1") return "unavailable";
+  if (env.NODE_ENV === "production" && env.REPORTS_MODE !== "local-demo") return "unavailable";
+  return "local-demo";
 }
 
 export function assertReportingAvailable(env: Record<string, string | undefined> = process.env): void {
@@ -46,6 +52,9 @@ export function opsBaseUrl(env: Record<string, string | undefined> = process.env
 type OpsResult = { status: number; body: Record<string, unknown> };
 
 async function call(path: string, init: RequestInit, timeoutMs: number): Promise<OpsResult> {
+  // Defence in depth: every request to operations re-checks the mode, so no
+  // code path can contact localhost while reporting is unavailable.
+  assertReportingAvailable();
   const url = new URL(path, opsBaseUrl());
   let response: Response;
   try {

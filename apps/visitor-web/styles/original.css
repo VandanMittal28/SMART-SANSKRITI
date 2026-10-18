@@ -1,0 +1,1739 @@
+/* ==========================================================================
+   Styles for the screens ported from the original Sanskriti app
+   (components/original/**): Monument Recognition, Issue Reporting and
+   Yatrik's conversation. They keep the original markup and its Tailwind
+   classes, so this file reproduces the original's styling without adding
+   Tailwind to the website. Every rule applies only inside .sanskriti-original,
+   so no other page is affected.
+
+   Generated, not edited: Tailwind CSS v4.1.14 (MIT licence; the original
+   uses Tailwind v4) compiled its theme, preflight and the utilities used in
+   components/original/**, then a script prefixed every selector with
+   .sanskriti-original, moved theme variables from :root to that class,
+   removed the cascade layers and renamed keyframes. If a ported file starts
+   using a new class, regenerate this part. The hand-written part is at the end.
+   ========================================================================== */
+/*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
+@supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    .sanskriti-original *, .sanskriti-original :before, .sanskriti-original :after, .sanskriti-original ::backdrop {
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+      --tw-space-y-reverse: 0;
+      --tw-border-style: solid;
+      --tw-gradient-position: initial;
+      --tw-gradient-from: #0000;
+      --tw-gradient-via: #0000;
+      --tw-gradient-to: #0000;
+      --tw-gradient-stops: initial;
+      --tw-gradient-via-stops: initial;
+      --tw-gradient-from-position: 0%;
+      --tw-gradient-via-position: 50%;
+      --tw-gradient-to-position: 100%;
+      --tw-leading: initial;
+      --tw-font-weight: initial;
+      --tw-tracking: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-duration: initial;
+      --tw-scale-x: 1;
+      --tw-scale-y: 1;
+      --tw-scale-z: 1;
+    }
+  }
+
+.sanskriti-original {
+    --font-sans: var(--font-manrope), Avenir Next, Avenir, system-ui, sans-serif;
+    --font-serif: var(--font-literata), Georgia, "Times New Roman", serif;
+    --color-red-200: oklch(88.5% .062 18.334);
+    --color-red-950: oklch(25.8% .092 26.042);
+    --color-black: #000;
+    --color-white: #fff;
+    --spacing: .25rem;
+    --container-2xl: 42rem;
+    --text-xs: .75rem;
+    --text-xs--line-height: calc(1 / .75);
+    --text-sm: .875rem;
+    --text-sm--line-height: calc(1.25 / .875);
+    --text-lg: 1.125rem;
+    --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
+    --text-3xl: 1.875rem;
+    --text-3xl--line-height: calc(2.25 / 1.875);
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --tracking-widest: .1em;
+    --leading-relaxed: 1.625;
+    --radius-lg: .5rem;
+    --radius-xl: .75rem;
+    --radius-2xl: 1rem;
+    --animate-spin: sanskriti-original-spin 1s linear infinite;
+    --animate-pulse: sanskriti-original-pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
+    --default-transition-duration: .15s;
+    --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    --default-font-family: var(--font-manrope), Avenir Next, Avenir, system-ui, sans-serif;
+    --default-mono-font-family: "Geist Mono", monospace;
+  }
+
+.sanskriti-original *, .sanskriti-original :after, .sanskriti-original :before, .sanskriti-original ::backdrop {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+.sanskriti-original ::file-selector-button {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+.sanskriti-original {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings, normal);
+    font-variation-settings: var(--default-font-variation-settings, normal);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+.sanskriti-original hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+.sanskriti-original abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+
+.sanskriti-original h1, .sanskriti-original h2, .sanskriti-original h3, .sanskriti-original h4, .sanskriti-original h5, .sanskriti-original h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+.sanskriti-original a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+
+.sanskriti-original b, .sanskriti-original strong {
+    font-weight: bolder;
+  }
+
+.sanskriti-original code, .sanskriti-original kbd, .sanskriti-original samp, .sanskriti-original pre {
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings, normal);
+    font-variation-settings: var(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+
+.sanskriti-original small {
+    font-size: 80%;
+  }
+
+.sanskriti-original sub, .sanskriti-original sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+  }
+
+.sanskriti-original sub {
+    bottom: -.25em;
+  }
+
+.sanskriti-original sup {
+    top: -.5em;
+  }
+
+.sanskriti-original table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+.sanskriti-original :-moz-focusring {
+    outline: auto;
+  }
+
+.sanskriti-original progress {
+    vertical-align: baseline;
+  }
+
+.sanskriti-original summary {
+    display: list-item;
+  }
+
+.sanskriti-original ol, .sanskriti-original ul, .sanskriti-original menu {
+    list-style: none;
+  }
+
+.sanskriti-original img, .sanskriti-original svg, .sanskriti-original video, .sanskriti-original canvas, .sanskriti-original audio, .sanskriti-original iframe, .sanskriti-original embed, .sanskriti-original object {
+    vertical-align: middle;
+    display: block;
+  }
+
+.sanskriti-original img, .sanskriti-original video {
+    max-width: 100%;
+    height: auto;
+  }
+
+.sanskriti-original button, .sanskriti-original input, .sanskriti-original select, .sanskriti-original optgroup, .sanskriti-original textarea {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+.sanskriti-original ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+.sanskriti-original :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+.sanskriti-original :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+
+.sanskriti-original ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+.sanskriti-original ::placeholder {
+    opacity: 1;
+  }
+
+@supports (not ((-webkit-appearance: -apple-pay-button))) or (contain-intrinsic-size: 1px) {
+    .sanskriti-original ::placeholder {
+      color: currentColor;
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .sanskriti-original ::placeholder {
+        color: color-mix(in oklab, currentcolor 50%, transparent);
+      }
+    }
+  }
+
+.sanskriti-original textarea {
+    resize: vertical;
+  }
+
+.sanskriti-original ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+.sanskriti-original ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-year-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-month-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-day-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-hour-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-minute-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-second-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-millisecond-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+.sanskriti-original ::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+
+.sanskriti-original :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+.sanskriti-original button, .sanskriti-original input:where([type="button"], [type="reset"], [type="submit"]) {
+    appearance: button;
+  }
+
+.sanskriti-original ::file-selector-button {
+    appearance: button;
+  }
+
+.sanskriti-original ::-webkit-inner-spin-button {
+    height: auto;
+  }
+
+.sanskriti-original ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+.sanskriti-original [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+
+.sanskriti-original .visible {
+    visibility: visible;
+  }
+
+.sanskriti-original .sr-only {
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    position: absolute;
+    overflow: hidden;
+  }
+
+.sanskriti-original .absolute {
+    position: absolute;
+  }
+
+.sanskriti-original .fixed {
+    position: fixed;
+  }
+
+.sanskriti-original .relative {
+    position: relative;
+  }
+
+.sanskriti-original .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
+
+.sanskriti-original .inset-x-0 {
+    inset-inline: calc(var(--spacing) * 0);
+  }
+
+.sanskriti-original .bottom-0 {
+    bottom: calc(var(--spacing) * 0);
+  }
+
+.sanskriti-original .mx-auto {
+    margin-inline: auto;
+  }
+
+.sanskriti-original .my-5 {
+    margin-block: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .mt-1 {
+    margin-top: calc(var(--spacing) * 1);
+  }
+
+.sanskriti-original .mt-2 {
+    margin-top: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .mt-3 {
+    margin-top: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .mt-4 {
+    margin-top: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .mt-5 {
+    margin-top: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .mt-6 {
+    margin-top: calc(var(--spacing) * 6);
+  }
+
+.sanskriti-original .mt-8 {
+    margin-top: calc(var(--spacing) * 8);
+  }
+
+.sanskriti-original .mb-1\.5 {
+    margin-bottom: calc(var(--spacing) * 1.5);
+  }
+
+.sanskriti-original .mb-2 {
+    margin-bottom: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .mb-4 {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .block {
+    display: block;
+  }
+
+.sanskriti-original .flex {
+    display: flex;
+  }
+
+.sanskriti-original .grid {
+    display: grid;
+  }
+
+.sanskriti-original .hidden {
+    display: none;
+  }
+
+.sanskriti-original .inline {
+    display: inline;
+  }
+
+.sanskriti-original .inline-block {
+    display: inline-block;
+  }
+
+.sanskriti-original .inline-flex {
+    display: inline-flex;
+  }
+
+.sanskriti-original .size-4 {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .size-5 {
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .size-8 {
+    width: calc(var(--spacing) * 8);
+    height: calc(var(--spacing) * 8);
+  }
+
+.sanskriti-original .h-2 {
+    height: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .h-3\.5 {
+    height: calc(var(--spacing) * 3.5);
+  }
+
+.sanskriti-original .h-4 {
+    height: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .h-4\.5 {
+    height: calc(var(--spacing) * 4.5);
+  }
+
+.sanskriti-original .h-5 {
+    height: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .h-8 {
+    height: calc(var(--spacing) * 8);
+  }
+
+.sanskriti-original .h-9 {
+    height: calc(var(--spacing) * 9);
+  }
+
+.sanskriti-original .h-10 {
+    height: calc(var(--spacing) * 10);
+  }
+
+.sanskriti-original .h-11 {
+    height: calc(var(--spacing) * 11);
+  }
+
+.sanskriti-original .h-12 {
+    height: calc(var(--spacing) * 12);
+  }
+
+.sanskriti-original .h-16 {
+    height: calc(var(--spacing) * 16);
+  }
+
+.sanskriti-original .h-\[220px\] {
+    height: 220px;
+  }
+
+.sanskriti-original .h-full {
+    height: 100%;
+  }
+
+.sanskriti-original .max-h-48 {
+    max-height: calc(var(--spacing) * 48);
+  }
+
+.sanskriti-original .min-h-7 {
+    min-height: calc(var(--spacing) * 7);
+  }
+
+.sanskriti-original .min-h-10 {
+    min-height: calc(var(--spacing) * 10);
+  }
+
+.sanskriti-original .min-h-11 {
+    min-height: calc(var(--spacing) * 11);
+  }
+
+.sanskriti-original .min-h-12 {
+    min-height: calc(var(--spacing) * 12);
+  }
+
+.sanskriti-original .min-h-24 {
+    min-height: calc(var(--spacing) * 24);
+  }
+
+.sanskriti-original .min-h-\[76px\] {
+    min-height: 76px;
+  }
+
+.sanskriti-original .min-h-dvh {
+    min-height: 100dvh;
+  }
+
+.sanskriti-original .w-2 {
+    width: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .w-3\.5 {
+    width: calc(var(--spacing) * 3.5);
+  }
+
+.sanskriti-original .w-4 {
+    width: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .w-4\.5 {
+    width: calc(var(--spacing) * 4.5);
+  }
+
+.sanskriti-original .w-5 {
+    width: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .w-8 {
+    width: calc(var(--spacing) * 8);
+  }
+
+.sanskriti-original .w-9 {
+    width: calc(var(--spacing) * 9);
+  }
+
+.sanskriti-original .w-10 {
+    width: calc(var(--spacing) * 10);
+  }
+
+.sanskriti-original .w-11 {
+    width: calc(var(--spacing) * 11);
+  }
+
+.sanskriti-original .w-12 {
+    width: calc(var(--spacing) * 12);
+  }
+
+.sanskriti-original .w-16 {
+    width: calc(var(--spacing) * 16);
+  }
+
+.sanskriti-original .w-full {
+    width: 100%;
+  }
+
+.sanskriti-original .max-w-2xl {
+    max-width: var(--container-2xl);
+  }
+
+.sanskriti-original .max-w-\[80\%\] {
+    max-width: 80%;
+  }
+
+.sanskriti-original .max-w-\[280px\] {
+    max-width: 280px;
+  }
+
+.sanskriti-original .max-w-\[300px\] {
+    max-width: 300px;
+  }
+
+.sanskriti-original .max-w-\[420px\] {
+    max-width: 420px;
+  }
+
+.sanskriti-original .min-w-0 {
+    min-width: calc(var(--spacing) * 0);
+  }
+
+.sanskriti-original .flex-1 {
+    flex: 1;
+  }
+
+.sanskriti-original .shrink-0 {
+    flex-shrink: 0;
+  }
+
+.sanskriti-original .rotate-180 {
+    rotate: 180deg;
+  }
+
+.sanskriti-original .transform {
+    transform: var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
+  }
+
+.sanskriti-original .animate-pulse {
+    animation: var(--animate-pulse);
+  }
+
+.sanskriti-original .animate-spin {
+    animation: var(--animate-spin);
+  }
+
+.sanskriti-original .cursor-pointer {
+    cursor: pointer;
+  }
+
+.sanskriti-original .resize {
+    resize: both;
+  }
+
+.sanskriti-original .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+.sanskriti-original .flex-col {
+    flex-direction: column;
+  }
+
+.sanskriti-original .flex-wrap {
+    flex-wrap: wrap;
+  }
+
+.sanskriti-original .place-items-center {
+    place-items: center;
+  }
+
+.sanskriti-original .items-center {
+    align-items: center;
+  }
+
+.sanskriti-original .items-start {
+    align-items: flex-start;
+  }
+
+.sanskriti-original .justify-between {
+    justify-content: space-between;
+  }
+
+.sanskriti-original .justify-center {
+    justify-content: center;
+  }
+
+.sanskriti-original .justify-end {
+    justify-content: flex-end;
+  }
+
+.sanskriti-original .justify-start {
+    justify-content: flex-start;
+  }
+
+.sanskriti-original .gap-1 {
+    gap: calc(var(--spacing) * 1);
+  }
+
+.sanskriti-original .gap-1\.5 {
+    gap: calc(var(--spacing) * 1.5);
+  }
+
+.sanskriti-original .gap-2 {
+    gap: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .gap-2\.5 {
+    gap: calc(var(--spacing) * 2.5);
+  }
+
+.sanskriti-original .gap-3 {
+    gap: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original :where(.space-y-3 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+.sanskriti-original :where(.space-y-4 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+.sanskriti-original :where(.space-y-5 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 5) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 5) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
+.sanskriti-original .gap-x-4 {
+    column-gap: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .overflow-hidden {
+    overflow: hidden;
+  }
+
+.sanskriti-original .overflow-x-auto {
+    overflow-x: auto;
+  }
+
+.sanskriti-original .overflow-y-auto {
+    overflow-y: auto;
+  }
+
+.sanskriti-original .rounded-2xl {
+    border-radius: var(--radius-2xl);
+  }
+
+.sanskriti-original .rounded-full {
+    border-radius: 3.40282e38px;
+  }
+
+.sanskriti-original .rounded-lg {
+    border-radius: var(--radius-lg);
+  }
+
+.sanskriti-original .rounded-xl {
+    border-radius: var(--radius-xl);
+  }
+
+.sanskriti-original .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+  }
+
+.sanskriti-original .border-2 {
+    border-style: var(--tw-border-style);
+    border-width: 2px;
+  }
+
+.sanskriti-original .border-4 {
+    border-style: var(--tw-border-style);
+    border-width: 4px;
+  }
+
+.sanskriti-original .border-t {
+    border-top-style: var(--tw-border-style);
+    border-top-width: 1px;
+  }
+
+.sanskriti-original .border-b {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 1px;
+  }
+
+.sanskriti-original .border-l-2 {
+    border-left-style: var(--tw-border-style);
+    border-left-width: 2px;
+  }
+
+.sanskriti-original .border-l-4 {
+    border-left-style: var(--tw-border-style);
+    border-left-width: 4px;
+  }
+
+.sanskriti-original .border-dashed {
+    --tw-border-style: dashed;
+    border-style: dashed;
+  }
+
+.sanskriti-original .border-\[\#63C7BA\] {
+    border-color: #63c7ba;
+  }
+
+.sanskriti-original .border-\[\#63C7BA\]\/15 {
+    border-color: oklab(76.5778% -.0958873 -.00719523 / .15);
+  }
+
+.sanskriti-original .border-\[\#63C7BA\]\/16 {
+    border-color: oklab(76.5778% -.0958873 -.00719523 / .16);
+  }
+
+.sanskriti-original .border-\[\#63C7BA\]\/30, .sanskriti-original .border-\[\#63c7ba\]\/30 {
+    border-color: oklab(76.5778% -.0958873 -.00719523 / .3);
+  }
+
+.sanskriti-original .border-\[\#63c7ba\]\/40 {
+    border-color: oklab(76.5778% -.0958873 -.00719523 / .4);
+  }
+
+.sanskriti-original .border-\[\#C66B4E\] {
+    border-color: #c66b4e;
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/15 {
+    border-color: oklab(75.6293% .015996 .121336 / .15);
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/16 {
+    border-color: oklab(75.6293% .015996 .121336 / .16);
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/18 {
+    border-color: oklab(75.6293% .015996 .121336 / .18);
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/20 {
+    border-color: oklab(75.6293% .015996 .121336 / .2);
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/25 {
+    border-color: oklab(75.6293% .015996 .121336 / .25);
+  }
+
+.sanskriti-original .border-\[\#D6A84B\]\/50 {
+    border-color: oklab(75.6293% .015996 .121336 / .5);
+  }
+
+.sanskriti-original .border-\[\#E46F67\]\/30 {
+    border-color: oklab(67.7819% .132571 .0637927 / .3);
+  }
+
+.sanskriti-original .border-\[\#E8928B\]\/20 {
+    border-color: oklab(74.6271% .0955927 .0444385 / .2);
+  }
+
+.sanskriti-original .border-\[\#e8be69\]\/45 {
+    border-color: oklab(82.1266% .0128982 .11363 / .45);
+  }
+
+.sanskriti-original .border-white\/6 {
+    border-color: #ffffff0f;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .border-white\/6 {
+      border-color: color-mix(in oklab, var(--color-white) 6%, transparent);
+    }
+  }
+
+.sanskriti-original .border-white\/7 {
+    border-color: #ffffff12;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .border-white\/7 {
+      border-color: color-mix(in oklab, var(--color-white) 7%, transparent);
+    }
+  }
+
+.sanskriti-original .border-white\/8 {
+    border-color: #ffffff14;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .border-white\/8 {
+      border-color: color-mix(in oklab, var(--color-white) 8%, transparent);
+    }
+  }
+
+.sanskriti-original .border-white\/10 {
+    border-color: #ffffff1a;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .border-white\/10 {
+      border-color: color-mix(in oklab, var(--color-white) 10%, transparent);
+    }
+  }
+
+.sanskriti-original .border-white\/20 {
+    border-color: #fff3;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .border-white\/20 {
+      border-color: color-mix(in oklab, var(--color-white) 20%, transparent);
+    }
+  }
+
+.sanskriti-original .bg-\[\#0A2526\]\/90 {
+    background-color: oklab(24.4444% -.0307511 -.0103499 / .9);
+  }
+
+.sanskriti-original .bg-\[\#0D1426\] {
+    background-color: #0d1426;
+  }
+
+.sanskriti-original .bg-\[\#0b1423\] {
+    background-color: #0b1423;
+  }
+
+.sanskriti-original .bg-\[\#1b2a3b\] {
+    background-color: #1b2a3b;
+  }
+
+.sanskriti-original .bg-\[\#7C3AED\]\/15 {
+    background-color: oklab(54.1337% .0963843 -.226968 / .15);
+  }
+
+.sanskriti-original .bg-\[\#63C7BA\] {
+    background-color: #63c7ba;
+  }
+
+.sanskriti-original .bg-\[\#63C7BA\]\/12 {
+    background-color: oklab(76.5778% -.0958873 -.00719523 / .12);
+  }
+
+.sanskriti-original .bg-\[\#63C7BA\]\/15 {
+    background-color: oklab(76.5778% -.0958873 -.00719523 / .15);
+  }
+
+.sanskriti-original .bg-\[\#63C7BA\]\/\[0\.05\] {
+    background-color: oklab(76.5778% -.0958873 -.00719523 / .05);
+  }
+
+.sanskriti-original .bg-\[\#63C7BA\]\/\[0\.06\] {
+    background-color: oklab(76.5778% -.0958873 -.00719523 / .06);
+  }
+
+.sanskriti-original .bg-\[\#080D1D\] {
+    background-color: #080d1d;
+  }
+
+.sanskriti-original .bg-\[\#171F34\] {
+    background-color: #171f34;
+  }
+
+.sanskriti-original .bg-\[\#11182B\] {
+    background-color: #11182b;
+  }
+
+.sanskriti-original .bg-\[\#15363b\] {
+    background-color: #15363b;
+  }
+
+.sanskriti-original .bg-\[\#172536\] {
+    background-color: #172536;
+  }
+
+.sanskriti-original .bg-\[\#C66B4E\]\/12 {
+    background-color: oklab(62.5948% .0967181 .0766053 / .12);
+  }
+
+.sanskriti-original .bg-\[\#D6A84B\] {
+    background-color: #d6a84b;
+  }
+
+.sanskriti-original .bg-\[\#D6A84B\]\/7 {
+    background-color: oklab(75.6293% .015996 .121336 / .07);
+  }
+
+.sanskriti-original .bg-\[\#D6A84B\]\/10 {
+    background-color: oklab(75.6293% .015996 .121336 / .1);
+  }
+
+.sanskriti-original .bg-\[\#D6A84B\]\/12 {
+    background-color: oklab(75.6293% .015996 .121336 / .12);
+  }
+
+.sanskriti-original .bg-\[\#D6A84B\]\/20 {
+    background-color: oklab(75.6293% .015996 .121336 / .2);
+  }
+
+.sanskriti-original .bg-\[\#E46F67\]\/12 {
+    background-color: oklab(67.7819% .132571 .0637927 / .12);
+  }
+
+.sanskriti-original .bg-\[\#E8928B\]\/10 {
+    background-color: oklab(74.6271% .0955927 .0444385 / .1);
+  }
+
+.sanskriti-original .bg-\[\#e8be69\] {
+    background-color: #e8be69;
+  }
+
+.sanskriti-original .bg-red-950\/50 {
+    background-color: #46080980;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .bg-red-950\/50 {
+      background-color: color-mix(in oklab, var(--color-red-950) 50%, transparent);
+    }
+  }
+
+.sanskriti-original .bg-gradient-to-br {
+    --tw-gradient-position: to bottom right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+
+.sanskriti-original .bg-gradient-to-t {
+    --tw-gradient-position: to top in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+
+.sanskriti-original .from-\[\#7C3AED\] {
+    --tw-gradient-from: #7c3aed;
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+.sanskriti-original .from-\[\#080D1D\] {
+    --tw-gradient-from: #080d1d;
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+.sanskriti-original .via-transparent {
+    --tw-gradient-via: transparent;
+    --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-via-stops);
+  }
+
+.sanskriti-original .to-\[\#5B21B6\] {
+    --tw-gradient-to: #5b21b6;
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+.sanskriti-original .to-black\/15 {
+    --tw-gradient-to: #00000026;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .to-black\/15 {
+      --tw-gradient-to: color-mix(in oklab, var(--color-black) 15%, transparent);
+    }
+  }
+
+.sanskriti-original .to-black\/15 {
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
+.sanskriti-original .object-cover {
+    object-fit: cover;
+  }
+
+.sanskriti-original .p-3 {
+    padding: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .p-3\.5 {
+    padding: calc(var(--spacing) * 3.5);
+  }
+
+.sanskriti-original .p-4 {
+    padding: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .p-5 {
+    padding: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .p-10 {
+    padding: calc(var(--spacing) * 10);
+  }
+
+.sanskriti-original .p-12 {
+    padding: calc(var(--spacing) * 12);
+  }
+
+.sanskriti-original .px-1 {
+    padding-inline: calc(var(--spacing) * 1);
+  }
+
+.sanskriti-original .px-2\.5 {
+    padding-inline: calc(var(--spacing) * 2.5);
+  }
+
+.sanskriti-original .px-3 {
+    padding-inline: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .px-4 {
+    padding-inline: calc(var(--spacing) * 4);
+  }
+
+.sanskriti-original .px-5 {
+    padding-inline: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .px-6 {
+    padding-inline: calc(var(--spacing) * 6);
+  }
+
+.sanskriti-original .py-1 {
+    padding-block: calc(var(--spacing) * 1);
+  }
+
+.sanskriti-original .py-1\.5 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+
+.sanskriti-original .py-2 {
+    padding-block: calc(var(--spacing) * 2);
+  }
+
+.sanskriti-original .py-3 {
+    padding-block: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .py-3\.5 {
+    padding-block: calc(var(--spacing) * 3.5);
+  }
+
+.sanskriti-original .py-5 {
+    padding-block: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .pt-3 {
+    padding-top: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .pt-\[calc\(env\(safe-area-inset-top\)\+24px\)\] {
+    padding-top: calc(env(safe-area-inset-top)  + 24px);
+  }
+
+.sanskriti-original .pb-1 {
+    padding-bottom: calc(var(--spacing) * 1);
+  }
+
+.sanskriti-original .pb-3 {
+    padding-bottom: calc(var(--spacing) * 3);
+  }
+
+.sanskriti-original .pb-12 {
+    padding-bottom: calc(var(--spacing) * 12);
+  }
+
+.sanskriti-original .text-center {
+    text-align: center;
+  }
+
+.sanskriti-original .text-left {
+    text-align: left;
+  }
+
+.sanskriti-original .text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--tw-leading, var(--text-3xl--line-height));
+  }
+
+.sanskriti-original .text-lg {
+    font-size: var(--text-lg);
+    line-height: var(--tw-leading, var(--text-lg--line-height));
+  }
+
+.sanskriti-original .text-sm {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+
+.sanskriti-original .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
+  }
+
+.sanskriti-original .text-xs {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+
+.sanskriti-original .text-\[10px\] {
+    font-size: 10px;
+  }
+
+.sanskriti-original .text-\[11px\] {
+    font-size: 11px;
+  }
+
+.sanskriti-original .text-\[26px\] {
+    font-size: 26px;
+  }
+
+.sanskriti-original .text-\[28px\] {
+    font-size: 28px;
+  }
+
+.sanskriti-original .leading-5 {
+    --tw-leading: calc(var(--spacing) * 5);
+    line-height: calc(var(--spacing) * 5);
+  }
+
+.sanskriti-original .leading-6 {
+    --tw-leading: calc(var(--spacing) * 6);
+    line-height: calc(var(--spacing) * 6);
+  }
+
+.sanskriti-original .leading-8 {
+    --tw-leading: calc(var(--spacing) * 8);
+    line-height: calc(var(--spacing) * 8);
+  }
+
+.sanskriti-original .leading-9 {
+    --tw-leading: calc(var(--spacing) * 9);
+    line-height: calc(var(--spacing) * 9);
+  }
+
+.sanskriti-original .leading-relaxed {
+    --tw-leading: var(--leading-relaxed);
+    line-height: var(--leading-relaxed);
+  }
+
+.sanskriti-original .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
+
+.sanskriti-original .font-medium {
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
+.sanskriti-original .font-semibold {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
+  }
+
+.sanskriti-original .tracking-\[0\.1em\] {
+    --tw-tracking: .1em;
+    letter-spacing: .1em;
+  }
+
+.sanskriti-original .tracking-\[0\.08em\] {
+    --tw-tracking: .08em;
+    letter-spacing: .08em;
+  }
+
+.sanskriti-original .tracking-widest {
+    --tw-tracking: var(--tracking-widest);
+    letter-spacing: var(--tracking-widest);
+  }
+
+.sanskriti-original .text-\[\#1b1d20\] {
+    color: #1b1d20;
+  }
+
+.sanskriti-original .text-\[\#8DE0D6\], .sanskriti-original .text-\[\#8de0d6\] {
+    color: #8de0d6;
+  }
+
+.sanskriti-original .text-\[\#63C7BA\] {
+    color: #63c7ba;
+  }
+
+.sanskriti-original .text-\[\#080D1D\] {
+    color: #080d1d;
+  }
+
+.sanskriti-original .text-\[\#8891A6\] {
+    color: #8891a6;
+  }
+
+.sanskriti-original .text-\[\#171004\] {
+    color: #171004;
+  }
+
+.sanskriti-original .text-\[\#667086\] {
+    color: #667086;
+  }
+
+.sanskriti-original .text-\[\#AEB6C8\] {
+    color: #aeb6c8;
+  }
+
+.sanskriti-original .text-\[\#B9A2F5\] {
+    color: #b9a2f5;
+  }
+
+.sanskriti-original .text-\[\#C7CDDA\] {
+    color: #c7cdda;
+  }
+
+.sanskriti-original .text-\[\#D6A84B\] {
+    color: #d6a84b;
+  }
+
+.sanskriti-original .text-\[\#D6A84B\]\/25 {
+    color: oklab(75.6293% .015996 .121336 / .25);
+  }
+
+.sanskriti-original .text-\[\#E8928B\] {
+    color: #e8928b;
+  }
+
+.sanskriti-original .text-\[\#F3DFC0\] {
+    color: #f3dfc0;
+  }
+
+.sanskriti-original .text-\[\#F6F1E8\] {
+    color: #f6f1e8;
+  }
+
+.sanskriti-original .text-\[\#FFAAA4\] {
+    color: #ffaaa4;
+  }
+
+.sanskriti-original .text-\[\#aeb6c8\] {
+    color: #aeb6c8;
+  }
+
+.sanskriti-original .text-\[\#caa967\] {
+    color: #caa967;
+  }
+
+.sanskriti-original .text-\[\#e8be69\] {
+    color: #e8be69;
+  }
+
+.sanskriti-original .text-\[\#f5f0e5\] {
+    color: #f5f0e5;
+  }
+
+.sanskriti-original .text-red-200 {
+    color: var(--color-red-200);
+  }
+
+.sanskriti-original .text-white {
+    color: var(--color-white);
+  }
+
+.sanskriti-original .text-white\/75 {
+    color: #ffffffbf;
+  }
+
+@supports (color: color-mix(in lab, red, red)) {
+    .sanskriti-original .text-white\/75 {
+      color: color-mix(in oklab, var(--color-white) 75%, transparent);
+    }
+  }
+
+.sanskriti-original .uppercase {
+    text-transform: uppercase;
+  }
+
+.sanskriti-original .shadow {
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, #0000001a), 0 1px 2px -1px var(--tw-shadow-color, #0000001a);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+.sanskriti-original .transition {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+.sanskriti-original .transition-all {
+    transition-property: all;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+.sanskriti-original .transition-colors {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+.sanskriti-original .transition-transform {
+    transition-property: transform, translate, scale, rotate;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+.sanskriti-original .duration-300 {
+    --tw-duration: .3s;
+    transition-duration: .3s;
+  }
+
+.sanskriti-original .outline-none {
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
+.sanskriti-original .placeholder\:text-\[\#8891A6\]::placeholder {
+    color: #8891a6;
+  }
+
+@media (hover: hover) {
+    .sanskriti-original .hover\:scale-105:hover {
+      --tw-scale-x: 105%;
+      --tw-scale-y: 105%;
+      --tw-scale-z: 105%;
+      scale: var(--tw-scale-x) var(--tw-scale-y);
+    }
+
+    .sanskriti-original .hover\:border-\[\#D6A84B\]:hover {
+      border-color: #d6a84b;
+    }
+
+    .sanskriti-original .hover\:border-\[\#D6A84B\]\/50:hover {
+      border-color: oklab(75.6293% .015996 .121336 / .5);
+    }
+
+    .sanskriti-original .hover\:bg-\[\#D6A84B\]\/5:hover {
+      background-color: oklab(75.6293% .015996 .121336 / .05);
+    }
+
+    .sanskriti-original .hover\:text-\[\#D6A84B\]:hover {
+      color: #d6a84b;
+    }
+
+    .sanskriti-original .hover\:text-\[\#F6F1E8\]:hover {
+      color: #f6f1e8;
+    }
+  }
+
+.sanskriti-original .focus\:border-\[\#D6A84B\]:focus {
+    border-color: #d6a84b;
+  }
+
+.sanskriti-original .active\:scale-95:active {
+    --tw-scale-x: 95%;
+    --tw-scale-y: 95%;
+    --tw-scale-z: 95%;
+    scale: var(--tw-scale-x) var(--tw-scale-y);
+  }
+
+.sanskriti-original .disabled\:opacity-50:disabled {
+    opacity: .5;
+  }
+
+.sanskriti-original .disabled\:opacity-60:disabled {
+    opacity: .6;
+  }
+
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+
+@property --tw-gradient-position {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-gradient-from {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+
+@property --tw-gradient-via {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+
+@property --tw-gradient-to {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+
+@property --tw-gradient-stops {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-gradient-via-stops {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-gradient-from-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --tw-gradient-via-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --tw-gradient-to-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-leading {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-tracking {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+
+@property --tw-duration {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-scale-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --tw-scale-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --tw-scale-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+
+@keyframes sanskriti-original-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sanskriti-original-pulse {
+  50% {
+    opacity: .5;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Written by hand: the parts of apk/ui/app/globals.css the ported screens
+   rely on, scoped the same way. Fonts reuse the website's Manrope and
+   Literata (the original's fonts), which the root layout already loads.
+   -------------------------------------------------------------------------- */
+/* The website's fonts under names the scoped theme doesn't redefine
+   (inside the scope --font-serif is the original's own token, defined from
+   --font-literata, so it can't be used here without a cycle). */
+:root {
+  --sanskriti-original-manrope: var(--font-sans);
+  --sanskriti-original-literata: var(--font-serif);
+}
+.sanskriti-original {
+  --font-manrope: var(--sanskriti-original-manrope);
+  --font-literata: var(--sanskriti-original-literata);
+  --font-devanagari: var(--font-deva);
+  background: #080D1D;
+  color: #F6F1E8;
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.sanskriti-original *, .sanskriti-original ::before, .sanskriti-original ::after {
+  border-color: rgba(214, 168, 75, 0.2);
+  outline-color: rgb(214 168 75 / 0.5);
+}
+.sanskriti-original h1, .sanskriti-original h2, .sanskriti-original h3 { text-wrap: balance; }
+/* Undo the website's global element styles (styles/base.css), which the
+   original doesn't have; the original's own utility classes still win. */
+.sanskriti-original h1, .sanskriti-original h2, .sanskriti-original h3 { font-family: inherit; line-height: inherit; letter-spacing: normal; }
+.sanskriti-original p { text-wrap: wrap; }
+.sanskriti-original :focus-visible { outline-style: revert; outline-width: revert; outline-offset: revert; }
+.sanskriti-original .font-heritage { font-family: var(--font-literata), Georgia, serif; }
+.sanskriti-original .screen-gutter { padding-inline: 20px; }
+.sanskriti-original .gold-gradient { background: linear-gradient(135deg, #C9A84C 0%, #D4893F 100%); }
+.sanskriti-original .app-scroll-row { scrollbar-width: none; }
+.sanskriti-original .app-scroll-row::-webkit-scrollbar { display: none; }
+@keyframes sanskriti-original-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sanskriti-original-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sanskriti-original .animate-fade-in { animation: sanskriti-original-fade-in 0.5s ease-out forwards; }
+.sanskriti-original .animate-slide-up { animation: sanskriti-original-slide-up 0.6s ease-out forwards; }
+
+/* Placement inside this website's shell (not part of the original). A page
+   fills the area between the header and the bottom navigation, edge to edge;
+   in the Yatrik panel the conversation fills the panel. */
+.sanskriti-original--page {
+  margin-block: calc(-1 * var(--s5)) calc(-1 * (var(--nav-h) + env(safe-area-inset-bottom) + 88px));
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 88px);
+  min-height: calc(100svh - var(--header-h));
+}
+.sanskriti-original--panel { flex: 1; min-height: 0; }
+@media (min-width: 1024px) {
+  .sanskriti-original--page { margin-block: calc(-1 * var(--s6)) calc(-1 * var(--s8)); padding-bottom: var(--s8); }
+}

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DeviceFooter, Greeting, PrimaryAction, ServiceNote, YatrikTile } from "@/components/home/home-parts";
+import { DeviceFooter, Greeting, PrimaryAction, ServiceNote } from "@/components/home/home-parts";
 import { IconArrowRight, IconFlag } from "@/components/icons";
 import { MonumentPhoto } from "@/components/monuments/monument-photo";
 import { MONUMENTS } from "@/lib/content/monuments";
 
 export const metadata: Metadata = { title: "Home" };
 
-// Hierarchy: recognition is the headline action; Yatrik and reporting sit
-// beneath as equals; then a strip of monuments to browse.
+// Hierarchy: recognition is the headline action, reporting beneath it, then a
+// strip of monuments to browse. Yatrik is opened from its floating character.
 export default function HomePage() {
   return (
     <div className="container page home">
@@ -16,16 +16,13 @@ export default function HomePage() {
 
       <section className="home-actions" aria-label="What would you like to do?">
         <PrimaryAction />
-        <div className="home-secondary">
-          <YatrikTile />
-          <Link href="/report" className="home-tile">
-            <span className="home-tile__icon" aria-hidden="true">
-              <IconFlag size={22} />
-            </span>
-            <span className="home-tile__title">Report an issue</span>
-            <span className="home-tile__text">Tell the site team about damage, litter or a hazard</span>
-          </Link>
-        </div>
+        <Link href="/report" className="home-tile">
+          <span className="home-tile__icon" aria-hidden="true">
+            <IconFlag size={22} />
+          </span>
+          <span className="home-tile__title">Report an issue</span>
+          <span className="home-tile__text">Tell the site team about damage, litter or a hazard</span>
+        </Link>
       </section>
 
       <ServiceNote />

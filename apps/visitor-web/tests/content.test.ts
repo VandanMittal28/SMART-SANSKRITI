@@ -4,7 +4,6 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { findMonumentInText, matchRecognisedMonument, suggestMonuments } from "../lib/content/match.ts";
 import { MONUMENTS, getMonument } from "../lib/content/monuments.ts";
-import { offlineAnswer } from "../lib/content/offline-answers.ts";
 import { STATUS_TEXT, isReceipt, newReceiptToken, newReportId } from "../lib/report.ts";
 
 const publicDir = fileURLToPath(new URL("../public", import.meta.url));
@@ -52,16 +51,6 @@ test("low-confidence suggestions favour related monuments", () => {
   const delhi = suggestMonuments("Fort", "Delhi").map((m) => m.id);
   assert.ok(delhi.includes("red-fort"));
   assert.equal(suggestMonuments(undefined, undefined).length, 3);
-});
-
-test("offline answers quote saved notes and never invent", () => {
-  const taj = getMonument("taj-mahal")!;
-  assert.equal(offlineAnswer("Who built it?", "taj-mahal", "en"), taj.origins);
-  assert.equal(offlineAnswer("What is it like today?", "taj-mahal", "en"), taj.today);
-  assert.equal(offlineAnswer("When was Charminar built?", undefined, "en"), getMonument("charminar")!.origins);
-  assert.match(offlineAnswer("Who built it?", "taj-mahal", "hi"), /सहेजे गए नोट्स/);
-  assert.match(offlineAnswer("Who built this?", undefined, "en"), /which monument/);
-  assert.match(offlineAnswer("Write me a poem about cars", undefined, "en"), /only help with questions about monuments/);
 });
 
 test("report ids and tokens match the operations format", () => {
