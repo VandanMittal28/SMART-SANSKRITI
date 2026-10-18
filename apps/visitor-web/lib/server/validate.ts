@@ -1,7 +1,7 @@
 // Input validation for the route handlers. Pure functions, unit-tested.
 
 import { isMonumentId, type MonumentId } from "../content/monuments.ts";
-import { NOTE_MAX_LENGTH, REPORT_CATEGORIES, type ReportCategory, type ReportPoint, type ReportZoneId } from "../report.ts";
+import { NOTE_MAX_LENGTH, REPORT_CATEGORIES, REPORT_ZONES, type ReportCategory, type ReportPoint, type ReportZoneId } from "../report.ts";
 import { HttpError } from "./http.ts";
 
 export type Language = "en" | "hi";
@@ -94,7 +94,6 @@ export function validateHeritageWatch(body: Record<string, unknown>): {
 export function validateReport(body: Record<string, unknown>): {
   id: string;
   token: string;
-  siteId: string;
   category: ReportCategory;
   note: string;
   zoneId: ReportZoneId;
@@ -105,10 +104,8 @@ export function validateReport(body: Record<string, unknown>): {
   if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw bad("Invalid report id.");
   const token = body.token;
   if (typeof token !== "string" || !/^[0-9a-f]{64}$/i.test(token)) throw bad("Invalid receipt token.");
-  const siteId = typeof body.siteId === "string" ? body.siteId : "";
-  if (!["taj-mahal", "qutub-minar", "red-fort", "konark"].includes(siteId)) throw bad("Choose a supported heritage site.");
   if (!REPORT_CATEGORIES.includes(body.category as ReportCategory)) throw bad("Choose what kind of issue it is.");
-  if (typeof body.zoneId !== "string" || !/^[a-z0-9-]{2,48}$/.test(body.zoneId)) throw bad("Choose where the issue is.");
+  if (!REPORT_ZONES.some((zone) => zone.id === body.zoneId)) throw bad("Choose where the issue is.");
   const note = typeof body.note === "string" ? body.note.trim() : "";
   if (note.length > NOTE_MAX_LENGTH) throw bad(`Keep the description under ${NOTE_MAX_LENGTH} characters.`);
 
@@ -141,7 +138,7 @@ export function validateReport(body: Record<string, unknown>): {
     photo = body.photo as string;
   }
 
-  return { id: id.toLowerCase(), token: token.toLowerCase(), siteId, category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
+  return { id: id.toLowerCase(), token: token.toLowerCase(), category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
 }
 
 export function validateReceiptQuery(url: URL): { id: string; token: string } {
