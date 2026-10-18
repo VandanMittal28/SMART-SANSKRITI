@@ -145,5 +145,80 @@ test("status exposes only booleans", async () => {
   resetOpsCache();
   process.env.OPS_BASE_URL = "http://127.0.0.1:9";
   const body = await (await status()).json();
-  assert.deepEqual(body, { live: false, reports: { mode: "local-demo", reachable: false } });
+  assert.deepEqual(body, { live: false, ai: "missing", reports: { mode: "local-demo", reachable: false } });
+});
+
+test("on Vercel, reporting is off: status says so and nothing reaches operations", async () => {
+  resetRateLimits();
+  resetOpsCache();
+  const ops = await fakeOps(() => [201, { id: goodReport.id, status: "review" }]);
+  process.env.OPS_BASE_URL = ops.url;
+  process.env.VERCEL = "1";
+  try {
+    assert.deepEqual(await (await status()).json(), { live: false, ai: "missing", reports: { mode: "unavailable", reachable: false } });
+    const posted = await report(post(goodReport));
+    assert.equal(posted.status, 503);
+    const body = await posted.json();
+    assert.equal(body.code, "reporting_unavailable");
+    assert.equal(body.error, "Reporting isn't available on the public website yet.");
+    const statusCheck = await reportStatus(new Request(`http://localhost/api/reports?id=${goodReport.id}&token=${goodReport.token}`));
+    assert.equal((await statusCheck.json()).code, "reporting_unavailable");
+    assert.equal(ops.seen.length, 0, "operations is never contacted on the public deployment");
+  } finally {
+    delete process.env.VERCEL;
+    ops.server.close();
+  }
+});
+
+test("off Vercel, local reporting still works", async () => {
+  resetRateLimits();
+  resetOpsCache();
+  const ops = await fakeOps((req) => (req.method === "POST" ? [201, { id: goodReport.id, status: "review", duplicate: false }] : [400, { error: "Receipt not found" }]));
+  process.env.OPS_BASE_URL = ops.url;
+  delete process.env.VERCEL;
+  try {
+    assert.deepEqual((await (await status()).json()).reports, { mode: "local-demo", reachable: true });
+    assert.equal((await report(post(goodReport))).status, 201);
+  } finally {
+    ops.server.close();
+  }
+});
+
+test("production builds never contact localhost unless explicitly opted in, and never claim success", async () => {
+  resetRateLimits();
+  resetOpsCache();
+  const ops = await fakeOps(() => [201, { id: goodReport.id, status: "review", duplicate: false }]);
+  process.env.OPS_BASE_URL = ops.url;
+  const realNodeEnv = process.env.NODE_ENV;
+  const env = process.env as Record<string, string | undefined>;
+  try {
+    // A production server that isn't on Vercel and hasn't opted in.
+    env.NODE_ENV = "production";
+    delete process.env.REPORTS_MODE;
+    delete process.env.VERCEL;
+    assert.deepEqual((await (await status()).json()).reports, { mode: "unavailable", reachable: false });
+    for (const response of [await report(post(goodReport)), await reportStatus(new Request(`http://localhost/api/reports?id=${goodReport.id}&token=${goodReport.token}`))]) {
+      assert.equal(response.status, 503);
+      const body = await response.json();
+      assert.equal(body.code, "reporting_unavailable");
+      assert.equal(body.id, undefined, "no receipt id, so nothing can look like a success");
+    }
+    // Opting in on Vercel still doesn't enable it.
+    process.env.REPORTS_MODE = "local-demo";
+    process.env.VERCEL = "1";
+    assert.equal((await report(post(goodReport))).status, 503);
+    assert.equal(ops.seen.length, 0, "operations (localhost) was never contacted");
+
+    // Explicit opt-in on a non-Vercel production server keeps the local demo working.
+    delete process.env.VERCEL;
+    resetOpsCache();
+    assert.equal((await report(post(goodReport))).status, 201);
+    assert.equal(ops.seen.length, 1);
+  } finally {
+    if (realNodeEnv === undefined) delete env.NODE_ENV;
+    else env.NODE_ENV = realNodeEnv;
+    delete process.env.REPORTS_MODE;
+    delete process.env.VERCEL;
+    ops.server.close();
+  }
 });

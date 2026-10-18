@@ -39,7 +39,8 @@
 
 .app-main {
   min-height: calc(100svh - var(--header-h));
-  padding-block: var(--s5) calc(var(--nav-h) + env(safe-area-inset-bottom) + var(--s6));
+  /* Bottom space clears the nav bar plus the floating Yatrik above it. */
+  padding-block: var(--s5) calc(var(--nav-h) + env(safe-area-inset-bottom) + 88px);
 }
 .app-main:focus { outline: none; }
 
@@ -48,7 +49,7 @@
   inset: auto 0 0 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   background: var(--paper);
   border-top: 1px solid var(--line);
@@ -71,9 +72,8 @@
   text-decoration: none;
 }
 .bottom-nav__item[aria-current="page"] { color: var(--navy); border-top-color: var(--gold); }
-.bottom-nav__yatrik .yatrik-avatar { margin: -4px 0 -2px; }
-
-.yatrik-dock { display: none; }
+.bottom-nav__icon { display: grid; place-items: center; width: 36px; height: 30px; border-radius: 8px; }
+.bottom-nav__item[aria-current="page"] .bottom-nav__icon { background: rgba(176, 141, 60, 0.14); color: var(--gold-text); }
 
 @media (min-width: 1024px) {
   .app-header__nav { display: flex; align-self: stretch; gap: var(--s1); margin-left: var(--s4); }
@@ -91,33 +91,9 @@
   .app-header__link[aria-current="page"] { color: var(--navy); border-bottom-color: var(--gold); }
 
   .bottom-nav { display: none; }
-  .app-main { padding: var(--s6) var(--dock-w) var(--s8) 0; transition: padding-right 200ms ease; }
+  .app-main { padding: var(--s6) 0 var(--s8); transition: padding-right 200ms ease; }
   .app[data-yatrik="open"] .app-main { padding-right: var(--panel-w); }
 
-  .yatrik-dock {
-    position: fixed;
-    top: 50%;
-    right: 0;
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--s1);
-    width: calc(var(--dock-w) - 8px);
-    padding: var(--s2) var(--s1) var(--s3);
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-right: 0;
-    border-radius: var(--radius) 0 0 var(--radius);
-    box-shadow: -8px 8px 24px -20px rgba(20, 33, 61, 0.5);
-    transform: translateY(-50%);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    line-height: 1.2;
-    text-align: center;
-    color: var(--navy);
-  }
-  .yatrik-dock:hover { border-color: var(--gold); }
 }
 
 /* Page scaffolding shared by screens ---------------------------------------- */
@@ -139,7 +115,6 @@
   text-decoration: none;
 }
 .back-link:hover { color: var(--gold-text); }
-.narrow { max-width: 640px; }
 
 .not-found { display: flex; flex-direction: column; gap: var(--s3); padding-block: var(--s8); max-width: 560px; }
 .not-found__actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s3); }

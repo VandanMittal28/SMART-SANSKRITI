@@ -2,12 +2,14 @@
 // transcription. COPIED from apk/ui/lib/nvidia.ts (the original is not
 // modified); prompts, request bodies, polling and answer parsing are kept as
 // they were. Changes, and why:
-//   - A missing key becomes a 503 "not_configured" HttpError, so the website
+//   - A missing key becomes a 503 "not_configured" HttpError and a rejected
+//     key (401/403) a 503 "ai_rejected" one, so the website can say which;
+//     /api/status reports the same via aiState(). The website
 //     can show an honest "not switched on yet" state.
 //   - Upstream errors become generic HttpErrors instead of passing NVIDIA's
 //     own messages to visitors.
 //   - The monument name for the chat prompt comes from this site's guide
-//     (16 monuments, including Agra Fort, which the original map lacked).
+//     (which also covers Agra Fort, missing from the original map).
 //   - Recognition accepts a 0–1 confidence and rescales it, as
 //     apk/ui/lib/nativeNvidia.ts already does on Android.
 //   - translateTextsWithNvidia is omitted: the original only used it to
@@ -37,6 +39,23 @@ interface NvidiaResponse {
 
 export function isNvidiaConfigured(env: Record<string, string | undefined> = process.env): boolean {
   return typeof env.NVIDIA_API_KEY === "string" && env.NVIDIA_API_KEY.trim().length > 0;
+}
+
+export type AiState = "ready" | "missing" | "rejected";
+
+// Set when NVIDIA answers 401/403 and cleared by the next successful call, so
+// /api/status can say "rejected" instead of pretending the key works or is
+// missing. Per server instance; a fresh instance reports "ready" until it
+// makes a call.
+let credentialsRejected = false;
+
+export function aiState(env: Record<string, string | undefined> = process.env): AiState {
+  if (!isNvidiaConfigured(env)) return "missing";
+  return credentialsRejected ? "rejected" : "ready";
+}
+
+export function resetAiState(): void {
+  credentialsRejected = false;
 }
 
 function monumentNameFor(monumentId: string) {
@@ -75,7 +94,10 @@ function getApiKey() {
 }
 
 function upstreamError(status: number): HttpError {
-  if (status === 401 || status === 403) return new HttpError(503, "not_configured", "The AI service rejected this website's credentials.");
+  if (status === 401 || status === 403) {
+    credentialsRejected = true;
+    return new HttpError(503, "ai_rejected", "The AI service didn't accept this website's API key.");
+  }
   if (status === 429) return new HttpError(429, "rate_limited", "The AI service is busy. Please try again in a minute.");
   return new HttpError(502, "upstream", "The AI service couldn't answer right now. Please try again.");
 }
@@ -109,11 +131,16 @@ async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaRespo
     throw new HttpError(502, "upstream", "Couldn't reach the AI service. Please try again.");
   }
   const data = (await response.json().catch(() => ({}))) as NvidiaResponse;
-  if (response.status === 202 && data.requestId) return pollNvidiaResult(data.requestId, apiKey);
+  if (response.status === 202 && data.requestId) {
+    const polled = await pollNvidiaResult(data.requestId, apiKey);
+    credentialsRejected = false;
+    return polled;
+  }
   if (!response.ok) {
     console.warn(`NVIDIA chat upstream returned HTTP ${response.status}.`);
     throw upstreamError(response.status);
   }
+  credentialsRejected = false;
   return data;
 }
 

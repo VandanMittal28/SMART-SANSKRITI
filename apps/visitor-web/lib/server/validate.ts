@@ -9,17 +9,19 @@ export type Language = "en" | "hi";
 const bad = (message: string) => new HttpError(400, "invalid", message);
 
 // Same contract and 2,000-character limit as apk/ui/app/api/chat/route.ts:
-// { question, monument_id, lang }. Unlike the original, monument_id must be a
-// guide monument (it selects the prompt's context) and only en/hi are offered.
+// { question, monument_id, lang }. As in the original, monument_id may be any
+// monument id the app derives (for example from a recognised name); unknown
+// ids are used as the monument's name in the prompt. It is limited here to a
+// short lowercase slug, the only form the app sends. Only en/hi are offered.
 export const QUESTION_MAX_LENGTH = 2_000;
 
-export function validateChat(body: Record<string, unknown>): { question: string; monumentId: MonumentId | undefined; language: Language } {
+export function validateChat(body: Record<string, unknown>): { question: string; monumentId: string | undefined; language: Language } {
   const question = typeof body.question === "string" ? body.question.trim() : "";
   if (!question) throw bad("Type a question first.");
   if (question.length > QUESTION_MAX_LENGTH) throw bad(`Keep questions under ${QUESTION_MAX_LENGTH} characters.`);
   const monumentId = body.monument_id;
-  if (monumentId !== undefined && monumentId !== null && monumentId !== "" && !isMonumentId(monumentId)) throw bad("Unknown monument.");
-  return { question, monumentId: isMonumentId(monumentId) ? monumentId : undefined, language: body.lang === "hi" ? "hi" : "en" };
+  if (monumentId !== undefined && monumentId !== null && monumentId !== "" && (typeof monumentId !== "string" || !/^[a-z0-9-]{1,80}$/.test(monumentId))) throw bad("Unknown monument.");
+  return { question, monumentId: typeof monumentId === "string" && monumentId ? monumentId : undefined, language: body.lang === "hi" ? "hi" : "en" };
 }
 
 function decodeBase64(value: unknown, field: string, maxBytes: number): Buffer {
@@ -122,12 +124,21 @@ export function validateReport(body: Record<string, unknown>): {
     point = { latitude: lat, longitude: lng, ...(acc !== undefined ? { accuracy: Math.round(acc) } : {}) };
   }
 
+  // JPEG, PNG or WebP data URLs, as the original report screen sends and
+  // operations accepts; the content must match the declared type.
   let photo: string | null = null;
   if (body.photo !== null && body.photo !== undefined) {
-    if (typeof body.photo !== "string" || !/^data:image\/jpeg;base64,/.test(body.photo)) throw bad("Attach the photo as a JPEG.");
+    const type = typeof body.photo === "string" ? /^data:image\/(jpeg|png|webp);base64,/.exec(body.photo)?.[1] : undefined;
+    if (!type) throw bad("Use JPEG, PNG or WebP");
     const bytes = decodeBase64(body.photo, "photo", 2_000_000);
-    if (!bytes.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) throw bad("The photo wasn't a valid JPEG.");
-    photo = body.photo;
+    const valid =
+      type === "jpeg"
+        ? bytes.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
+        : type === "png"
+          ? bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+          : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
+    if (!valid) throw bad("The photo wasn't a valid image");
+    photo = body.photo as string;
   }
 
   return { id: id.toLowerCase(), token: token.toLowerCase(), siteId, category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };

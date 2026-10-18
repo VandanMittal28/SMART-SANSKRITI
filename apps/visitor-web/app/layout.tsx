@@ -7,9 +7,8 @@ import "../styles/shell.css";
 import "../styles/welcome.css";
 import "../styles/home.css";
 import "../styles/monuments.css";
-import "../styles/recognize.css";
-import "../styles/report.css";
 import "../styles/yatrik.css";
+import "../styles/original.css";
 
 // next/font downloads these at build time and serves them from this site, so
 // no font request goes to Google from the visitor's browser.

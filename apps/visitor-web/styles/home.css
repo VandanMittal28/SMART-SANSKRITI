@@ -35,7 +35,6 @@
 }
 .home-primary:hover .home-primary__go { background: var(--gold-hover); }
 
-.home-secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 .home-tile {
   display: flex;
   flex-direction: column;
@@ -52,7 +51,6 @@
 }
 .home-tile:hover { border-color: var(--navy); }
 .home-tile__icon { display: grid; place-items: center; width: 48px; height: 48px; color: var(--navy); }
-.home-tile--yatrik .yatrik-avatar { margin: 0 0 0 -4px; }
 .home-tile__title { margin-top: auto; font-weight: 700; font-size: var(--text-base); color: var(--navy); }
 .home-tile__text { font-size: var(--text-sm); line-height: 1.4; color: var(--ink-muted); }
 
@@ -96,7 +94,6 @@
   .home-actions { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: stretch; }
   .home-primary { min-height: 220px; padding: var(--s6); }
   .home-primary__title { font-size: var(--text-2xl); }
-  .home-secondary { grid-template-columns: 1fr; }
   .home-tile { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--s3); }
   .home-tile__title { margin-top: 0; }
   .home-tile__text { flex-basis: 100%; }
