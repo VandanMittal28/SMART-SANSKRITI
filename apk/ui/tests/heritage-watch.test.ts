@@ -9,6 +9,7 @@ import {
 } from '../lib/vision/motion.ts'
 import { CorroborationBuffer } from '../lib/vision/corroboration.ts'
 import { parseSceneAssessment, buildScenePrompt } from '../lib/vision/prompt.ts'
+import { chooseZone } from '../lib/vision/submission.ts'
 import { HERITAGE_WATCH_BY_ID, HERITAGE_WATCH_DEFINITIONS } from '../lib/vision/taxonomy.ts'
 
 /** A uniform grayscale frame at the gate's analysis resolution. */
@@ -250,4 +251,29 @@ test('the prompt names every category and keeps its identity guardrails', () => 
   }
   assert.match(prompt, /Never infer from a person's appearance/)
   assert.match(prompt, /Do not identify or describe any individual/)
+})
+
+// Heritage Watch used to post detections to 127.0.0.1:3100 — the operations
+// console on a developer's laptop, and nothing at all on a visitor's phone.
+// It now files a real MMS incident, which means picking the right zone: the
+// wrong one sends a staff member to the wrong part of the monument.
+test('a detection is filed against the closest real zone, not a hardcoded one', () => {
+  const tajZones = [
+    { id: '1', site_id: 'taj-mahal', zone_key: 'east-gate', name: 'East Gate' },
+    { id: '2', site_id: 'taj-mahal', zone_key: 'main-mausoleum', name: 'Main Mausoleum' },
+    { id: '3', site_id: 'taj-mahal', zone_key: 'charbagh', name: 'Charbagh Gardens' },
+    { id: '4', site_id: 'taj-mahal', zone_key: 'mosque', name: 'Mosque and Guest House' },
+  ]
+
+  // Explore's waypoint names are richer than the operational zone names.
+  assert.equal(chooseZone('Inner Dome Chamber (Main Mausoleum)', tajZones)?.zone_key, 'main-mausoleum')
+  assert.equal(chooseZone('Moonlight Garden (Mahtab Bagh)', tajZones)?.zone_key, 'charbagh')
+  assert.equal(chooseZone('West Mosque', tajZones)?.zone_key, 'mosque')
+  assert.equal(chooseZone('East Gate forecourt', tajZones)?.zone_key, 'east-gate')
+
+  // Short and stop words must not create a match on their own.
+  assert.equal(chooseZone('The Jawab', tajZones)?.zone_key, 'east-gate', 'falls back to the first zone')
+
+  // An empty zone list is a real condition: the caller must not file blind.
+  assert.equal(chooseZone('Anywhere', []), null)
 })

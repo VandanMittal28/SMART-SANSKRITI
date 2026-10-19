@@ -4,8 +4,22 @@
     {
       "name": "smart-sanskriti-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "apk/ui", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "apk/ui",
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "sanskriti-operations",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:operations"
+      ],
+      "port": 3100
     }
   ]
 }

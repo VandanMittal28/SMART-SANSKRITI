@@ -35,6 +35,7 @@ import {
 import { CorroborationBuffer, type RaisedIncident } from '@/lib/vision/corroboration'
 import { assessScene } from '@/lib/vision/classifier'
 import { submitDetection, type SubmissionContext, type SubmissionReceipt } from '@/lib/vision/submission'
+import { isMmsSite } from '@/lib/visitorApi'
 import { HERITAGE_WATCH_BY_ID, isHeritageWatchCategory, type HeritageWatchCategory } from '@/lib/vision/taxonomy'
 
 /** Motion sampling cadence. 2 Hz is ample for human-scale actions. */
@@ -217,6 +218,20 @@ export function useHeritageWatch({ enabled, stream, context }: Options) {
         receipts: previous.receipts,
         phase: enabled ? 'awaiting-camera' : 'off',
         lastMessage: enabled ? 'Waiting for the camera to open.' : '',
+      }))
+      return
+    }
+
+    // Only the four staffed sites have an operations team to receive a
+    // detection. Watching anywhere else would spend vision calls producing
+    // reports with nowhere to go, so say so instead of appearing to work.
+    if (!isMmsSite(contextRef.current.monumentId)) {
+      activeRef.current = false
+      setStatus(previous => ({
+        ...EMPTY_STATUS,
+        receipts: previous.receipts,
+        phase: 'unavailable',
+        lastMessage: `${contextRef.current.monumentName} has no monument operations team connected yet.`,
       }))
       return
     }

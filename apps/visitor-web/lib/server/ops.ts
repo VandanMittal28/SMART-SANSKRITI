@@ -9,19 +9,29 @@
 
 import { HttpError } from "./http.ts";
 
-export type ReportingMode = "local-demo" | "unavailable";
+export type ReportingMode = "hosted-mms" | "local-demo" | "unavailable";
 
 /**
- * Reporting goes only to the operations demo on the same computer, so it is
- * enabled only where that makes sense:
- *   - never on Vercel (VERCEL=1): a hosted site can't reach anyone's computer;
- *   - in development (`next dev`), where it is the local demo;
+ * Where a visitor report is delivered.
+ *
+ * "hosted-mms" is the real destination: Supabase, through
+ * `mms_submit_visitor_report`, which files the report as an MMS incident the
+ * site team sees in `apps/operations`. It is chosen whenever this deployment
+ * has Supabase credentials, which is the only thing that path needs.
+ *
+ * "local-demo" forwards to the operations sandbox on the same computer, for
+ * development without Supabase. The rule that mattered in the previous
+ * version is kept exactly: that path is never taken in production, because a
+ * hosted site cannot reach anyone's localhost —
+ *   - never on Vercel (VERCEL=1);
  *   - in a production build only with an explicit REPORTS_MODE=local-demo
  *     (e.g. testing `next start` on the same machine as operations).
- * Everything else is "unavailable": there is no public reporting
- * destination yet, so production must never send reports to localhost.
+ *
+ * "unavailable" means neither destination is configured, and the route says so
+ * rather than appearing to accept a report it cannot deliver.
  */
 export function reportingMode(env: Record<string, string | undefined> = process.env): ReportingMode {
+  if (env.NEXT_PUBLIC_SUPABASE_URL?.trim() && env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()) return "hosted-mms";
   if (env.VERCEL === "1") return "unavailable";
   if (env.NODE_ENV === "production" && env.REPORTS_MODE !== "local-demo") return "unavailable";
   return "local-demo";
