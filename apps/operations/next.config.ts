@@ -5,7 +5,10 @@ import type { NextConfig } from "next";
 // fail intermittently with "Cannot find module for page". Giving the
 // production build its own directory keeps the two independent, so the
 // documented `npm run build:operations` check is safe to run at any time.
-const distDir = process.env.NODE_ENV === "production" ? ".next-build" : ".next";
+// Vercel expects the standard `.next` output directory when it packages a
+// Next.js deployment. Local production builds keep a separate directory so a
+// running development server is not disturbed.
+const distDir = process.env.VERCEL ? ".next" : process.env.NODE_ENV === "production" ? ".next-build" : ".next";
 
 const config: NextConfig = { poweredByHeader: false, devIndicators: false, distDir };
 export default config;

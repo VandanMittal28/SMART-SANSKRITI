@@ -23,6 +23,16 @@ export type ReportSite = { id: string; name: string; city: string; state: string
 export type ReportZone = { id: string; zone_key: string; name: string; site_id: string };
 export type ReportZoneId = string;
 
+// The bundled visitor experience can also run against the local operations
+// demo. Keep its fixed zones available for that compatibility path; hosted
+// MMS deployments obtain their richer zone list from the report catalogue.
+export const REPORT_ZONES = [
+  { id: "entrance", name: "Entrance court" },
+  { id: "garden", name: "Heritage gardens" },
+  { id: "gallery", name: "Stone gallery" },
+  { id: "courtyard", name: "Central courtyard" },
+] as const;
+
 export const NOTE_MAX_LENGTH = 1200;
 /** Operations rejects decoded photos over 2,000,000 bytes. */
 export const PHOTO_MAX_BYTES = 1_900_000;

@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCapabilities } from "@/components/capabilities";
+import { aiUnavailableText, useCapabilities } from "@/components/capabilities";
 import { IconArrowRight } from "@/components/icons";
 import { Notice } from "@/components/ui/notice";
 import { useVisitor } from "@/components/visitor/use-visitor";
-import { YatrikAvatar } from "@/components/yatrik/yatrik-avatar";
-import { useYatrik } from "@/components/yatrik/yatrik-provider";
 
 export function Greeting() {
   const { visitor } = useVisitor();
@@ -19,24 +17,14 @@ export function Greeting() {
   );
 }
 
-export function YatrikTile() {
-  const yatrik = useYatrik();
-  return (
-    <button type="button" className="home-tile home-tile--yatrik" aria-haspopup="dialog" onClick={(event) => yatrik.open({ opener: event.currentTarget })}>
-      <YatrikAvatar size={48} />
-      <span className="home-tile__title">Ask Yatrik</span>
-      <span className="home-tile__text">Questions about any monument, in English or Hindi</span>
-    </button>
-  );
-}
-
 // Only appears when something is switched off, and says what still works.
 export function ServiceNote() {
-  const { status, live, reportsReachable } = useCapabilities();
+  const { status, live, ai, reportsMode, reportsReachable } = useCapabilities();
   if (status !== "ready") return null;
   const items: string[] = [];
-  if (live === false) items.push("Live recognition, Yatrik's AI answers and voice questions aren't switched on yet. Yatrik answers from saved notes, and the monument guide and audio stories work as normal.");
-  if (reportsReachable === false) items.push("Online issue reporting is temporarily unavailable.");
+  if (live === false) items.push(`${aiUnavailableText(ai)} Recognition, Yatrik's AI answers and voice questions are off; Yatrik answers from the original app's offline guide, and the monument guide and audio stories work as normal.`);
+  if (reportsMode === "unavailable") items.push("Reporting isn't available on the public website yet.");
+  else if (reportsReachable === false) items.push("Reporting uses a local operations demo that isn't running on this computer right now.");
   if (items.length === 0) return null;
   return (
     <Notice title="Some features are unavailable">
@@ -79,8 +67,8 @@ export function PrimaryAction() {
   return (
     <Link href="/recognize" className="home-primary on-dark">
       <span className="home-primary__text">
-        <span className="home-primary__title">Recognise a monument</span>
-        <span className="home-primary__sub">Take a photo or choose one from your gallery, and learn what you&apos;re looking at.</span>
+        <span className="home-primary__title">Scan a monument</span>
+        <span className="home-primary__sub">Point your camera or upload a photo, and learn what you&apos;re looking at.</span>
       </span>
       <span className="home-primary__go" aria-hidden="true">
         <IconArrowRight size={22} />

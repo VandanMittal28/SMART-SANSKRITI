@@ -46,21 +46,23 @@ export function MonumentBrowser() {
           </button>
         </div>
       ) : (
-        <ul className="monument-list">
+        // One container with divided rows, as in the original app's
+        // "Recommended near you" list.
+        <ul className="row-list row-list--browse">
           {results.map((monument) => (
             <li key={monument.id}>
-              <Link href={`/monuments/${monument.id}`} className="monument-row">
-                <MonumentPhoto monumentId={monument.id} alt="" className="monument-row__img" sizes="96px" />
-                <span className="monument-row__text">
-                  <span className="monument-row__name">{monument.name}</span>
-                  <span className="monument-row__place">{monument.place}</span>
+              <Link href={`/monuments/${monument.id}`} className="row">
+                <MonumentPhoto monumentId={monument.id} alt="" className="row__img" sizes="72px" />
+                <span className="row__text">
+                  <span className="row__name">{monument.name}</span>
+                  <span className="row__place">{monument.place}</span>
                   {monument.audio && (
-                    <span className="monument-row__audio">
+                    <span className="row__audio">
                       <IconSpeaker size={14} /> Audio story
                     </span>
                   )}
                 </span>
-                <IconChevronRight size={20} className="monument-row__chevron" />
+                <IconChevronRight size={20} className="row__chevron" />
               </Link>
             </li>
           ))}

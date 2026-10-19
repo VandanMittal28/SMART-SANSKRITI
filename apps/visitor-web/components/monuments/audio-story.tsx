@@ -10,7 +10,7 @@ import { IconSpeaker } from "@/components/icons";
 export function AudioStory({ name, audio }: { name: string; audio: { en: string; hi: string } }) {
   const [language, setLanguage] = useState<"en" | "hi">("en");
   return (
-    <section className="audio-story" aria-labelledby="audio-story-title">
+    <section id="audio-story" className="audio-story" aria-labelledby="audio-story-title">
       <div className="audio-story__head">
         <span className="audio-story__icon" aria-hidden="true">
           <IconSpeaker size={20} />

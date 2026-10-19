@@ -1,19 +1,23 @@
 import { json } from "../../../lib/server/http.ts";
-import { isNvidiaConfigured } from "../../../lib/server/nvidia.ts";
-import { getReportCatalog } from "../../../lib/server/visitor-reports.ts";
+import { aiState } from "../../../lib/server/nvidia.ts";
+import { opsReachable, reportingMode } from "../../../lib/server/ops.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Tells the interface which capabilities are switched on, so it can show
-// honest "unavailable" states. Exposes booleans only: never keys or URLs.
+// honest "unavailable" states. Exposes flags only: never keys or URLs.
 export async function GET(): Promise<Response> {
+  const mode = reportingMode();
   let reachable = false;
-  try {
-    const catalog = await getReportCatalog();
-    reachable = catalog.sites.length === 4 && catalog.zones.length > 0;
-  } catch {
-    reachable = false;
+  if (mode === "local-demo") {
+    try {
+      reachable = await opsReachable();
+    } catch {
+      reachable = false;
+    }
   }
-  return json({ live: isNvidiaConfigured(), reports: { mode: "hosted-mms", reachable } });
+  const ai = aiState();
+  // live: whether to try AI features at all. ai: why not, when they're off.
+  return json({ live: ai === "ready", ai, reports: { mode, reachable } });
 }
