@@ -47,3 +47,6 @@ next-env.d.ts
 **/supabase/.temp/
 **/xcuserdata/
 /output/
+
+# Vercel local project metadata
+**/.vercel/

@@ -154,7 +154,7 @@ export function validateReport(body: Record<string, unknown>, mode: ReportingMod
     const lat = Number(p?.latitude);
     const lng = Number(p?.longitude);
     const acc = p?.accuracy === undefined ? undefined : Number(p.accuracy);
-    if (!Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lng) || Math.abs(lng) > 180 || (acc !== undefined && (!Number.isFinite(acc) || acc < 0))) {
+    if (!Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lng) || Math.abs(lng) > 180 || (acc !== undefined && (!Number.isFinite(acc) || acc < 0 || acc > 100000))) {
       throw bad("The location wasn't valid.");
     }
     point = { latitude: lat, longitude: lng, ...(acc !== undefined ? { accuracy: Math.round(acc) } : {}) };

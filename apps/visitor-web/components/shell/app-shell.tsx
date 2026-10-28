@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {useLang} from "@/lib/original/languageContext";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
@@ -15,7 +16,7 @@ import { useYatrik } from "@/components/yatrik/yatrik-provider";
 // screen's "Scan a monument" card), so Explore stays current while it is open.
 const NAV = [
   { href: "/home", label: "Home", short: "Home", Icon: IconHome },
-  { href: "/monuments", label: "Explore", short: "Explore", Icon: IconCompass, also: ["/recognize"] },
+  { href: "/explore", label: "Explore", short: "Explore", Icon: IconCompass, also: ["/recognize", "/monuments"] },
   { href: "/report", label: "Report an issue", short: "Report", Icon: IconFlag },
 ] as const;
 
@@ -30,6 +31,7 @@ function isCurrent(pathname: string, item: (typeof NAV)[number]) {
 // aside on desktop.
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const {lang,changeLanguage} = useLang();
   const { visitor } = useVisitor();
   const yatrik = useYatrik();
 
@@ -50,6 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
+          <select aria-label="Language" value={lang} onChange={e=>changeLanguage(e.target.value as "en"|"hi")} style={{marginLeft:"auto",padding:"8px",maxWidth:"100px"}}><option value="en">English</option><option value="hi">हिन्दी</option></select>
           {visitor && (
             <p className="app-header__visitor">
               <span className="visually-hidden">Visiting as </span>

@@ -1,7 +1,7 @@
+import { getReportCatalog } from "../../../lib/server/visitor-reports.ts";
 import { json } from "../../../lib/server/http.ts";
 import { aiState } from "../../../lib/server/nvidia.ts";
 import { opsReachable, reportingMode } from "../../../lib/server/ops.ts";
-import { getReportCatalog } from "../../../lib/server/visitor-reports.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

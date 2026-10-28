@@ -29,17 +29,16 @@ const cn = (...classes: (string | false | null | undefined)[]) => classes.filter
 
 interface Message { id: string | number; role: "assistant" | "user"; content: string }
 
-export function ChatScreen({ onClose }: { onClose: () => void }) {
+export function ChatScreen({ onClose, monumentId = "", initialDraft = "" }: { onClose: () => void; monumentId?: string; initialDraft?: string }) {
   const { t, lang, translate } = useLang()
   const suggestedQuestions = [t('when_built'), t('who_built'), t('what_legend'), t('best_time_visit'), t('entry_fee_q')]
 
   const [messages, setMessages] = useState<Message[]>([{ id: 1, role: "assistant", content: t('namaste_greeting') }])
-  const [input, setInput] = useState("")
+  const [input, setInput] = useState(initialDraft)
   const [loading, setLoading] = useState(false)
   // No monument is preselected here — this is the general Ask AI chat reachable
   // from anywhere in the app, so the assistant infers the monument from each
   // question instead of assuming one.
-  const monumentId = ""
   const [listening, setListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)

@@ -11,18 +11,27 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3200",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "styles:mobile": "node scripts/build-mobile-styles.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",
-    "next": "15.5.25",
+    "leaflet": "1.9.4",
+    "lucide-react": "0.577.0",
+    "next": "15.5.28",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.1.14",
     "@types/node": "20.19.37",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "postcss": "8.5.23",
+    "tailwindcss": "4.1.14",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "postcss": "8.5.23"
   }
 }

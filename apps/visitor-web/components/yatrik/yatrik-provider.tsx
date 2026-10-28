@@ -15,6 +15,7 @@ type OpenOptions = { monumentId?: MonumentId | null; draft?: string; opener?: HT
 
 type YatrikValue = {
   isOpen: boolean;
+  options: OpenOptions;
   open: (options?: OpenOptions) => void;
   close: () => void;
   /** The element focus returns to when the panel closes. */
@@ -24,11 +25,13 @@ type YatrikValue = {
 const YatrikContext = createContext<YatrikValue | null>(null);
 
 export function YatrikProvider({ children }: { children: ReactNode }) {
+  const [options, setOptions] = useState<OpenOptions>({});
   const [isOpen, setIsOpen] = useState(false);
   const openerRef = useRef<HTMLElement | null>(null);
 
   const open = useCallback((options?: OpenOptions) => {
     openerRef.current = options?.opener ?? (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null);
+    setOptions(options ?? {});
     setIsOpen(true);
   }, []);
 
@@ -49,7 +52,7 @@ export function YatrikProvider({ children }: { children: ReactNode }) {
     wasOpen.current = isOpen;
   }, [isOpen]);
 
-  const value = useMemo<YatrikValue>(() => ({ isOpen, open, close, openerRef }), [isOpen, open, close]);
+  const value = useMemo<YatrikValue>(() => ({ isOpen, options, open, close, openerRef }), [isOpen, options, open, close]);
   return <YatrikContext.Provider value={value}>{children}</YatrikContext.Provider>;
 }
 
@@ -57,4 +60,11 @@ export function useYatrik(): YatrikValue {
   const value = useContext(YatrikContext);
   if (!value) throw new Error("useYatrik must be used inside YatrikProvider");
   return value;
+}
+
+/** Explore narration controls; persisted for this visit. */
+export function useYatrikControls() {
+ const [muted, setMuted] = useState(false);
+ const toggleMute = useCallback(() => setMuted(value => !value), []);
+ return {muted, toggleMute};
 }

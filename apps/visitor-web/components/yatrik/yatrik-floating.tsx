@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import { DESKTOP_QUERY, useMedia } from "@/components/use-media";
 import { useYatrikSuppressed } from "./visibility";
 import { YatrikAvatar } from "./yatrik-avatar";
+import { getMonument } from "@/lib/original/monumentStore";
+import type { MonumentId } from "@/lib/content/monuments";
 import { useYatrik } from "./yatrik-provider";
 
 // Floating Yatrik, adapted from the original app's YatrikCompanion
@@ -181,7 +183,7 @@ export function YatrikFloating() {
           suppressClick.current = false;
           return;
         }
-        yatrik.open({ opener: event.currentTarget });
+        yatrik.open({ opener: event.currentTarget, monumentId: pathname === "/explore" ? getMonument()?.id as MonumentId : undefined });
       }}
     >
       <span className="yatrik-float__glow" aria-hidden="true" />

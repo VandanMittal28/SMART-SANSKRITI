@@ -8,7 +8,7 @@ function client() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new HttpError(503, "not_configured", "Online issue reporting is not configured yet.");
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createClient(url, key, { global: {fetch: (input, init) => fetch(input, {...init, signal: AbortSignal.timeout(15_000)})}, auth: { persistSession: false, autoRefreshToken: false } });
 }
 
 export async function getReportCatalog(): Promise<{ sites: ReportSite[]; zones: ReportZone[] }> {
@@ -29,6 +29,13 @@ export async function createVisitorReport(report: {
   /** 'Camera alert' marks an unconfirmed Heritage Watch detection. */
   source?: ReportSource;
 }) {
+  // A network retry must return the first receipt without another user or photo.
+  try {
+    const existing = await readVisitorReportStatus(report.id, report.token);
+    return {id: existing.id, status: existing.status, duplicate: true};
+  } catch(error) {
+    if (!(error instanceof HttpError) || error.status !== 404) throw error;
+  }
   const supabase = client();
   const { data: auth, error: authError } = await supabase.auth.signInAnonymously();
   if (authError || !auth.user) throw new HttpError(503, "upstream", "A secure visitor session could not be started. Please try again.");
@@ -82,7 +89,7 @@ export async function createVisitorReport(report: {
   }
   const receipt = Array.isArray(data) ? data[0] : data;
   if (!receipt?.id || !receipt?.status) throw new HttpError(502, "upstream", "The site team did not confirm the report.");
-  return { id: receipt.id as string, status: receipt.status as string };
+  return { id: receipt.id as string, status: receipt.status as string, duplicate: false };
 }
 
 export async function readVisitorReportStatus(id: string, token: string) {

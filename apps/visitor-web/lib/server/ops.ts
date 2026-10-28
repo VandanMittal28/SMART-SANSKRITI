@@ -64,7 +64,7 @@ type OpsResult = { status: number; body: Record<string, unknown> };
 async function call(path: string, init: RequestInit, timeoutMs: number): Promise<OpsResult> {
   // Defence in depth: every request to operations re-checks the mode, so no
   // code path can contact localhost while reporting is unavailable.
-  assertReportingAvailable();
+  if (reportingMode() !== "local-demo") throw new HttpError(503, "local_only", "Local reporting is unavailable.");
   const url = new URL(path, opsBaseUrl());
   let response: Response;
   try {

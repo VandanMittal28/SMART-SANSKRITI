@@ -1,0 +1,12 @@
+/* Match the iPhone explorer within the website navigation. */
+.explore-web { --background:#F2F2F4; --foreground:#181A13; --card:#fff; --primary:#F6C00A; --primary-text:#8A6A05; --primary-foreground:#181A13; --muted:#F9F9FA; --muted-foreground:#494B45; --border:rgba(24,26,19,.08); }
+.sanskriti-original .explore-hud { top:calc(var(--header-h) + env(safe-area-inset-top)); bottom:calc(var(--nav-h) + env(safe-area-inset-bottom)); height:auto; max-width:560px; }
+.explore-web .font-heritage {font-family:var(--font-display);}
+@media(min-width:1024px) { .sanskriti-original .explore-hud {bottom:20px;top:calc(var(--header-h) + 20px);border-radius:24px;box-shadow:0 12px 50px #18202a20;} }
+/* The shared iPhone HUD uses warm white type on deep navy panels. */
+.explore-web { --background:#080d1d; --foreground:#f6f1e8; --card:#132237; --primary:#efc566; --primary-text:#efc566; --primary-foreground:#201406; --muted:#1c2d42; --muted-foreground:#aeb6c8; --border:#ffffff18; --success:#79dfd0; --shadow-card:0 8px 24px #0003; }
+.sanskriti-original .explore-hud .btn-primary {display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;padding:12px 16px;border:0;border-radius:16px;background:#efc566;color:#201406;font-weight:700;}
+.sanskriti-original .explore-hud .btn-primary:disabled {background:#263448;color:#aeb6c8;cursor:not-allowed;}
+.sanskriti-original .explore-hud > section:first-child {height:176px;}
+.sanskriti-original .explore-hud > section:nth-child(2) {height:calc(100% - 176px);}
+.sanskriti-original .explore-hud .leaflet-control-attribution {color:#172536;background:#ffffffe6;}

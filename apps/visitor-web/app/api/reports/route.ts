@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
 
     if (mode === "hosted-mms") {
       const result = await createVisitorReport(report);
-      return json({ ...result, duplicate: false }, 201, cors);
+      return json(result, result.duplicate ? 200 : 201, cors);
     }
 
     // The sandbox has no notion of a site or an MMS source; don't send it
