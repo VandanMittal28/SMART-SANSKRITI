@@ -37,6 +37,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // Pinch-zoom is the clearest tell that a packaged app is a web view, and a
+  // zoomed layout breaks the fixed bottom navigation. Android already refuses
+  // it at the shell (`setSupportZoom(false)`); WKWebView honours these limits
+  // unless `ignoresViewportScaleLimits` is set, which the iOS shell does not.
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

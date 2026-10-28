@@ -928,6 +928,7 @@ export default function ExplorePage() {
     enabled: watchRequested && watchConsent === true && cameraModeActive,
     stream: cameraModeActive ? arNav.cameraStream : null,
     context: {
+      monumentId: exploreMonumentId,
       monumentName: customMonumentName && exploreMonumentId === DEMO_MONUMENT_ID
         ? customMonumentName
         : MONUMENT_NAMES[exploreMonumentId] || exploreMonumentId,

@@ -1,12 +1,13 @@
 import { isBundledNativeApp } from '@/lib/supabase/client'
 import type { SupportedLanguage } from '@/lib/languages'
+import { VISITOR_API_BASE as API_BASE } from '@/lib/visitorApi'
 import type { SceneAssessment, SceneRequestInput } from '@/lib/vision/prompt'
 
 type NativeNvidiaBridge = {
   recordMicrophone: (requestId: string, durationMs: number) => void
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'https://smart-sanskriti.vercel.app').replace(/\/$/, '')
+
 
 function bridge(): NativeNvidiaBridge | null {
   if (!isBundledNativeApp()) return null

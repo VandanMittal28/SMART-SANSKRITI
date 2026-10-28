@@ -278,9 +278,14 @@ export default function CreateZonesPage() {
             disabled={capture.status !== "captured" || !name.trim() || !arrivalFact.trim()}
             style={{
               width: "100%",
+              // Disabled used to be a pale wash under white text, which only
+              // worked while the canvas behind it was dark navy.
               background: capture.status === "captured" && name.trim() && arrivalFact.trim()
-                ? "linear-gradient(135deg,#63C7BA,#3a7a6e)" : "rgba(75,155,142,0.25)",
-              borderRadius: 12, padding: "12px 20px", color: "white", fontWeight: 700, fontSize: 14,
+                ? "var(--success)" : "var(--muted)",
+              borderRadius: 12, padding: "12px 20px",
+              color: capture.status === "captured" && name.trim() && arrivalFact.trim()
+                ? "var(--success-foreground)" : "var(--muted-foreground)",
+              fontWeight: 700, fontSize: 14,
               border: "none",
               cursor: capture.status === "captured" && name.trim() && arrivalFact.trim() ? "pointer" : "default",
             }}
@@ -294,8 +299,10 @@ export default function CreateZonesPage() {
           disabled={zones.length === 0}
           style={{
             width: "100%",
-            background: zones.length > 0 ? "linear-gradient(135deg,#7C3AED,#3d35a0)" : "rgba(83,74,183,0.25)",
-            borderRadius: 14, padding: "14px 24px", color: "white", fontWeight: 700, fontSize: 16,
+            background: zones.length > 0 ? "var(--primary)" : "var(--muted)",
+            borderRadius: 14, padding: "14px 24px",
+            color: zones.length > 0 ? "var(--on-tint)" : "var(--muted-foreground)",
+            fontWeight: 700, fontSize: 16,
             border: "none", cursor: zones.length > 0 ? "pointer" : "default",
           }}
         >

@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Camera, MapPin, RefreshCw, ShieldAlert } from 'lucide-react'
+import { VISITOR_API_BASE as REPORT_API } from '@/lib/visitorApi'
 
-const REPORT_API = 'https://smart-sanskriti.vercel.app'
+
 const categories = ['Property damage', 'Littering', 'Restricted access', 'Harassment', 'Safety hazard', 'Other site-rule concern']
 type Point = { latitude: number; longitude: number; accuracy: number }
 type Site = { id: string; name: string; city: string; state: string }

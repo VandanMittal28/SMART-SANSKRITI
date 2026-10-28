@@ -292,27 +292,27 @@ export default function MonumentPage() {
                   justifyContent: 'center',
                   gap: 10,
                   background:
-                    'radial-gradient(circle at top, rgba(250, 250, 250, 0.1), transparent 60%), #080D1D',
+                    'radial-gradient(circle at top, rgba(24, 26, 19, 0.04), transparent 60%), var(--muted)',
                 }}
               >
                 <div style={{ fontSize: 40 }}>
                   {ERA_LABELS[activeEra].icon}
                 </div>
-                <div style={{ color: '#8A6A05', fontWeight: 800, fontSize: 16 }}>
+                <div style={{ color: 'var(--primary-text)', fontWeight: 800, fontSize: 16 }}>
                   {ERA_LABELS[activeEra].en}
                 </div>
-                <div style={{ color: '#C7CDDA', fontSize: 13, textAlign: 'center', maxWidth: 360 }}>
+                <div style={{ color: 'var(--muted-foreground)', fontSize: 13, textAlign: 'center', maxWidth: 360 }}>
                   {ERA_DESCRIPTIONS[activeEra]}
                 </div>
                 <div
                   style={{
                     marginTop: 8,
-                    color: '#8A6A05',
+                    color: 'var(--primary-text)',
                     fontSize: 12,
-                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    backgroundColor: 'var(--card)',
                     padding: '6px 12px',
                     borderRadius: 999,
-                    border: '1px solid rgba(214,168,75,0.3)',
+                    border: '1px solid var(--border)',
                   }}
                 >
                   📁 360° panorama coming soon for this era
@@ -324,15 +324,15 @@ export default function MonumentPage() {
           {/* Era description card */}
           <div
             style={{
-              backgroundColor: 'rgba(17, 24, 43, 0.85)',
+              backgroundColor: 'var(--card)',
               borderRadius: 12,
-              border: '1px solid rgba(214, 168, 75, 0.3)',
+              border: '1px solid var(--border)',
               padding: 16,
-              color: '#C7CDDA',
+              color: 'var(--muted-foreground)',
               fontSize: 14,
             }}
           >
-            <div style={{ color: '#F3DFC0', fontWeight: 700, marginBottom: 6 }}>
+            <div style={{ color: 'var(--foreground)', fontWeight: 700, marginBottom: 6 }}>
               {ERA_LABELS[activeEra].en}
             </div>
             <div>{ERA_DESCRIPTIONS[activeEra]}</div>

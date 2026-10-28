@@ -48,6 +48,7 @@ function randomToken() {
 }
 
 export interface SubmissionContext {
+  monumentId: string
   monumentName: string
   waypointName: string
   point: { latitude: number; longitude: number; accuracy?: number } | null
@@ -91,7 +92,7 @@ export async function submitDetection(
     `site before taking any action.`,
   ].join('\n').slice(0, 1200)
 
-  const siteId = ({'Taj Mahal':'taj-mahal','Qutub Minar':'qutub-minar','Red Fort':'red-fort','Konark Sun Temple':'konark'} as Record<string,string>)[context.monumentName];
+  const siteId = ['taj-mahal','qutub-minar','red-fort','konark'].includes(context.monumentId) ? context.monumentId : undefined;
   if (!siteId) throw new Error('Reporting is not available at this site. Contact staff nearby.');
   const catalogResponse = await fetch('/api/reports/catalog');
   const catalog = await catalogResponse.json();

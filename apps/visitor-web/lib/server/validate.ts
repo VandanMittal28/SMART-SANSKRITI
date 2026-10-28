@@ -1,7 +1,8 @@
 // Input validation for the route handlers. Pure functions, unit-tested.
 
 import { isMonumentId, type MonumentId } from "../content/monuments.ts";
-import { NOTE_MAX_LENGTH, REPORT_CATEGORIES, REPORT_ZONES, type ReportCategory, type ReportPoint, type ReportZoneId } from "../report.ts";
+import { NOTE_MAX_LENGTH, REPORT_CATEGORIES, REPORT_ZONES, type ReportCategory, type ReportPoint, type ReportSite, type ReportZone, type ReportZoneId } from "../report.ts";
+import type { ReportingMode } from "./ops.ts";
 import { HttpError } from "./http.ts";
 
 export type Language = "en" | "hi";
@@ -91,10 +92,30 @@ export function validateHeritageWatch(body: Record<string, unknown>): {
   return { imageBase64: image.toString("base64"), regionBase64, motionContext };
 }
 
-export function validateReport(body: Record<string, unknown>, hosted = false): {
-  siteId?: string;
+export const MMS_SITE_IDS = ["taj-mahal", "qutub-minar", "red-fort", "konark"] as const;
+
+/**
+ * The zone list the local sandbox understands, shaped like the hosted
+ * catalogue so one report screen can drive either destination.
+ */
+export function demoCatalog(): { sites: ReportSite[]; zones: ReportZone[] } {
+  return {
+    sites: [{ id: "local-demo", name: "Operations demo", city: "This computer", state: "" }],
+    zones: REPORT_ZONES.map((zone) => ({ id: zone.id, zone_key: zone.id, name: zone.name, site_id: "local-demo" })),
+  };
+}
+
+/**
+ * `mode` decides how location is checked, because the two destinations model
+ * it differently: the hosted MMS workspace has real per-site zone keys (and
+ * needs to know which site), the sandbox has four fixed zones and no sites.
+ * Everything else — ids, token, category, note, point, photo — is identical.
+ */
+export function validateReport(body: Record<string, unknown>, mode: ReportingMode = "local-demo"): {
   id: string;
   token: string;
+  siteId: string;
+  source: "Visitor report" | "Camera alert";
   category: ReportCategory;
   note: string;
   zoneId: ReportZoneId;
@@ -106,8 +127,24 @@ export function validateReport(body: Record<string, unknown>, hosted = false): {
   const token = body.token;
   if (typeof token !== "string" || !/^[0-9a-f]{64}$/i.test(token)) throw bad("Invalid receipt token.");
   if (!REPORT_CATEGORIES.includes(body.category as ReportCategory)) throw bad("Choose what kind of issue it is.");
-  if (hosted && (typeof body.siteId !== "string" || !["taj-mahal", "qutub-minar", "red-fort", "konark"].includes(body.siteId))) throw bad("Choose a supported heritage site.");
-  if (hosted ? (typeof body.zoneId !== "string" || !/^[a-z0-9-]{1,80}$/.test(body.zoneId)) : !REPORT_ZONES.some((zone) => zone.id === body.zoneId)) throw bad("Choose where the issue is.");
+
+  // Heritage Watch submits `origin: "automated"`. A client can only ever ask
+  // for the weaker label: an automated detection is filed as unconfirmed and
+  // capped in priority, so claiming it costs a caller nothing to lie about.
+  if (body.origin !== undefined && body.origin !== "visitor" && body.origin !== "automated") {
+    throw bad("Unknown report origin.");
+  }
+  const source = body.origin === "automated" ? "Camera alert" as const : "Visitor report" as const;
+
+  let siteId = "local-demo";
+  if (mode === "hosted-mms") {
+    const value = typeof body.siteId === "string" ? body.siteId : "";
+    if (!(MMS_SITE_IDS as readonly string[]).includes(value)) throw bad("Choose a supported heritage site.");
+    siteId = value;
+    if (typeof body.zoneId !== "string" || !/^[a-z0-9-]{2,48}$/.test(body.zoneId)) throw bad("Choose where the issue is.");
+  } else if (!REPORT_ZONES.some((zone) => zone.id === body.zoneId)) {
+    throw bad("Choose where the issue is.");
+  }
   const note = typeof body.note === "string" ? body.note.trim() : "";
   if (note.length > NOTE_MAX_LENGTH) throw bad(`Keep the description under ${NOTE_MAX_LENGTH} characters.`);
 
@@ -140,7 +177,7 @@ export function validateReport(body: Record<string, unknown>, hosted = false): {
     photo = body.photo as string;
   }
 
-  return { ...(hosted ? {siteId: body.siteId as string} : {}), id: id.toLowerCase(), token: token.toLowerCase(), category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
+  return { id: id.toLowerCase(), token: token.toLowerCase(), siteId, source, category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
 }
 
 export function validateReceiptQuery(url: URL): { id: string; token: string } {

@@ -89,7 +89,10 @@ local draft with the same receipt token for safe retry. The Android build is a
 local demo; the server remains bound to loopback. If port 3100 is already in use,
 stop that server before starting this version.
 
-Set `NVIDIA_API_KEY` in `apps/operations/.env.local` before starting the MMS
+Copy `.env.example` to `apps/operations/.env.local` and fill in
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; without them the
+console cannot reach the database and fails with "MMS database configuration is
+missing." Set `NVIDIA_API_KEY` in the same file before starting the MMS
 server. `NVIDIA_VISION_MODEL` can override the default
 `meta/llama-3.2-11b-vision-instruct` model. The server sends each
 new report's category, note and supported JPEG/PNG photo to NVIDIA for triage;

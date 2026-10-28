@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
  try {
   const mode = reportingMode();
-  if (mode === 'supabase') return json({mode, ...await getReportCatalog()});
+  if (mode === 'hosted-mms') return json({mode, ...await getReportCatalog()});
   return json({mode, sites: [{id:'local-demo', name:'Heritage Park · local demo'}], zones: REPORT_ZONES.map(z => ({zone_key:z.id, name:z.name,site_id:'local-demo'}))});
  } catch(error) { return errorResponse(error); }
 }

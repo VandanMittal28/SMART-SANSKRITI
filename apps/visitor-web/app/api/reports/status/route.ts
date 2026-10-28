@@ -13,6 +13,6 @@ export async function POST(request: Request) {
   url.searchParams.set('id',String(body.id ?? ''));
   url.searchParams.set('token',String(body.token ?? ''));
   const {id,token} = validateReceiptQuery(url);
-  return json(await (reportingMode()==='supabase'?readVisitorReportStatus(id,token):fetchReportStatus(id,token)));
+  return json(await (reportingMode()==='hosted-mms'?readVisitorReportStatus(id,token):fetchReportStatus(id,token)));
  } catch(error) {return errorResponse(error);}
 }

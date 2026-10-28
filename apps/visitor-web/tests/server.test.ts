@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { HttpError, rateLimit, readJsonBody, resetRateLimits } from "../lib/server/http.ts";
 import { parseRecognition, parseScopedAnswer } from "../lib/server/nvidia.ts";
-import { opsBaseUrl } from "../lib/server/ops.ts";
+import { opsBaseUrl, reportingMode } from "../lib/server/ops.ts";
 import { validateChat, validateRecognize, validateReport, validateTranscribe } from "../lib/server/validate.ts";
 
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 1)]).toString("base64");
@@ -131,4 +131,44 @@ test("reporting mode follows the VERCEL environment flag", async () => {
   assert.equal(reportingMode({ NODE_ENV: "production", REPORTS_MODE: "local-demo", VERCEL: "1" }), "unavailable");
   assert.doesNotThrow(() => assertReportingAvailable({}));
   throwsCode(() => assertReportingAvailable({ VERCEL: "1" }), 503);
+});
+
+// Reporting had been hard-disabled in production while a working Supabase
+// destination already existed, so both report paths in the apps were dead
+// ends. These pin the rule that replaced it.
+test("reporting goes to Supabase when it is configured, never to localhost in production", () => {
+  const supabase = {
+    NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+  };
+  // Configured wins everywhere, including on Vercel: it is a real destination.
+  assert.equal(reportingMode({ ...supabase, VERCEL: "1" }), "hosted-mms");
+  assert.equal(reportingMode({ ...supabase, NODE_ENV: "production" }), "hosted-mms");
+  assert.equal(reportingMode(supabase), "hosted-mms");
+
+  // Blank or half-configured is not configured.
+  assert.equal(reportingMode({ NEXT_PUBLIC_SUPABASE_URL: "  ", NEXT_PUBLIC_SUPABASE_ANON_KEY: "k" }), "local-demo");
+  assert.equal(reportingMode({ NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }), "local-demo");
+
+  // The old safety rule is unchanged: a hosted site never posts to localhost.
+  assert.equal(reportingMode({ VERCEL: "1" }), "unavailable");
+  assert.equal(reportingMode({ NODE_ENV: "production" }), "unavailable");
+  assert.equal(reportingMode({ NODE_ENV: "production", REPORTS_MODE: "local-demo" }), "local-demo");
+  assert.equal(reportingMode({}), "local-demo");
+});
+
+test("hosted reports carry a site and real zone keys; the sandbox keeps its four", () => {
+  const hosted = { ...goodReport(), siteId: "taj-mahal", zoneId: "main-mausoleum" };
+  const ok = validateReport(hosted, "hosted-mms");
+  assert.equal(ok.siteId, "taj-mahal");
+  assert.equal(ok.zoneId, "main-mausoleum");
+
+  // A site is required, and only the four staffed ones exist.
+  throwsCode(() => validateReport({ ...hosted, siteId: undefined }, "hosted-mms"), 400);
+  throwsCode(() => validateReport({ ...hosted, siteId: "agra-fort" }, "hosted-mms"), 400);
+  throwsCode(() => validateReport({ ...hosted, zoneId: "Main Mausoleum" }, "hosted-mms"), 400);
+
+  // The sandbox rejects the hosted zone keys, and needs no site.
+  throwsCode(() => validateReport(hosted, "local-demo"), 400);
+  assert.equal(validateReport(goodReport(), "local-demo").siteId, "local-demo");
 });

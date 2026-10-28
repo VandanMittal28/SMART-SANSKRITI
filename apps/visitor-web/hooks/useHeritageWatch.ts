@@ -221,6 +221,11 @@ export function useHeritageWatch({ enabled, stream, context }: Options) {
       return
     }
 
+    if (!['taj-mahal','qutub-minar','red-fort','konark'].includes(contextRef.current.monumentId)) {
+      activeRef.current = false;
+      setStatus(previous => ({...EMPTY_STATUS, receipts:previous.receipts, phase:'unavailable',lastMessage:'This site has no connected operations team.'}));
+      return;
+    }
     activeRef.current = true
     patch({ phase: 'starting', lastMessage: 'Starting Heritage Watch…', error: null })
 

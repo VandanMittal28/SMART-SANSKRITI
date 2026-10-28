@@ -2,6 +2,21 @@ import SwiftUI
 import UIKit
 import WebKit
 
+/// The shell's share of the design tokens in `apk/ui/app/globals.css`.
+///
+/// Only the few colours that are painted by UIKit rather than by the page:
+/// what shows behind and around the web content, and the load progress bar.
+/// Keep these in step with `--background` (`html.light` / `html.dark`) and
+/// `--primary`, or the frame around the page will disagree with the page.
+enum Palette {
+    /// `--background` on `html.light` — #F2F2F4.
+    static let light = UIColor(red: 242/255, green: 242/255, blue: 244/255, alpha: 1)
+    /// `--background` on `html.dark` — #121410.
+    static let dark = UIColor(red: 18/255, green: 20/255, blue: 16/255, alpha: 1)
+    /// `--primary` — #F6C00A.
+    static let amber = UIColor(red: 246/255, green: 192/255, blue: 10/255, alpha: 1)
+}
+
 /// Hosts the bundled visitor UI and wires it to the native services.
 ///
 /// This is the iOS counterpart of `MainActivity` on Android: full-screen web
@@ -18,7 +33,7 @@ final class SanskritiViewController: UIViewController {
 
     override func loadView() {
         let container = UIView(frame: .zero)
-        container.backgroundColor = UIColor(red: 7/255, green: 10/255, blue: 22/255, alpha: 1)
+        container.backgroundColor = Palette.light
         view = container
 
         webView = makeWebView()
@@ -28,12 +43,21 @@ final class SanskritiViewController: UIViewController {
         webView.scrollView.backgroundColor = container.backgroundColor
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
+        // The bundled UI is a fixed-width mobile layout with a pinned bottom
+        // nav; zooming it only breaks the layout and advertises the web view.
+        // The viewport meta in apk/ui/app/layout.tsx already asks for this —
+        // these four lines mean a stray page-level override cannot undo it,
+        // and they match what Android does in MainActivity.
+        webView.scrollView.minimumZoomScale = 1
+        webView.scrollView.maximumZoomScale = 1
+        webView.scrollView.bouncesZoom = false
+        webView.scrollView.pinchGestureRecognizer?.isEnabled = false
         // Matches Android's back gesture through the bundled routes.
         webView.allowsBackForwardNavigationGestures = true
         container.addSubview(webView)
 
         progressBar.translatesAutoresizingMaskIntoConstraints = false
-        progressBar.progressTintColor = UIColor(red: 201/255, green: 168/255, blue: 76/255, alpha: 1)
+        progressBar.progressTintColor = Palette.amber
         progressBar.trackTintColor = .clear
         progressBar.alpha = 0
         container.addSubview(progressBar)
@@ -115,9 +139,7 @@ final class SanskritiViewController: UIViewController {
     }
 
     private func applyTheme(light: Bool) {
-        let background = light
-            ? UIColor(red: 250/255, green: 246/255, blue: 237/255, alpha: 1)
-            : UIColor(red: 7/255, green: 10/255, blue: 22/255, alpha: 1)
+        let background = light ? Palette.light : Palette.dark
         view.backgroundColor = background
         webView.backgroundColor = background
         webView.scrollView.backgroundColor = background

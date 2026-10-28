@@ -17,8 +17,16 @@ export async function GET(): Promise<Response> {
     } catch {
       reachable = false;
     }
+  } else if (mode === "hosted-mms") {
+    // Reachable means a report submitted right now would land somewhere: the
+    // catalogue read proves the credentials work and the four sites are there.
+    try {
+      const catalog = await getReportCatalog();
+      reachable = catalog.sites.length > 0 && catalog.zones.length > 0;
+    } catch {
+      reachable = false;
+    }
   }
-  if (mode === "supabase") { try { reachable = (await getReportCatalog()).sites.length > 0; } catch {} }
   const ai = aiState();
   // live: whether to try AI features at all. ai: why not, when they're off.
   return json({ live: ai === "ready", ai, reports: { mode, reachable } });
