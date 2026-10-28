@@ -12,7 +12,7 @@ type State = {
   live: boolean | null;
   /** Why live AI is off: "missing" key or "rejected" key. */
   ai: AiState | null;
-  reportsMode: "local-demo" | "unavailable" | null;
+  reportsMode: "local-demo" | "supabase" | "unavailable" | null;
   reportsReachable: boolean | null;
 };
 

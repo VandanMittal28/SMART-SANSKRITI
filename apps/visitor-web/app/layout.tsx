@@ -9,6 +9,8 @@ import "../styles/home.css";
 import "../styles/monuments.css";
 import "../styles/yatrik.css";
 import "../styles/original.css";
+import "../styles/mobile-utilities.css";
+import "../styles/explore.css";
 
 // next/font downloads these at build time and serves them from this site, so
 // no font request goes to Google from the visitor's browser.

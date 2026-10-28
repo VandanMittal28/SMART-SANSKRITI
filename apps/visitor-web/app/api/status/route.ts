@@ -1,3 +1,4 @@
+import { getReportCatalog } from "../../../lib/server/visitor-reports.ts";
 import { json } from "../../../lib/server/http.ts";
 import { aiState } from "../../../lib/server/nvidia.ts";
 import { opsReachable, reportingMode } from "../../../lib/server/ops.ts";
@@ -17,6 +18,7 @@ export async function GET(): Promise<Response> {
       reachable = false;
     }
   }
+  if (mode === "supabase") { try { reachable = (await getReportCatalog()).sites.length > 0; } catch {} }
   const ai = aiState();
   // live: whether to try AI features at all. ai: why not, when they're off.
   return json({ live: ai === "ready", ai, reports: { mode, reachable } });

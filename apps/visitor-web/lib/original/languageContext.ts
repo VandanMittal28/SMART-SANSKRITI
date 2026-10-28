@@ -65,10 +65,22 @@ export function useLang() {
     return entry.en || key
   }
 
+  useEffect(() => {
+    const sync = () => { try { const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY); if (isSupportedLanguage(saved)) setLang(saved); } catch {} };
+    window.addEventListener('sanskriti-language-change', sync);
+    return () => window.removeEventListener('sanskriti-language-change', sync);
+  }, []);
+  const changeLanguage = (value: Lang) => {
+    setLang(value);
+    try { localStorage.setItem(LANGUAGE_STORAGE_KEY, value); } catch {}
+    window.dispatchEvent(new Event('sanskriti-language-change'));
+  };
   const translate = async (text: string): Promise<string> => {
-    void text
-    throw new Error('Translation is not available on this website.')
-  }
-
-  return { lang, t, translate }
+    if (lang === 'en') return text;
+    const response = await fetch('/api/translate', {method:'POST', headers:{'Content-Type':'application/json'},body:JSON.stringify({texts:[text],language:lang})});
+    const data = await response.json();
+    if (!response.ok || typeof data.translations?.[0] !== 'string') throw new Error('Translation unavailable');
+    return data.translations[0];
+  };
+  return { lang, t, translate, changeLanguage };
 }

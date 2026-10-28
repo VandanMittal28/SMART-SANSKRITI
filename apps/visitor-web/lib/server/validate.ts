@@ -91,7 +91,8 @@ export function validateHeritageWatch(body: Record<string, unknown>): {
   return { imageBase64: image.toString("base64"), regionBase64, motionContext };
 }
 
-export function validateReport(body: Record<string, unknown>): {
+export function validateReport(body: Record<string, unknown>, hosted = false): {
+  siteId?: string;
   id: string;
   token: string;
   category: ReportCategory;
@@ -105,7 +106,8 @@ export function validateReport(body: Record<string, unknown>): {
   const token = body.token;
   if (typeof token !== "string" || !/^[0-9a-f]{64}$/i.test(token)) throw bad("Invalid receipt token.");
   if (!REPORT_CATEGORIES.includes(body.category as ReportCategory)) throw bad("Choose what kind of issue it is.");
-  if (!REPORT_ZONES.some((zone) => zone.id === body.zoneId)) throw bad("Choose where the issue is.");
+  if (hosted && (typeof body.siteId !== "string" || !["taj-mahal", "qutub-minar", "red-fort", "konark"].includes(body.siteId))) throw bad("Choose a supported heritage site.");
+  if (hosted ? (typeof body.zoneId !== "string" || !/^[a-z0-9-]{1,80}$/.test(body.zoneId)) : !REPORT_ZONES.some((zone) => zone.id === body.zoneId)) throw bad("Choose where the issue is.");
   const note = typeof body.note === "string" ? body.note.trim() : "";
   if (note.length > NOTE_MAX_LENGTH) throw bad(`Keep the description under ${NOTE_MAX_LENGTH} characters.`);
 
@@ -115,7 +117,7 @@ export function validateReport(body: Record<string, unknown>): {
     const lat = Number(p?.latitude);
     const lng = Number(p?.longitude);
     const acc = p?.accuracy === undefined ? undefined : Number(p.accuracy);
-    if (!Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lng) || Math.abs(lng) > 180 || (acc !== undefined && (!Number.isFinite(acc) || acc < 0))) {
+    if (!Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lng) || Math.abs(lng) > 180 || (acc !== undefined && (!Number.isFinite(acc) || acc < 0 || acc > 100000))) {
       throw bad("The location wasn't valid.");
     }
     point = { latitude: lat, longitude: lng, ...(acc !== undefined ? { accuracy: Math.round(acc) } : {}) };
@@ -138,7 +140,7 @@ export function validateReport(body: Record<string, unknown>): {
     photo = body.photo as string;
   }
 
-  return { id: id.toLowerCase(), token: token.toLowerCase(), category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
+  return { ...(hosted ? {siteId: body.siteId as string} : {}), id: id.toLowerCase(), token: token.toLowerCase(), category: body.category as ReportCategory, note, zoneId: body.zoneId as ReportZoneId, point, photo };
 }
 
 export function validateReceiptQuery(url: URL): { id: string; token: string } {

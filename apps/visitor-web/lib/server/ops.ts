@@ -9,7 +9,7 @@
 
 import { HttpError } from "./http.ts";
 
-export type ReportingMode = "local-demo" | "unavailable";
+export type ReportingMode = "local-demo" | "supabase" | "unavailable";
 
 /**
  * Reporting goes only to the operations demo on the same computer, so it is
@@ -22,6 +22,7 @@ export type ReportingMode = "local-demo" | "unavailable";
  * destination yet, so production must never send reports to localhost.
  */
 export function reportingMode(env: Record<string, string | undefined> = process.env): ReportingMode {
+  if (env.REPORTS_MODE === "supabase" && env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return "supabase";
   if (env.VERCEL === "1") return "unavailable";
   if (env.NODE_ENV === "production" && env.REPORTS_MODE !== "local-demo") return "unavailable";
   return "local-demo";
@@ -54,7 +55,7 @@ type OpsResult = { status: number; body: Record<string, unknown> };
 async function call(path: string, init: RequestInit, timeoutMs: number): Promise<OpsResult> {
   // Defence in depth: every request to operations re-checks the mode, so no
   // code path can contact localhost while reporting is unavailable.
-  assertReportingAvailable();
+  if (reportingMode() !== "local-demo") throw new HttpError(503, "local_only", "Local reporting is unavailable.");
   const url = new URL(path, opsBaseUrl());
   let response: Response;
   try {

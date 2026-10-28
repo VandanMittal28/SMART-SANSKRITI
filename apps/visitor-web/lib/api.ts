@@ -68,7 +68,7 @@ export type AiState = "ready" | "missing" | "rejected";
 export type Capabilities = {
   live: boolean;
   ai: AiState;
-  reports: { mode: "local-demo" | "unavailable"; reachable: boolean };
+  reports: { mode: "local-demo" | "supabase" | "unavailable"; reachable: boolean };
 };
 
 export const getCapabilities = () => call<Capabilities>("/api/status", { timeoutMs: 8_000 });

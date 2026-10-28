@@ -24,7 +24,7 @@ export function ServiceNote() {
   const items: string[] = [];
   if (live === false) items.push(`${aiUnavailableText(ai)} Recognition, Yatrik's AI answers and voice questions are off; Yatrik answers from the original app's offline guide, and the monument guide and audio stories work as normal.`);
   if (reportsMode === "unavailable") items.push("Reporting isn't available on the public website yet.");
-  else if (reportsReachable === false) items.push("Reporting uses a local operations demo that isn't running on this computer right now.");
+  else if (reportsReachable === false) items.push("Reporting is temporarily unavailable. Your draft stays on this device.");
   if (items.length === 0) return null;
   return (
     <Notice title="Some features are unavailable">
@@ -65,10 +65,10 @@ export function DeviceFooter() {
 
 export function PrimaryAction() {
   return (
-    <Link href="/recognize" className="home-primary on-dark">
+    <Link href="/explore" className="home-primary on-dark">
       <span className="home-primary__text">
-        <span className="home-primary__title">Scan a monument</span>
-        <span className="home-primary__sub">Point your camera or upload a photo, and learn what you&apos;re looking at.</span>
+        <span className="home-primary__title">Explore with Sanskriti</span>
+        <span className="home-primary__sub">Follow the map, discover historic zones, and hear their stories.</span>
       </span>
       <span className="home-primary__go" aria-hidden="true">
         <IconArrowRight size={22} />

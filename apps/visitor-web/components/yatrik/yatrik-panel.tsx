@@ -83,7 +83,7 @@ export function YatrikPanel() {
       onKeyDown={onKeyDown}
     >
       <div className="sanskriti-original sanskriti-original--panel">
-        <ChatScreen onClose={yatrik.close} />
+        <ChatScreen onClose={yatrik.close} monumentId={yatrik.options.monumentId ?? undefined} initialDraft={yatrik.options.draft} />
       </div>
     </section>
   );
