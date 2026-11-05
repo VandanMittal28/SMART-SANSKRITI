@@ -1,0 +1,28 @@
+import type { SupportedLanguage } from '../languages'
+import ar from './ar.json'
+import da from './da.json'
+import de from './de.json'
+import el from './el.json'
+import en from './en.json'
+import es from './es.json'
+import fi from './fi.json'
+import fr from './fr.json'
+import he from './he.json'
+import hi from './hi.json'
+import it from './it.json'
+import ja from './ja.json'
+import ko from './ko.json'
+import ms from './ms.json'
+import nl from './nl.json'
+import nb from './nb.json'
+import pl from './pl.json'
+import pt from './pt.json'
+import ru from './ru.json'
+import sv from './sv.json'
+import sw from './sw.json'
+import tr from './tr.json'
+import zh from './zh.json'
+
+export const bundledTranslations: Record<SupportedLanguage, Record<string, string>> = {
+  ar, da, de, el, en, es, fi, fr, he, hi, it, ja, ko, ms, nl, nb, pl, pt, ru, sv, sw, tr, zh
+}

@@ -27,6 +27,8 @@ final class SanskritiViewController: UIViewController {
     private var server: BundledUIServer?
     private let bridge = NativeBridge()
     private var progressObservation: NSKeyValueObservation?
+    private var recoveringLoad = false
+    private var foregroundObserver: NSObjectProtocol?
     private let progressBar = UIProgressView(progressViewStyle: .bar)
 
     // MARK: - Lifecycle
@@ -83,6 +85,9 @@ final class SanskritiViewController: UIViewController {
             self?.applyTheme(light: light)
         }
         observeProgress()
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in self?.checkLocalServer() }
         startServerAndLoad()
     }
 
@@ -90,6 +95,7 @@ final class SanskritiViewController: UIViewController {
     private var statusBarStyle: UIStatusBarStyle = .lightContent
 
     deinit {
+        if let foregroundObserver { NotificationCenter.default.removeObserver(foregroundObserver) }
         progressObservation?.invalidate()
         webView?.configuration.userContentController
             .removeScriptMessageHandler(forName: NativeBridge.messageHandlerName)
@@ -106,6 +112,7 @@ final class SanskritiViewController: UIViewController {
 
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = controller
+        configuration.websiteDataStore = .default()
         // The AR view and the audio guides both need to play without a tap.
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
@@ -148,6 +155,29 @@ final class SanskritiViewController: UIViewController {
     }
 
     // MARK: - Loading
+
+    private func checkLocalServer() {
+        guard server != nil, !recoveringLoad else { return }
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:18765/")!)
+        request.timeoutInterval = 3
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: request) { [weak self] _, _, error in
+            guard error != nil else { return }
+            DispatchQueue.main.async { self?.recoverLocalServer() }
+        }.resume()
+    }
+
+    private func recoverLocalServer() {
+        guard !recoveringLoad else { return }
+        recoveringLoad = true
+        if let server {
+            server.stop { [weak self] in
+                DispatchQueue.main.async { self?.startServerAndLoad() }
+            }
+        } else {
+            startServerAndLoad()
+        }
+    }
 
     private func startServerAndLoad() {
         guard let server = BundledUIServer() else {
@@ -220,6 +250,7 @@ extension SanskritiViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard isInternal(webView.url) else { return }
+        recoveringLoad = false
         // The AR controller is only meaningful on Explore; leaving the screen
         // releases GPS and the compass, matching Android's page-start check.
         webView.evaluateJavaScript("window.location.pathname") { [weak self] value, _ in
@@ -238,10 +269,19 @@ extension SanskritiViewController: WKNavigationDelegate {
         presentLoadFailure(error)
     }
 
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        recoveringLoad = false
+        recoverLocalServer()
+    }
+
     private func presentLoadFailure(_ error: Error) {
         let code = (error as NSError).code
         // -999 is a cancelled load, which happens on every fast re-navigation.
         guard code != NSURLErrorCancelled else { return }
+        if !recoveringLoad && [NSURLErrorCannotConnectToHost, NSURLErrorNetworkConnectionLost].contains(code) {
+            recoverLocalServer()
+            return
+        }
         showFailure(
             title: "Sanskriti could not open",
             detail: "The bundled interface failed to load: \(error.localizedDescription)"

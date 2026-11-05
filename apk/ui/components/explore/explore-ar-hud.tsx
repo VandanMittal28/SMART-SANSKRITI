@@ -34,9 +34,9 @@ export interface ExploreARHudState {
     xp: number
   }
   arrivalStatus: ExploreArrivalStatus
-  bearingDegrees: number
+  bearingDegrees: number | null
   caption: string
-  distanceMeters: number
+  distanceMeters: number | null
   fallbackStatus: ExploreFallbackStatus
   miniFact?: string
   mode: ExploreMode
@@ -144,7 +144,7 @@ export function ExploreARHud({
   cameraStream,
   mapView,
 }: ExploreARHudProps) {
-  const bearing = normalizeBearing(state.bearingDegrees)
+  const bearing = normalizeBearing(state.bearingDegrees ?? 0)
   const relativeDirection = ((state.relativeDirectionDegrees + 540) % 360) - 180
   const progress = Math.round(((state.zoneIndex + (state.arrivalStatus === 'arrived' ? 1 : 0)) / state.totalZones) * 100)
   const canArrive = state.mode === 'demo' || state.arrivalStatus === 'inside'
@@ -221,8 +221,8 @@ export function ExploreARHud({
               {cameraMode ? <DirectionNeedle className="size-5" degrees={relativeDirection} /> : <Map className="size-4 text-[#79dfd0]" />}
             </div>
             <div className="text-right">
-              <p className="font-serif text-xl font-bold leading-none text-[#efc566]">{state.distanceMeters}m</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-[#8891A6]">{Math.round(bearing)}° bearing</p>
+              <p className="font-serif text-xl font-bold leading-none text-[#efc566]">{state.distanceMeters === null ? '—' : `${state.distanceMeters}m`}</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-[#8891A6]">{state.bearingDegrees === null ? 'Waiting for GPS' : `${Math.round(bearing)}° bearing`}</p>
             </div>
           </div>
         </div>
@@ -304,7 +304,7 @@ export function ExploreARHud({
                   <DirectionNeedle className="size-16" degrees={relativeDirection} />
                 </div>
                 <span className="mt-3 whitespace-nowrap rounded-full border border-[#efc566]/30 bg-black/70 px-4 py-1.5 text-xs font-black text-[#ffe5a7] shadow-lg">
-                  {directionCopy(relativeDirection)} · {state.distanceMeters}m
+                  {directionCopy(relativeDirection)} · {state.distanceMeters === null ? '—' : `${state.distanceMeters}m`}
                 </span>
                 <span className="sr-only">{directionCopy(relativeDirection)} toward the target</span>
               </div>

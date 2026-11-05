@@ -1,30 +1,32 @@
 'use client'
 
+import { bundledTranslations } from '@/lib/locales'
 import { type SupportedLanguage } from '@/lib/languages'
 import { hasNativeNvidia, translateTextsNative } from '@/lib/nativeNvidia'
 
 const CACHE_VERSION = 'v6'
 const STORAGE_PREFIX = `sanskriti-site-translation-${CACHE_VERSION}:`
 const memoryCaches = new Map<SupportedLanguage, Record<string, string>>()
+const refreshingLanguages = new Set<SupportedLanguage>()
 const pendingBatches = new Map<string, Promise<string[]>>()
 
 function readCache(language: SupportedLanguage): Record<string, string> {
   const existing = memoryCaches.get(language)
   if (existing) return existing
 
-  let cache: Record<string, string> = {}
+  let cache: Record<string, string> = { ...bundledTranslations[language] }
   if (typeof window !== 'undefined') {
     try {
       const parsed = JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${language}`) || '{}') as unknown
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        cache = Object.fromEntries(
+        cache = { ...cache, ...Object.fromEntries(
           Object.entries(parsed).filter(
             (entry): entry is [string, string] => typeof entry[1] === 'string' && Boolean(entry[1].trim()),
           ),
-        )
+        ) }
       }
     } catch {
-      cache = {}
+      // Bundled translations remain available offline.
     }
   }
   memoryCaches.set(language, cache)
@@ -99,4 +101,31 @@ export async function translateTexts(
 export async function translateText(text: string, language: SupportedLanguage): Promise<string> {
   const [translated] = await translateTexts([text], language)
   return translated || text
+}
+
+// Optional updates never block the bundled interface or remove its offline copy.
+export async function refreshBundledTranslations(language: SupportedLanguage): Promise<void> {
+  if (language === 'en' || typeof window === 'undefined' || !navigator.onLine) return
+  if (refreshingLanguages.has(language)) return
+  refreshingLanguages.add(language)
+  const stampKey = `${STORAGE_PREFIX}${language}:updated`
+  try {
+    if (Date.now() - Number(localStorage.getItem(stampKey) || 0) < 7 * 86400000) return
+    const sources = Object.keys(bundledTranslations[language])
+    const cache = readCache(language)
+    for (let offset = 0; offset < sources.length; offset += 20) {
+      const batch = sources.slice(offset, offset + 20)
+      const values = await requestTranslation(batch, language)
+      batch.forEach((source, index) => {
+        if (values[index]?.trim()) cache[source] = values[index].trim()
+      })
+      saveCache(language, cache)
+    }
+    localStorage.setItem(stampKey, String(Date.now()))
+    window.dispatchEvent(new Event('sanskriti-translations-updated'))
+  } catch {
+    // Retry on a later launch or when connectivity returns.
+  } finally {
+    refreshingLanguages.delete(language)
+  }
 }

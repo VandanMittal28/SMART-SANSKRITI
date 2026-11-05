@@ -28,7 +28,7 @@ final class BundledUIServer {
 
     /// Fails only when the bundle has no `www` folder, which means the Xcode
     /// "Bundle visitor UI" phase did not run.
-    init?() {
+    init?(port: UInt16 = 18765) {
         let bundled = Bundle.main.bundleURL.appendingPathComponent("www", isDirectory: true)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: bundled.path, isDirectory: &isDirectory),
@@ -37,7 +37,8 @@ final class BundledUIServer {
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
         // Bind the listening socket to loopback; nothing off-device can reach it.
-        parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: .any)
+        // A stable origin preserves WebKit localStorage (account, theme, language).
+        parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: port)!)
 
         guard let listener = try? NWListener(using: parameters) else { return nil }
         self.listener = listener
@@ -71,8 +72,10 @@ final class BundledUIServer {
         listener.start(queue: queue)
     }
 
-    func stop() {
-        listener.stateUpdateHandler = nil
+    func stop(completion: (() -> Void)? = nil) {
+        listener.stateUpdateHandler = { state in
+            if case .cancelled = state { completion?() }
+        }
         listener.newConnectionHandler = nil
         listener.cancel()
     }

@@ -7,7 +7,7 @@ import {
 } from '@/lib/languages'
 import { useAuth } from '@/lib/authContext'
 import { updateUserProfile } from '@/lib/authClient'
-import { getCachedTranslation, translateText } from '@/lib/translationClient'
+import { getCachedTranslation, translateText, refreshBundledTranslations } from '@/lib/translationClient'
 
 export type Lang = SupportedLanguage
 
@@ -269,6 +269,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth()
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANGUAGE)
   const [languageLoaded, setLanguageLoaded] = useState(false)
+  const [, setTranslationRevision] = useState(0)
+
+  useEffect(() => {
+    if (!languageLoaded) return
+    const refresh = () => { void refreshBundledTranslations(lang) }
+    const updated = () => setTranslationRevision(value => value + 1)
+    window.addEventListener('online', refresh)
+    window.addEventListener('sanskriti-translations-updated', updated)
+    refresh()
+    return () => {
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('sanskriti-translations-updated', updated)
+    }
+  }, [lang, languageLoaded])
 
   useEffect(() => {
     let localLanguage: string | null = null
@@ -314,7 +328,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const entry = TRANSLATIONS[key]
     if (!entry) return key
     if (lang === 'en') return entry.en || key
-    if (lang === 'hi' && entry.hi) return entry.hi
     return getCachedTranslation(entry.en, lang) || entry.en || key
   }
 
