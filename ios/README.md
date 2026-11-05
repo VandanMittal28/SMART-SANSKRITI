@@ -72,3 +72,25 @@ Without a key the AI features fall back to curated local content, exactly as on
 Android. A key placed in an app bundle can be extracted from the device, so
 this is for local MVP builds only; production belongs behind the separate API
 server.
+
+## Standalone startup and saved settings
+
+The bundled server uses the stable, loopback-only origin `http://127.0.0.1:18765`.
+The default persistent WebKit store therefore restores the on-device account,
+appearance, and language after relaunch. Do not switch this to an ephemeral port:
+WebKit partitions local storage by origin, including the port. Foreground checks
+recover an unavailable listener, waiting for cancellation before rebinding.
+Web content process termination also reloads the local interface.
+
+The shared UI includes checked-in machine-translated packs for all 23 language
+choices (249 catalogued interface strings per language). Optional API refreshes
+are cached weekly; failed refreshes retain the bundled copy. Dynamic content and
+strings outside the interface catalogue still use the existing translation API.
+Regenerate packs with the local UI server running on port 3456 using
+`node apk/ui/scripts/bundle-languages.mjs`. These translations still benefit from
+native-speaker review.
+
+Regression checks: `npm --prefix apk/ui test`, the mobile UI build, and `⌘U`.
+The iOS test suite includes serving the bundled HTML and restarting on the same
+origin. Check device force-quit/relaunch, background/foreground, sign-out, and
+real GPS/audio on an iPhone before distributing a build.

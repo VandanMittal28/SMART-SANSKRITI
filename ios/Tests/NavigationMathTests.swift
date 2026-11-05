@@ -47,3 +47,33 @@ final class NavigationMathTests: XCTestCase {
             radiusMeters: 50, graceMeters: 70))
     }
 }
+
+
+final class BundledUIStartupTests: XCTestCase {
+    func testBundledInterfaceCanRestartOnTheSameOriginWithoutAnIDE() async throws {
+        let first = try XCTUnwrap(BundledUIServer(port: 18766))
+        let firstURL = try await start(first)
+        let (body, response) = try await URLSession.shared.data(from: firstURL)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        XCTAssertTrue(String(decoding: body, as: UTF8.self).contains("<html"))
+        await withCheckedContinuation { continuation in
+            first.stop { continuation.resume() }
+        }
+
+        let second = try XCTUnwrap(BundledUIServer(port: 18766))
+        defer { second.stop() }
+        let secondURL = try await start(second)
+        XCTAssertEqual(firstURL, secondURL, "Changing the origin loses saved account and preferences")
+        let (_, restartedResponse) = try await URLSession.shared.data(from: secondURL)
+        XCTAssertEqual((restartedResponse as? HTTPURLResponse)?.statusCode, 200)
+    }
+
+    private func start(_ server: BundledUIServer) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            server.start(ready: { continuation.resume(returning: $0) }, failed: {
+                continuation.resume(throwing: NSError(domain: "BundledUIServerTest", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: $0]))
+            })
+        }
+    }
+}

@@ -169,12 +169,15 @@ export function ClientLangWrapper() {
       timer = setTimeout(() => void translatePage(), delay)
     }
 
+    const refreshTranslations = () => scheduleTranslation()
+    window.addEventListener('sanskriti-translations-updated', refreshTranslations)
     const observer = new MutationObserver(() => scheduleTranslation())
     observer.observe(document.body, { childList: true, characterData: true, subtree: true })
     scheduleTranslation()
 
     return () => {
       cancelled = true
+      window.removeEventListener('sanskriti-translations-updated', refreshTranslations)
       observer.disconnect()
       if (timer) clearTimeout(timer)
       restore()

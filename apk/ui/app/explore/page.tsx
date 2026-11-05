@@ -713,7 +713,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
   zones, currentZoneIndex, completedZones, userPos, monumentId
 }: {
   zones: typeof TAJ_ZONES; currentZoneIndex: number;
-  completedZones: number[]; userPos: { lat: number; lng: number };
+  completedZones: number[]; userPos: { lat: number; lng: number } | null;
   monumentId: string;
 }) {
   const mapRef = useRef<any>(null)
@@ -757,7 +757,7 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
     }
     // Keep the synthetic user and active coordinate visible together.
     const activeZone = zones[currentZoneIndex]
-    if (activeZone) {
+    if (activeZone && userPos) {
       mapRef.current.invalidateSize()
       const routeBounds = L.latLngBounds([
         [userPos.lat, userPos.lng],
@@ -807,22 +807,24 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
       newMarkers.push(label)
     })
 
-    // User marker
-    const userMarker = L.circleMarker([userPos.lat, userPos.lng], {
-      radius: 8, fillColor: '#fff', color: '#8A6A05',
-      fillOpacity: 1, weight: 3
-    }).addTo(map)
-    userMarker.bindPopup('<b style="color:#333">📍 You</b>')
-    newMarkers.push(userMarker)
+    // Never substitute a demo coordinate when live GPS is unavailable.
+    if (userPos) {
+      const userMarker = L.circleMarker([userPos.lat, userPos.lng], {
+        radius: 8, fillColor: '#fff', color: '#8A6A05',
+        fillOpacity: 1, weight: 3
+      }).addTo(map)
+      userMarker.bindPopup('<b style="color:#333">📍 You</b>')
+      newMarkers.push(userMarker)
 
-    const youLabel = L.marker([userPos.lat, userPos.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="font-size:11px;color:#181A13;font-weight:700;text-align:center;margin-top:8px;text-shadow:0 0 3px #fff,0 0 6px #fff">You</div>',
-        iconSize: [40, 20],
-      })
-    }).addTo(map)
-    newMarkers.push(youLabel)
+      const youLabel = L.marker([userPos.lat, userPos.lng], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="font-size:11px;color:#181A13;font-weight:700;text-align:center;margin-top:8px;text-shadow:0 0 3px #fff,0 0 6px #fff">You</div>',
+          iconSize: [40, 20],
+        })
+      }).addTo(map)
+      newMarkers.push(youLabel)
+    }
 
     markersRef.current = newMarkers
   }, [zones, currentZoneIndex, completedZones, userPos, monumentId])
@@ -833,9 +835,9 @@ const ExploreMap = dynamic(() => Promise.resolve(function ExploreMapInner({
   }, [])
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#0c1824]" aria-label="Coordinate route map">
+    <div className="explore-route-map absolute inset-0 overflow-hidden bg-[#0c1824]" aria-label="Coordinate route map">
       <div ref={containerRef} className="absolute inset-0" />
-      <style>{`.pulse-marker { animation: markerPulse 1.5s ease infinite; } @keyframes markerPulse { 0%,100% { opacity: 0.9; } 50% { opacity: 0.5; } }`}</style>
+      <style>{`.explore-route-map .leaflet-top.leaflet-right { top: 112px; right: 8px; } .pulse-marker { animation: markerPulse 1.5s ease infinite; } @keyframes markerPulse { 0%,100% { opacity: 0.9; } 50% { opacity: 0.5; } }`}</style>
     </div>
   )
 }), { ssr: false })
@@ -986,10 +988,12 @@ export default function ExplorePage() {
       URL.revokeObjectURL(audioUrlRef.current)
       audioUrlRef.current = null
     }
-    if (browserTTSStateRef.current !== 'idle' && typeof window !== 'undefined' && window.speechSynthesis) {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel()
     }
     browserTTSStateRef.current = 'idle'
+    pendingNarrationRef.current = null
+    setNarrationLoading(false)
     setIsTTSSpeaking(false)
     setNarrationReady(false)
   }, [])
@@ -1013,15 +1017,18 @@ export default function ExplorePage() {
     }
     window.speechSynthesis.cancel()
 
+    const speechToken = nativeNarrationTokenRef.current
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = getLanguageConfig(language).locale
     utterance.rate = 0.95
     utterance.onend = () => {
+      if (speechToken !== nativeNarrationTokenRef.current) return
       browserTTSStateRef.current = 'idle'
       setIsTTSSpeaking(false)
       setNarrationReady(false)
     }
     utterance.onerror = () => {
+      if (speechToken !== nativeNarrationTokenRef.current) return
       browserTTSStateRef.current = 'failed'
       setIsTTSSpeaking(false)
       setNarrationReady(true)
@@ -1156,25 +1163,7 @@ export default function ExplorePage() {
     // native NVIDIA bridge instead, falling back to on-device speech
     // synthesis (tagged as the Android system voice) if that fails.
     if (isBundledNativeApp()) {
-      const speakWithAndroidVoice = () => {
-        if (typeof window === 'undefined' || !window.speechSynthesis) return
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = getLanguageConfig(language).locale
-        utterance.rate = 0.92
-        utterance.onstart = () => {
-          setNarrationReady(false)
-          setIsTTSSpeaking(true)
-        }
-        utterance.onend = () => {
-          setIsTTSSpeaking(false)
-          setNarrationReady(true)
-        }
-        utterance.onerror = () => {
-          setIsTTSSpeaking(false)
-          setNarrationReady(false)
-        }
-        window.speechSynthesis.speak(utterance)
-      }
+      const speakWithAndroidVoice = () => speakWithBrowserFallback(text, language)
 
       const narrationVoice = getNvidiaNarrationVoice(exploreMonumentId, language)
       if (!narrationVoice) {
@@ -1259,6 +1248,7 @@ export default function ExplorePage() {
       }
 
       const fail = () => {
+        if (audioRef.current !== audio) return
         if (audioRef.current === audio) audioRef.current = null
         if (audioUrlRef.current === audioUrl) {
           URL.revokeObjectURL(audioUrl)
@@ -1317,6 +1307,8 @@ export default function ExplorePage() {
   // Reset distance when zone changes + auto-speak direction hint
   useEffect(() => {
     let cancelled = false
+    stopNarration()
+    const guideToken = nativeNarrationTokenRef.current
     setArrivedAtZone(false)
     setShowFact(false)
     setCurrentTranslation(null)
@@ -1328,7 +1320,7 @@ export default function ExplorePage() {
       if (lang !== 'en') {
         setTranslationLoading(true)
         const translated = await getGuideTranslation(exploreMonumentId, guideZone)
-        if (cancelled) return
+        if (cancelled || guideToken !== nativeNarrationTokenRef.current) return
         setCurrentTranslation(translated)
         setTranslationLoading(false)
         if (translated) {
@@ -1339,7 +1331,7 @@ export default function ExplorePage() {
       }
 
       window.setTimeout(() => {
-        if (!cancelled) {
+        if (!cancelled && guideToken === nativeNarrationTokenRef.current) {
           emitYatrikEvent({
             type: 'route-prompt',
             caption: direction,
@@ -1370,6 +1362,8 @@ export default function ExplorePage() {
   // ── HANDLE ARRIVAL ──────────────────────────────────────
   const handleArrival = useCallback(async () => {
     if (arrivedAtZone) return
+    stopNarration()
+    const arrivalToken = nativeNarrationTokenRef.current
     setArrivedAtZone(true)
     setShowFact(true)
 
@@ -1384,6 +1378,7 @@ export default function ExplorePage() {
         window.dispatchEvent(new Event('xp-updated'))
       } catch (err) { console.warn('XP award failed:', err) }
     }
+    if (arrivalToken !== nativeNarrationTokenRef.current) return
     setXpEarned(z.xp)
     setCompletedZones(prev => [...prev, z.id])
 
@@ -1391,6 +1386,7 @@ export default function ExplorePage() {
     if (lang !== 'en') {
       const translated =
         currentTranslation || await getGuideTranslation(exploreMonumentId, z)
+      if (arrivalToken !== nativeNarrationTokenRef.current) return
       if (translated) {
         setCurrentTranslation(translated)
         story = translated.arrivalFact
@@ -1421,12 +1417,14 @@ export default function ExplorePage() {
     getGuideTranslation,
     lang,
     setProfile,
+    stopNarration,
     speakFact,
     user,
   ])
 
   // ── EXPLORE VIEW MODES ──────────────────────────────────
   const changeViewMode = useCallback((nextMode: ExploreViewMode) => {
+    stopNarration()
     setViewMode(nextMode)
     const nextIsLive = nextMode === 'live-camera' || nextMode === 'live-map'
     if (nextIsLive !== arViewActive) {
@@ -1448,7 +1446,7 @@ export default function ExplorePage() {
     } else {
       arNav.stopCameraPreview()
     }
-  }, [arNav, arViewActive])
+  }, [arNav, arViewActive, stopNarration])
 
   // ── COMPLETION SCREEN ───────────────────────────────────
   if (explorerComplete) {
@@ -1515,33 +1513,33 @@ export default function ExplorePage() {
       ? currentTranslation.miniFact
       : zone.mini_fact
 
-  const liveTracking = arViewActive && arNav.mode === 'live'
+  const liveTracking = arViewActive && arNav.userPosition !== null
   const demoRelativeDirection = arNav.headingDeg !== null
     ? angleDiffDegrees(bearing, arNav.headingDeg)
     : bearing
-  const mapUserPosition = viewMode === 'live-map' && arNav.userPosition
-    ? arNav.userPosition
-    : userPos
+  const mapUserPosition = arViewActive ? arNav.userPosition : userPos
   const syntheticDistance = Math.round(calculateDistanceMeters(userPos, zone))
-  const insideNow = liveTracking ? arNav.arrivalUnlocked : syntheticDistance <= zone.radius
+  const insideNow = arViewActive ? liveTracking && arNav.arrivalUnlocked : syntheticDistance <= zone.radius
 
   const hudFallbackStatus: ExploreFallbackStatus =
     arViewActive && arNav.mode === 'fallback'
-      ? arNav.permissions.camera === 'denied' || arNav.permissions.camera === 'unavailable'
+      ? viewMode === 'live-camera' && (arNav.permissions.camera === 'denied' || arNav.permissions.camera === 'unavailable')
         ? 'camera-denied'
         : arNav.permissions.location === 'denied' || arNav.permissions.location === 'unavailable'
           ? 'location-denied'
-          : 'orientation-unavailable'
+          : viewMode === 'live-map' ? 'none' : 'orientation-unavailable'
       : 'none'
 
   const hudMode: ExploreMode =
     !arViewActive
       ? 'demo'
+      : viewMode === 'live-map' && liveTracking
+        ? 'live'
       : arNav.mode === 'fallback'
         ? 'fallback'
         : arNav.mode === 'live'
           ? 'live'
-          : 'demo'
+          : 'fallback'
 
   const hudNarrationStatus: ExploreNarrationStatus = isTTSSpeaking
     ? 'speaking'
@@ -1562,11 +1560,6 @@ export default function ExplorePage() {
 
   const handleHudArrive = () => {
     void handleArrival()
-    if (arViewActive) {
-      arNav.stop()
-      setArViewActive(false)
-      setViewMode('demo-map')
-    }
   }
 
   return (
@@ -1581,6 +1574,7 @@ export default function ExplorePage() {
         router.push('/')
       }}
       onComplete={() => {
+        stopNarration()
         emitYatrikEvent({
           type: 'explore-complete',
           caption: `Amazing! You completed every zone at ${MONUMENT_NAMES[exploreMonumentId] || 'this monument'}.`,
@@ -1619,12 +1613,12 @@ export default function ExplorePage() {
           xp: zone.xp,
         },
         arrivalStatus: showFact ? 'arrived' : insideNow ? 'inside' : 'approaching',
-        bearingDegrees: liveTracking && arNav.bearingDeg !== null ? arNav.bearingDeg : bearing,
+        bearingDegrees: arViewActive ? (liveTracking ? arNav.bearingDeg : null) : bearing,
         relativeDirectionDegrees: liveTracking ? arNav.waypoint.relativeAngle : demoRelativeDirection,
         caption: showFact ? arrivalText : directionText,
         distanceMeters: liveTracking && arNav.distanceMeters !== null
           ? Math.round(arNav.distanceMeters)
-          : syntheticDistance,
+          : arViewActive ? null : syntheticDistance,
         fallbackStatus: hudFallbackStatus,
         miniFact: showFact ? miniFactText : undefined,
         mode: hudMode,
