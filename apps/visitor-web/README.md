@@ -106,3 +106,7 @@ production domain. This repository is not yet linked to a Vercel project.
   this implementation. Original map demo routes are intentionally synthetic.
 - Explore points are session progress, not authenticated account XP.
 - Assets retain their existing credits. Map attribution is now visible.
+
+### Groq for the website and packaged apps
+
+The packaged apps use this website’s hosted API for chat, translation and transcription. Set server-only `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-20b`, and `GROQ_SPEECH_MODEL=whisper-large-v3-turbo` in the hosted project and redeploy to enable Groq for both. NVIDIA continues to handle vision and narration. Never include provider keys in public variables or mobile bundles.

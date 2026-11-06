@@ -1,22 +1,7 @@
-// NVIDIA NIM calls for Yatrik chat, monument recognition and voice
-// transcription. COPIED from apk/ui/lib/nvidia.ts (the original is not
-// modified); prompts, request bodies, polling and answer parsing are kept as
-// they were. Changes, and why:
-//   - A missing key becomes a 503 "not_configured" HttpError and a rejected
-//     key (401/403) a 503 "ai_rejected" one, so the website can say which;
-//     /api/status reports the same via aiState(). The website
-//     can show an honest "not switched on yet" state.
-//   - Upstream errors become generic HttpErrors instead of passing NVIDIA's
-//     own messages to visitors.
-//   - The monument name for the chat prompt comes from this site's guide
-//     (which also covers Agra Fort, missing from the original map).
-//   - Recognition accepts a 0–1 confidence and rescales it, as
-//     apk/ui/lib/nativeNvidia.ts already does on Android.
-//   - translateTextsWithNvidia is omitted: the original only used it to
-//     translate the refusal into languages other than English and Hindi,
-//     which this website doesn't offer.
-// SERVER-ONLY: reads NVIDIA_API_KEY and must never be imported by browser code.
-// Not verified against the live API from this website: no key was available.
+import { GroqError, isTextRequest, requestGroq, transcribeGroq } from "./groq.ts";
+// Server-only AI integration. Groq handles chat, translation and transcription
+// when configured. NVIDIA continues to handle vision and speech synthesis.
+// Existing exports are retained for compatibility with the route handlers.
 
 import { getMonument } from "../content/monuments.ts";
 import { buildSceneMessageContent, parseSceneAssessment, type SceneAssessment, type SceneRequest } from "../heritage/watch.ts";
@@ -50,7 +35,7 @@ export type AiState = "ready" | "missing" | "rejected";
 let credentialsRejected = false;
 
 export function aiState(env: Record<string, string | undefined> = process.env): AiState {
-  if (!isNvidiaConfigured(env)) return "missing";
+  if (!isNvidiaConfigured(env) && !env.GROQ_API_KEY?.trim()) return "missing";
   return credentialsRejected ? "rejected" : "ready";
 }
 
@@ -117,6 +102,15 @@ async function pollNvidiaResult(requestId: string, apiKey: string) {
 }
 
 async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaResponse> {
+  if (process.env.GROQ_API_KEY?.trim() && isTextRequest(body)) {
+    try {
+      const data = await requestGroq(body);
+      credentialsRejected = false;
+      return data;
+    } catch (error) {
+      throw upstreamError(error instanceof GroqError ? error.status : 502);
+    }
+  }
   const apiKey = getApiKey();
   let response: Response;
   try {
@@ -280,6 +274,10 @@ export async function recognizeMonument(imageBase64: string): Promise<MonumentRe
 }
 
 export async function transcribeAudio(audioBase64: string, language: Language = "en"): Promise<string> {
+  if (process.env.GROQ_API_KEY?.trim()) {
+    try { return await transcribeGroq(audioBase64, language); }
+    catch (error) { throw upstreamError(error instanceof GroqError ? error.status : 502); }
+  }
   const model = process.env.NVIDIA_SPEECH_MODEL || DEFAULT_NVIDIA_SPEECH_MODEL;
   const languageName = language === "hi" ? "Hindi" : "English";
   const data = await requestNvidia({
