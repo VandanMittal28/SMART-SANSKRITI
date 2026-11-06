@@ -1,3 +1,4 @@
+import { isImageRequest, requestGeminiVision } from './gemini.ts'
 import { isTextRequest, requestGroq, transcribeGroq } from './groq.ts'
 import { getLanguageConfig, isSupportedLanguage } from '@/lib/languages'
 import { buildSceneRequestBody, parseSceneAssessment, type SceneAssessment, type SceneRequestInput } from '@/lib/vision/prompt'
@@ -120,6 +121,7 @@ async function pollNvidiaResult(requestId: string, apiKey: string) {
 }
 
 async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaResponse> {
+  if (process.env.GEMINI_API_KEY?.trim() && isImageRequest(body)) return requestGeminiVision(body)
   if (process.env.GROQ_API_KEY?.trim() && isTextRequest(body)) return requestGroq(body)
   const apiKey = getApiKey()
   const response = await fetch(NVIDIA_CHAT_URL, {

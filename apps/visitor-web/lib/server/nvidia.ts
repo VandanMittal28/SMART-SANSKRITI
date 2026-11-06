@@ -1,6 +1,7 @@
+import { GeminiError, isImageRequest, requestGeminiVision } from "./gemini.ts";
 import { GroqError, isTextRequest, requestGroq, transcribeGroq } from "./groq.ts";
 // Server-only AI integration. Groq handles chat, translation and transcription
-// when configured. NVIDIA continues to handle vision and speech synthesis.
+// when configured. Gemini handles vision; NVIDIA handles speech synthesis.
 // Existing exports are retained for compatibility with the route handlers.
 
 import { getMonument } from "../content/monuments.ts";
@@ -35,7 +36,7 @@ export type AiState = "ready" | "missing" | "rejected";
 let credentialsRejected = false;
 
 export function aiState(env: Record<string, string | undefined> = process.env): AiState {
-  if (!isNvidiaConfigured(env) && !env.GROQ_API_KEY?.trim()) return "missing";
+  if (!isNvidiaConfigured(env) && !env.GROQ_API_KEY?.trim() && !env.GEMINI_API_KEY?.trim()) return "missing";
   return credentialsRejected ? "rejected" : "ready";
 }
 
@@ -102,6 +103,15 @@ async function pollNvidiaResult(requestId: string, apiKey: string) {
 }
 
 async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaResponse> {
+  if (process.env.GEMINI_API_KEY?.trim() && isImageRequest(body)) {
+    try {
+      const data = await requestGeminiVision(body);
+      credentialsRejected = false;
+      return data;
+    } catch (error) {
+      throw upstreamError(error instanceof GeminiError ? error.status : 502);
+    }
+  }
   if (process.env.GROQ_API_KEY?.trim() && isTextRequest(body)) {
     try {
       const data = await requestGroq(body);
