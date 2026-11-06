@@ -106,3 +106,11 @@ production domain. This repository is not yet linked to a Vercel project.
   this implementation. Original map demo routes are intentionally synthetic.
 - Explore points are session progress, not authenticated account XP.
 - Assets retain their existing credits. Map attribution is now visible.
+
+### Groq for the website and packaged apps
+
+The packaged apps use this website’s hosted API for chat, translation and transcription. Set server-only `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-20b`, and `GROQ_SPEECH_MODEL=whisper-large-v3-turbo` in the hosted project and redeploy to enable Groq for both. NVIDIA continues to handle vision and narration. Never include provider keys in public variables or mobile bundles.
+
+### Google vision for app and website
+
+`GEMINI_API_KEY` enables Google vision for monument recognition and Heritage Watch in both clients through the shared hosted API. `GEMINI_VISION_MODEL` defaults to `gemini-3.1-flash-lite`, which supports image understanding and has a free tier. Keep billing disabled on the Google project to remain on its free tier; Google quota and eligibility rules apply. Configuring this integration does not enable billing. Quota failures return an unavailable/busy response without retrying NVIDIA or another paid model. Groq continues to handle text and transcription, and NVIDIA handles narration. Keep all provider keys server-side.

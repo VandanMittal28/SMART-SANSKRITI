@@ -1,3 +1,5 @@
+import { isImageRequest, requestGeminiVision } from './gemini.ts'
+import { isTextRequest, requestGroq, transcribeGroq } from './groq.ts'
 import { getLanguageConfig, isSupportedLanguage } from '@/lib/languages'
 import { buildSceneRequestBody, parseSceneAssessment, type SceneAssessment, type SceneRequestInput } from '@/lib/vision/prompt'
 
@@ -119,6 +121,8 @@ async function pollNvidiaResult(requestId: string, apiKey: string) {
 }
 
 async function requestNvidia(body: Record<string, unknown>): Promise<NvidiaResponse> {
+  if (process.env.GEMINI_API_KEY?.trim() && isImageRequest(body)) return requestGeminiVision(body)
+  if (process.env.GROQ_API_KEY?.trim() && isTextRequest(body)) return requestGroq(body)
   const apiKey = getApiKey()
   const response = await fetch(NVIDIA_CHAT_URL, {
     method: 'POST',
@@ -212,7 +216,7 @@ export async function translateTextsWithNvidia(
     it: 'it', ja: 'ja', ko: 'ko', nb: 'no', nl: 'nl', pl: 'pl', pt: 'pt-br', ru: 'ru',
     sv: 'sv', tr: 'tr', zh: 'zh-cn',
   }
-  const translationCode = translationCodes[language]
+  const translationCode = process.env.GROQ_API_KEY?.trim() ? undefined : translationCodes[language]
   const model = translationCode
     ? (process.env.NVIDIA_TRANSLATION_MODEL || DEFAULT_NVIDIA_TRANSLATION_MODEL)
     : (process.env.NVIDIA_MODEL || DEFAULT_NVIDIA_MODEL)
@@ -414,6 +418,7 @@ export async function transcribeAudio(
   audioBase64: string,
   language: string = 'en',
 ): Promise<string> {
+  if (process.env.GROQ_API_KEY?.trim()) return transcribeGroq(audioBase64, language || 'en')
   const model = process.env.NVIDIA_SPEECH_MODEL || DEFAULT_NVIDIA_SPEECH_MODEL
   const selectedLanguage = isSupportedLanguage(language) ? language : 'en'
   const languageName = getLanguageConfig(selectedLanguage).name
