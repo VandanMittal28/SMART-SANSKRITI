@@ -10,6 +10,37 @@ The initial administrator is provisioned only for the verified address authorize
 
 The `mms_*` tables are separate from the visitor profiles and marketplace tables. Monument site records are read from the existing `heritage_sites` directory. Site zone capacities are intentionally unset until a site operator supplies verified limits.
 
+## AI review in the main MMS
+
+Each saved incident has an **AI review** panel. Opening it as a site administrator
+or manager assesses the saved description/category and any visitor JPEG with the
+existing NVIDIA vision service. The browser submits only the incident ID; the
+server verifies the session and site role, reads the saved input, and downloads
+private evidence using that user's permissions. Ordinary staff can read a saved
+assessment but cannot request one.
+
+Apply `supabase/migrations/20261107153229_mms_ai_assessments.sql` to the same
+database used by MMS before enabling this feature. Configure
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), and server-only `NVIDIA_API_KEY` in the
+operations deployment. `NVIDIA_VISION_MODEL` is optional and defaults to
+`nvidia/nemotron-3.5-super-vl-120b-a12b`. The retired Llama 3.2 11B setting is automatically mapped to this replacement. No service-role key is needed.
+
+New assessments can mark clear advertising, scams, or junk as **Suspected spam**, with a reason. The report remains visible and a manager decides whether to dismiss it. Missing photos, brief notes, spelling errors, and unverified allegations alone are not spam. Existing saved assessments are retained without automatic reclassification. Apply `supabase/migrations/20261107155021_mms_ai_spam_classification.sql` for this classification.
+
+Completed assessments are retained in `mms_ai_assessments`, including the model,
+requesting manager, result, reason, and timestamp. Subsequent opens reuse the
+first completed assessment. Missing configuration, unreadable photos, and failed
+model calls show a manual-review message and can be retried. Storage failures do
+not display an unsaved result as successful. Missing AI storage does not disable
+the normal incident workflow.
+
+This is manager-triggered advice, not automatic intake processing or dispatch.
+It never changes incident status, priority, or assignment. It does not activate
+the currently unwired hosted visitor-report helper. Existing local demo dispatch
+remains separate. The new migration must be applied and the operations app
+deployed before this is available on the hosted console.
+
 ## Run locally
 
 Requires Node 22.18+ and npm.
@@ -94,7 +125,7 @@ Copy `.env.example` to `apps/operations/.env.local` and fill in
 console cannot reach the database and fails with "MMS database configuration is
 missing." Set `NVIDIA_API_KEY` in the same file before starting the MMS
 server. `NVIDIA_VISION_MODEL` can override the default
-`meta/llama-3.2-11b-vision-instruct` model. The server sends each
+`nvidia/nemotron-3.5-super-vl-120b-a12b` model. The server sends each
 new report's category, note and supported JPEG/PNG photo to NVIDIA for triage;
 the key stays server-side. Only a valid **relevant** model response can trigger
 automatic dispatch. Uncertain, irrelevant, failed or unconfigured assessments

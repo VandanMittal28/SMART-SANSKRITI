@@ -4,7 +4,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { site, staff, zones } from './domain.ts';
 
 export type Point = { latitude: number; longitude: number; accuracy?: number };
-export type Assessment = 'relevant' | 'uncertain' | 'irrelevant' | 'unavailable';
+export type Assessment = 'relevant' | 'uncertain' | 'irrelevant' | 'spam' | 'unavailable';
 export type ReportOrigin = 'visitor' | 'automated';
 export type ReportState = 'review' | 'unassigned' | 'assigned' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed' | 'dismissed';
 export type DemoReport = {

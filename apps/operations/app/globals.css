@@ -1719,3 +1719,5 @@ dialog label {
   .ops-entry-card { padding: 24px; }
   .ops-main { padding: 20px 14px 50px; }
 }
+
+.mms-ai-review>p{margin-top:12px;line-height:1.6}.mms-ai-result{margin-top:12px;padding:14px;background:#f0f7f5;border-radius:10px;overflow-wrap:anywhere}.mms-ai-result p{margin:8px 0;line-height:1.6}.mms-ai-result small{color:#65797d}

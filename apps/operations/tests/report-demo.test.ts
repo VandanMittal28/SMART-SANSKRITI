@@ -8,6 +8,12 @@ function fixture():{data:DemoData;report:DemoReport}{
  const report:DemoReport={id:'r1',receiptHash:'hash',category:'Property damage',note:'Broken sign',zoneId:'garden',point:{latitude:27,longitude:78},evidenceId:null,completionEvidenceId:null,assessment:'relevant',assessmentReason:'demo',status:'unassigned',assigneeId:null,assignmentReason:null,createdAt:at,assignedAt:null,resolvedAt:null,alerts:[],history:[]};
  return {report,data:{version:1,reports:[report],duties:staff.map((s,i)=>({id:s.id,zoneId:zones[i].id,onDuty:true,point:null,locationAt:null}))}};
 }
+test('suspected spam is retained for review and is never automatically dispatched',()=>{
+ const {data,report}=fixture();report.assessment='spam';
+ dispatch(data,report,at);
+ assert.equal(report.assigneeId,null);
+ assert.equal(data.reports.length,1);
+});
 test('dispatch prefers fresh GPS, then matching zone, and never doubles an active assignment',()=>{
  const {data,report}=fixture();
  data.duties[0].point={latitude:27,longitude:78.001};data.duties[0].locationAt=at;
