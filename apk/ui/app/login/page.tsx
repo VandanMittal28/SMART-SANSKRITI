@@ -92,7 +92,7 @@ export default function LoginPage() {
           </div>
 
           <div className="absolute inset-x-0 bottom-0 px-[22px] pb-11">
-            <p className="eyebrow text-white/85">Explorer login</p>
+            <p className="eyebrow eyebrow-on-photo">Explorer login</p>
             <h1 className="mt-3 max-w-[19rem] font-display text-[2.15rem] font-semibold leading-[1.06] tracking-[-0.03em] text-white [text-shadow:0_2px_18px_rgba(14,16,11,0.45)]">
               Discover India&apos;s{' '}
               <span className="text-[var(--primary)]">living heritage</span>
@@ -193,7 +193,7 @@ export default function LoginPage() {
             </div>
 
             {(error || authError) && (
-              <p className="mt-3 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-[var(--destructive)]" role="alert">
+              <p className="mt-3 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-destructive-text" role="alert">
                 {error || authError}
               </p>
             )}

@@ -322,11 +322,11 @@ export default function ProfilePage() {
   }) {
     const inner = (
       <>
-        <span className={`grid size-11 shrink-0 place-items-center rounded-full ${danger ? 'bg-[var(--destructive)]/10 text-[var(--destructive)]' : 'bg-[var(--muted)] text-[var(--foreground)]'}`}>
+        <span className={`grid size-11 shrink-0 place-items-center rounded-full ${danger ? 'bg-[var(--destructive)]/10 text-destructive-text' : 'bg-[var(--muted)] text-[var(--foreground)]'}`}>
           <Icon className="size-[19px]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-[16px] font-semibold ${danger ? 'text-[var(--destructive)]' : 'text-[var(--foreground)]'}`}>
+          <span className={`block truncate text-[16px] font-semibold ${danger ? 'text-destructive-text' : 'text-[var(--foreground)]'}`}>
             {label}
           </span>
           {detail && <span className="mt-0.5 block truncate text-[13px] text-[var(--muted-foreground)]">{detail}</span>}

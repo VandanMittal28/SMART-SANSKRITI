@@ -22,12 +22,12 @@
   --accent: #F6C00A;
   --accent-foreground: #181A13;
   --destructive: #C2321B;
-  --destructive-text: #BA301A;
+  --destructive-text: #B52C18;
   --destructive-foreground: #FFFFFF;
   --border: rgba(24, 26, 19, 0.08);
   --input: #FFFFFF;
   --ring: #F6C00A;
-  --primary-text: #7C5F04;
+  --primary-text: #785B04;
   --on-tint: #181A13;
   --success: #2F7D63;
   --success-text: #2C745C;
@@ -49,7 +49,7 @@
 }
 
 html.light {
-  --primary-text: #7C5F04;
+  --primary-text: #785B04;
   --on-tint: #181A13;
   --background: #F2F2F4;
   --foreground: #181A13;
@@ -101,8 +101,8 @@ html.dark {
   --muted-foreground: #A7AA9F;
   --accent: #F6C00A;
   --accent-foreground: #181A13;
-  --destructive: #E4553B;
-  --destructive-text: #E4553B;
+  --destructive: #C2321B;
+  --destructive-text: #FF8A75;
   --destructive-foreground: #FFFFFF;
   --border: rgba(249, 249, 250, 0.10);
   --input: #22251D;
@@ -135,6 +135,7 @@ html.dark {
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -143,6 +144,7 @@ html.dark {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-text: var(--destructive-text);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -265,7 +267,7 @@ html.dark {
 }
 
 .text-gold-gradient {
-  background: linear-gradient(135deg, #C9A84C 0%, #D4893F 100%);
+  background: linear-gradient(135deg, var(--primary-text), var(--foreground));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -459,6 +461,11 @@ html.light [style*="color: #8891A6"] {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+.eyebrow-on-photo {
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .screen-gutter {
@@ -786,11 +793,11 @@ html.light [style*="color: #8891A6"] {
 [class~="bg-[#C9A84C]"], [class~="bg-[#efc566]"], [class~="bg-[#d5a94d]"],
 [class~="bg-[#D5A94D]"] {
   background-color: var(--primary);
-  color: var(--on-tint);
+  color: var(--primary-foreground);
 }
 [class~="text-[#171004]"], [class~="text-[#201406]"], [class~="text-[#211406]"],
 [class~="text-[#241507]"], [class~="text-[#142126]"] {
-  color: var(--on-tint);
+  color: var(--primary-foreground);
 }
 [class~="border-[#D6A84B]"], [class~="border-[#EFC566]"], [class~="border-[#C9A84C]"] {
   border-color: var(--primary);
@@ -900,7 +907,7 @@ html.light [class*="shadow-[0_0_80px_rgba(0,0,0"] {
 }
 [class~="text-[#C66B4E]"],
 [class~="text-[#E8928B]"] {
-  color: var(--destructive);
+  color: var(--destructive-text);
 }
 [class~="text-[#D9C7AA]"],
 [class~="text-[#F3DFC0]"],
@@ -941,7 +948,7 @@ html.light [class*="shadow-[0_0_80px_rgba(0,0,0"] {
 [class~="text-[#201406]"],
 [class~="text-[#211406]"],
 [class~="text-[#241507]"] {
-  color: var(--on-tint);
+  color: var(--primary-foreground);
 }
 [class~="text-[#7C3AED]"],
 [class~="text-[#B9A2F5]"] {
@@ -1008,7 +1015,7 @@ html.light [class*="shadow-[0_0_80px_rgba(0,0,0"] {
 }
 [class~="text-[#07131A]"],
 [class~="text-[#1b1d20]"] {
-  color: var(--on-tint);
+  color: var(--primary-foreground);
 }
 
 /* Teal-tinted darks only ever sat on the teal fill, which is now the deep

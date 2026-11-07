@@ -424,8 +424,8 @@ export default function ChatPage() {
               aria-label={listening ? t('listening') : t('ask_by_voice')}
               aria-pressed={listening}
               className={cn(
-                'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white transition-transform active:scale-95 disabled:opacity-50',
-                listening ? 'animate-pulse bg-[#63C7BA]' : 'bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]',
+                'grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform active:scale-95 disabled:opacity-50',
+                listening ? 'animate-pulse bg-success text-success-foreground' : 'bg-secondary text-secondary-foreground',
               )}
             >
               {listening ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}

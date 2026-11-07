@@ -45,7 +45,7 @@ export function YatrikWelcome({
           </p>
 
           {error && (
-            <p className="mt-3.5 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-[var(--destructive)]" role="alert">
+            <p className="mt-3.5 rounded-[18px] bg-[var(--destructive)]/10 px-4 py-3 text-[13px] leading-5 text-destructive-text" role="alert">
               {error}
             </p>
           )}
