@@ -7,6 +7,7 @@ import {
   Camera,
   ChevronDown,
   LocateFixed,
+  LoaderCircle,
   Map,
   Pause,
   Play,
@@ -38,6 +39,7 @@ export interface ExploreARHudState {
   caption: string
   distanceMeters: number | null
   fallbackStatus: ExploreFallbackStatus
+  preparationError?: string
   miniFact?: string
   mode: ExploreMode
   narrationStatus: ExploreNarrationStatus
@@ -59,6 +61,7 @@ interface ExploreARHudProps {
   monumentId: string
   monuments: MonumentOption[]
   muted: boolean
+  onRetryPreparation: () => void
   onArrive: () => void
   onBack: () => void
   onComplete: () => void
@@ -129,6 +132,7 @@ export function ExploreARHud({
   monumentId,
   monuments,
   muted,
+  onRetryPreparation,
   onArrive,
   onBack,
   onComplete,
@@ -165,8 +169,8 @@ export function ExploreARHud({
   }, [cameraStream])
 
   return (
-    <main className="fixed inset-x-0 bottom-0 top-[72px] z-40 mx-auto h-[calc(100dvh-72px)] w-full max-w-[420px] overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
-      <section className="relative z-20 flex h-1/4 min-h-[176px] flex-col border-b border-[var(--border)] bg-[var(--card)] px-4 pb-3 pt-3">
+    <main className="fixed inset-0 z-40 mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+      <section className="relative z-20 flex h-[calc(25%+env(safe-area-inset-top))] min-h-[calc(176px+env(safe-area-inset-top))] shrink-0 flex-col border-b border-[var(--border)] bg-[var(--card)] px-4 pb-3 pt-[calc(12px+env(safe-area-inset-top))]">
         <div className="flex items-center gap-2">
           <button
             aria-label="Leave Explore"
@@ -237,7 +241,7 @@ export function ExploreARHud({
         </div>
       </section>
 
-      <section className="relative h-3/4 min-h-0 overflow-hidden bg-[var(--muted)]">
+      <section className="relative min-h-0 flex-1 overflow-hidden bg-[var(--muted)]">
         {showCamera ? (
           <video
             ref={videoRef}
@@ -281,7 +285,6 @@ export function ExploreARHud({
             {state.mode === 'demo' ? <Sparkles className="size-3" /> : <Radio className="size-3" />}
             {state.mode === 'demo' ? 'Demo · Synthetic GPS' : state.mode === 'live' ? 'Live exploration' : 'Fallback guidance'}
           </span>
-          {state.narrationStatus === 'loading' && <span className="rounded-full bg-black/45 px-2 py-1 text-[10px] text-[#ead6b0]">Preparing story…</span>}
         </div>
 
         {state.fallbackStatus !== 'none' ? (
@@ -320,7 +323,14 @@ export function ExploreARHud({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#79dfd0]">Yatrik says</p>
-                <p data-no-translate className="mt-1 line-clamp-2 text-sm leading-5 text-[#f7ead1]">{state.caption}</p>
+                {state.narrationStatus === 'loading' ? (
+                  <p role="status" className="mt-1 flex items-center gap-2 text-sm leading-5"><LoaderCircle aria-hidden="true" className="size-4 shrink-0 animate-spin" />Preparing your selected-language guide…</p>
+                ) : state.preparationError ? (
+                  <div role="alert" className="mt-1 text-sm leading-5">
+                    <p>{state.preparationError}</p>
+                    <button type="button" className="mt-2 min-h-10 font-bold underline" onClick={onRetryPreparation}>Try again</button>
+                  </div>
+                ) : <p data-no-translate className="mt-1 line-clamp-2 text-sm leading-5 text-[#f7ead1]">{state.caption}</p>}
               </div>
               {state.narrationStatus === 'speaking' ? (
                 <button aria-label="Pause narration" className="grid size-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5" onClick={onPauseNarration} type="button"><Pause className="size-3.5" /></button>
@@ -349,7 +359,7 @@ export function ExploreARHud({
           ) : (
             <button
               className="btn-primary disabled:!bg-[var(--muted)] disabled:!text-[var(--muted-foreground)] disabled:!shadow-none"
-              disabled={!canArrive}
+              disabled={!canArrive || state.narrationStatus === 'loading' || Boolean(state.preparationError)}
               onClick={onArrive}
               type="button"
             >

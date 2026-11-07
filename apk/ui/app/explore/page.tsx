@@ -50,7 +50,7 @@ interface GuideTranslation {
   miniFact: string
 }
 
-const GUIDE_TRANSLATION_STORAGE_KEY = 'sanskriti-explore-translations-v5'
+const GUIDE_TRANSLATION_STORAGE_KEY = 'sanskriti-explore-translations-v6'
 const HERITAGE_WATCH_CONSENT_KEY = 'sanskriti-heritage-watch-consent'
 
 // ── TAJ MAHAL ZONES ──────────────────────────────────────
@@ -863,6 +863,8 @@ export default function ExplorePage() {
   const [narrationLoading, setNarrationLoading] = useState(false)
   const [currentTranslation, setCurrentTranslation] = useState<GuideTranslation | null>(null)
   const [translationLoading, setTranslationLoading] = useState(false)
+  const [preparationError, setPreparationError] = useState<string | undefined>()
+  const arrivalStartedRef = useRef(false)
   const { muted, toggleMute } = useYatrikControls()
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioUrlRef = useRef<string | null>(null)
@@ -976,6 +978,7 @@ export default function ExplorePage() {
 
   const stopNarration = useCallback(() => {
     nativeNarrationTokenRef.current += 1
+    setNarrationLoading(false)
     activeNarrationKeyRef.current = null
     narrationRequestRef.current?.abort()
     narrationRequestRef.current = null
@@ -1020,6 +1023,10 @@ export default function ExplorePage() {
     const speechToken = nativeNarrationTokenRef.current
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = getLanguageConfig(language).locale
+    const voices = window.speechSynthesis.getVoices()
+    const matchingVoice = voices.find((voice) => voice.lang === utterance.lang)
+      || voices.find((voice) => voice.lang.split(/[-_]/)[0] === language)
+    if (matchingVoice) utterance.voice = matchingVoice
     utterance.rate = 0.95
     utterance.onend = () => {
       if (speechToken !== nativeNarrationTokenRef.current) return
@@ -1123,10 +1130,16 @@ export default function ExplorePage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ language: lang, monumentId, ...source }),
+          signal: AbortSignal.timeout(90_000),
         })
         if (!response.ok) throw new Error('Guide translation unavailable')
         translation = await response.json() as GuideTranslation
       }
+      if (Object.keys(source).some((key) => {
+        const field = key as keyof GuideTranslation
+        return typeof translation[field] !== 'string' || !translation[field].trim()
+          || (lang !== 'en' && translation[field].trim() === source[field].trim())
+      })) throw new Error('Guide translation was incomplete')
       translationCacheRef.current[cacheKey] = translation
       try {
         localStorage.setItem(
@@ -1224,7 +1237,7 @@ export default function ExplorePage() {
 
     const controller = new AbortController()
     narrationRequestRef.current = controller
-    setIsTTSSpeaking(true)
+    setNarrationLoading(true)
     setNarrationReady(false)
 
     try {
@@ -1259,6 +1272,10 @@ export default function ExplorePage() {
         activeNarrationKeyRef.current = null
       }
 
+      audio.onplay = () => {
+        setNarrationLoading(false)
+        setIsTTSSpeaking(true)
+      }
       audio.onended = finish
       audio.onerror = fail
       try {
@@ -1277,6 +1294,7 @@ export default function ExplorePage() {
     } finally {
       if (narrationRequestRef.current === controller) {
         narrationRequestRef.current = null
+        setNarrationLoading(false)
       }
     }
   }, [exploreMonumentId, fetchNarration, lang, muted, speakWithBrowserFallback, stopNarration])
@@ -1309,9 +1327,11 @@ export default function ExplorePage() {
     let cancelled = false
     stopNarration()
     const guideToken = nativeNarrationTokenRef.current
+    arrivalStartedRef.current = false
     setArrivedAtZone(false)
     setShowFact(false)
     setCurrentTranslation(null)
+    setPreparationError(undefined)
 
     const guideZone = activeZones[currentZoneIndex]
     const prepareGuide = async () => {
@@ -1323,15 +1343,17 @@ export default function ExplorePage() {
         if (cancelled || guideToken !== nativeNarrationTokenRef.current) return
         setCurrentTranslation(translated)
         setTranslationLoading(false)
-        if (translated) {
-          direction = translated.directionHint
+        if (!translated) {
+          setPreparationError('The guide could not be prepared in your selected language.')
+          return
         }
+        direction = translated.directionHint
       } else {
         setTranslationLoading(false)
       }
 
       window.setTimeout(() => {
-        if (!cancelled && guideToken === nativeNarrationTokenRef.current) {
+        if (!cancelled && !arrivalStartedRef.current && guideToken === nativeNarrationTokenRef.current) {
           emitYatrikEvent({
             type: 'route-prompt',
             caption: direction,
@@ -1361,9 +1383,10 @@ export default function ExplorePage() {
 
   // ── HANDLE ARRIVAL ──────────────────────────────────────
   const handleArrival = useCallback(async () => {
-    if (arrivedAtZone) return
+    if (arrivalStartedRef.current) return
+    arrivalStartedRef.current = true
     stopNarration()
-    const arrivalToken = nativeNarrationTokenRef.current
+    const requestToken = nativeNarrationTokenRef.current
     setArrivedAtZone(true)
     setShowFact(true)
 
@@ -1378,19 +1401,24 @@ export default function ExplorePage() {
         window.dispatchEvent(new Event('xp-updated'))
       } catch (err) { console.warn('XP award failed:', err) }
     }
-    if (arrivalToken !== nativeNarrationTokenRef.current) return
+    if (requestToken !== nativeNarrationTokenRef.current) return
     setXpEarned(z.xp)
     setCompletedZones(prev => [...prev, z.id])
 
     let story = z.arrival_fact
+    if (nativeNarrationTokenRef.current !== requestToken) return
     if (lang !== 'en') {
+      setTranslationLoading(true)
       const translated =
         currentTranslation || await getGuideTranslation(exploreMonumentId, z)
-      if (arrivalToken !== nativeNarrationTokenRef.current) return
-      if (translated) {
-        setCurrentTranslation(translated)
-        story = translated.arrivalFact
+      if (nativeNarrationTokenRef.current !== requestToken) return
+      setTranslationLoading(false)
+      if (!translated) {
+        setPreparationError('The guide could not be prepared in your selected language.')
+        return
       }
+      setCurrentTranslation(translated)
+      story = translated.arrivalFact
     }
     emitYatrikEvent({
       type: 'arrival-story',
@@ -1541,12 +1569,12 @@ export default function ExplorePage() {
           ? 'live'
           : 'fallback'
 
-  const hudNarrationStatus: ExploreNarrationStatus = isTTSSpeaking
-    ? 'speaking'
-    : narrationReady
-      ? 'ready'
-      : translationLoading || narrationLoading
-        ? 'loading'
+  const hudNarrationStatus: ExploreNarrationStatus = translationLoading || narrationLoading
+    ? 'loading'
+    : isTTSSpeaking
+      ? 'speaking'
+      : narrationReady
+        ? 'ready'
         : 'idle'
 
   const selectMonument = (id: string) => {
@@ -1568,6 +1596,21 @@ export default function ExplorePage() {
       monumentId={exploreMonumentId}
       monuments={monumentsList}
       muted={muted}
+      onRetryPreparation={() => {
+        const requestToken = nativeNarrationTokenRef.current
+        setPreparationError(undefined)
+        setTranslationLoading(true)
+        void getGuideTranslation(exploreMonumentId, zone).then((translated) => {
+          if (nativeNarrationTokenRef.current !== requestToken) return
+          setTranslationLoading(false)
+          if (!translated) {
+            setPreparationError('The guide could not be prepared in your selected language.')
+            return
+          }
+          setCurrentTranslation(translated)
+          void speakFact(arrivedAtZone ? translated.arrivalFact : translated.directionHint, lang)
+        })
+      }}
       onArrive={handleHudArrive}
       onBack={() => {
         stopNarration()
@@ -1623,6 +1666,7 @@ export default function ExplorePage() {
         miniFact: showFact ? miniFactText : undefined,
         mode: hudMode,
         narrationStatus: hudNarrationStatus,
+        preparationError,
         story: showFact ? arrivalText : undefined,
         totalZones: activeZones.length,
         xpEarned: showFact ? xpEarned : undefined,
@@ -1630,10 +1674,10 @@ export default function ExplorePage() {
       }}
     />
     {cameraModeActive ? (
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[72px] z-[80] mx-auto flex w-full max-w-[420px] flex-col">
+      <div className="pointer-events-none fixed inset-0 z-[80] mx-auto flex w-full flex-col">
         {/* Mirrors ExploreARHud's header band so the panel is positioned
             against the camera pane, exactly like the HUD's own chips. */}
-        <div className="h-1/4 min-h-[176px] shrink-0" aria-hidden />
+        <div className="h-[calc(25%+env(safe-area-inset-top))] min-h-[calc(176px+env(safe-area-inset-top))] shrink-0" aria-hidden />
         <div className="relative min-h-0 flex-1">
           <HeritageWatchPanel
             consented={watchConsent}
