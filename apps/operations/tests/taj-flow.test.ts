@@ -1,0 +1,28 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { DemoRepository, type DemoStorage } from "../lib/taj-pilot/demo-repository.ts";
+import { flowPolicy } from "../lib/taj-pilot/flow-policy.ts";
+test("manual Zone 2 congestion holds Zone 1 until recovery and suggests Zone 3 exit only with known data", async () => {
+  const data = new Map<string,string>(); const storage: DemoStorage = {getItem:k=>data.get(k)??null,setItem:(k,v)=>{data.set(k,v);}};
+  const repo = await DemoRepository.open(storage);
+  await repo.setInput("main-gateway",125);
+  assert.equal(flowPolicy("demo",repo.states).entry,"Open (simulation)");
+  await repo.advance(30000);
+  assert.equal(flowPolicy("demo",repo.states).entry,"Closed (simulation)");
+  assert.equal(flowPolicy("demo",repo.states).exitSuggested,true);
+  assert.equal(flowPolicy("real",repo.states).exitSuggested,false);
+  assert.equal(flowPolicy("real",repo.states).entry,"Unavailable");
+  await repo.setInput("mausoleum",null);
+  assert.equal(flowPolicy("demo",repo.states).exitSuggested,false);
+  await repo.setInput("main-gateway",null);
+  assert.equal(flowPolicy("demo",repo.states).entry,"Closed (simulation)");
+  await repo.setInput("main-gateway",60);
+  await repo.advance(10000);
+  assert.equal(flowPolicy("demo",repo.states).entry,"Closed (simulation)");
+  await repo.advance(10000);
+  assert.equal(flowPolicy("demo",repo.states).entry,"Open (simulation)");
+  assert.equal(flowPolicy("demo",repo.states).exitSuggested,false);
+  const restored = await DemoRepository.open(storage);
+  assert.equal(restored.snapshots[1].estimatedCount,60);
+  for(const invalid of [-1,1.2,100001,NaN]) await assert.rejects(repo.setInput("main-gateway",invalid));
+});
