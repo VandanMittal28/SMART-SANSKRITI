@@ -1,0 +1,46 @@
+name: Repository checks
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '.github/**'
+      - 'scripts/check-docs.mjs'
+      - 'package.json'
+      - 'apps/visitor-web/**'
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '.github/**'
+      - 'scripts/check-docs.mjs'
+      - 'package.json'
+      - 'apps/visitor-web/**'
+permissions:
+  contents: read
+concurrency:
+  group: repository-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check:docs
+  visitor-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/visitor-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/visitor-web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
