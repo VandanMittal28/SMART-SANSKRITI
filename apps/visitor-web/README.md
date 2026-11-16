@@ -4,6 +4,8 @@ An installation-free heritage experience built with Next.js and React. Visitors
 can discover monuments, explore routes and stories, ask Yatrik, recognise a monument
 from a photograph and voluntarily report an issue to the site's MMS.
 
+**Live website:** [smart-sanskriti.vercel.app](https://smart-sanskriti.vercel.app)
+
 ## Run locally
 
 Requires Node 22.18+ and npm. From the repository root:

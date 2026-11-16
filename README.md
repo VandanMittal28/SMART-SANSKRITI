@@ -4,6 +4,8 @@
   <p><strong>Discover India's Living Heritage.</strong></p>
   <p>AI-powered heritage experiences. Connected monument operations.</p>
   <p>
+    <a href="https://smart-sanskriti.vercel.app">Live visitor app</a> ·
+    <a href="https://mms-sanskriti.vercel.app">Live management console</a> ·
     <a href="docs/product/overview.md">Product</a> ·
     <a href="docs/engineering/getting-started.md">Get started</a> ·
     <a href="docs/architecture.md">Architecture</a> ·
@@ -28,6 +30,17 @@ Built by **Team Smart Sanskriti** for the Heritage & Culture theme of
 > This repository contains implemented features, configuration-dependent services
 > and explicitly synthetic demonstrations. Source availability does not establish
 > production readiness, official partnerships or measured detection accuracy.
+
+## Live applications
+
+| Application | Live link | Access and scope |
+| --- | --- | --- |
+| **Visitor experience** | [Open Sanskriti AI](https://smart-sanskriti.vercel.app) | Public heritage companion website |
+| **Monument Management System** | [Open the management console](https://mms-sanskriti.vercel.app) | Authorised staff sign-in required |
+| **MMS crowd feature** | [Open crowd management](https://mms-sanskriti.vercel.app/mms/crowd) | Staff access; demonstration data represents simulations, not live camera counts |
+
+These public routes were checked on **16 November 2026**. A reachable application
+is not a claim that every integration has passed production acceptance.
 
 ## The platform
 

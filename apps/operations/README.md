@@ -2,6 +2,13 @@
 
 A separate staff console for monument operations. The visitor website remains a separate Vercel deployment.
 
+**Live console:** [mms-sanskriti.vercel.app](https://mms-sanskriti.vercel.app)
+
+**Crowd feature:** [MMS crowd management](https://mms-sanskriti.vercel.app/mms/crowd)
+
+Staff sign-in and site permissions are required. Crowd demonstration data is
+synthetic; a hosted interface does not establish live camera coverage.
+
 ## Database-backed workspace
 
 The MMS uses Supabase Auth and site-scoped Postgres tables. Its current workspace covers Taj Mahal, Qutub Minar, Red Fort and Konark Sun Temple, with zone lists specific to each site. Sign-in uses the administrator's email and password; `base` is an administrator username alias. Incident creation and status transitions are recorded with an audit history. Row Level Security and database functions enforce site membership and workflow transitions.
