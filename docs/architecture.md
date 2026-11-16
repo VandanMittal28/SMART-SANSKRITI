@@ -1,53 +1,94 @@
-# Architecture and delivery boundaries
+# Architecture
 
-## Product surfaces
+Sanskriti has four application surfaces with explicit build and service boundaries.
+The two native clients share a bundled interface; the visitor website and staff
+console are separately built Next.js applications.
 
-1. Android and iOS: full visitor experiences. The web interface currently lives
-   in `apk/ui`, and iOS copies its exported assets. Keep those paths stable until
-   a dedicated shared-mobile extraction has cross-platform build verification.
-2. `apps/operations`: separate staff interface and local API. It does not import
-   the visitor providers, demo auth, marketplace roles or mobile navigation.
-3. NFC/QR visitor website: planned. It will reuse reviewed content and stable
-   monument/checkpoint identities without exposing staff records.
+```mermaid
+flowchart TD
+  UI[Shared visitor UI: apk/ui] --> AND[Android shell]
+  UI --> IOS[iOS shell]
+  WEB[Visitor website] --> API[Visitor server routes]
+  API --> AI[Configured AI providers]
+  API --> INTAKE[Hosted MMS report functions]
+  INTAKE --> DB[(MMS database and private evidence)]
+  STAFF[Staff console] --> AUTH[Staff identity and site permissions]
+  AUTH --> DB
+  STAFF --> REVIEW[Server-side AI assessment]
+  REVIEW --> AI
+  REVIEW --> DB
+  DEMO[Local demo and crowd scenarios] --> LOCAL[Local files or browser demo journal]
+```
 
-## Operations foundation
+The diagram describes source-level paths, not the deployment status of any service.
+Native clients also have provider and backend integrations; a bundled UI does not
+make online features available without connectivity and configuration.
 
-- `app/`: Next.js entry points, styling and request handlers.
-- `components/`: browser interactions and accessible, responsive screens.
-- `lib/domain.ts`: incident state machine, validation, synthetic site/staff data
-  and crowd freshness/count rules.
-- `lib/store.ts`: local single-process storage adapter with serialized writes
-  and atomic file replacement.
-- `lib/request.ts`: loopback/origin checks and request errors for the sandbox.
-- `lib/crowd.ts`: validated camera/presence input, ordering, independent session
-  expiry, consent withdrawal and aggregate-only dashboard projection.
-- `tests/`: workflow, freshness, persistence/concurrency and request-boundary checks.
+## Build boundaries
 
-The server is authoritative for workflow transitions. Updates carry the record
-version, so a stale edit fails instead of overwriting another action. The UI
-never claims its sample staff selection is authentication.
+| Surface | Runtime | Build ownership |
+| --- | --- | --- |
+| Android | Java shell and WebView with native bridges | Gradle builds the shared static UI and packages it as assets |
+| iOS | Swift, WKWebView and loopback asset server | Xcode copies the shared export and verifies its manifest |
+| Visitor website | Next.js pages and Node server routes | Independent package and lockfile in `apps/visitor-web` |
+| Operations | Next.js staff interface and server routes | Root npm workspace and lockfile |
 
-## Production boundary
+The mobile export excludes `app/api`; native device services and configured
+external services handle capabilities a static export cannot provide. Android
+and iOS preserve compatible bridge contracts for speech, camera, navigation and
+other device interactions. See the [native navigation contract](../apk/docs/ar-navigation-controller.md).
 
-Replace the local store with transactional storage and add real identity and
-site membership before deployment. Test isolation across organisations. Add
-private evidence uploads, auditable evidence access, notifications and backup
-restoration. Keep privileged keys server-side.
+## Visitor services
 
-Crowd monitoring combines complementary signals, not summed populations:
-camera-based zone estimates, consented/expiring app presence and site-wide
-entry/exit records. Uncovered or stale zones are unknown. Pilot calibration
-must establish camera overlap, counting error and alert thresholds before
-staff rely on it. All current sensor readings are labelled synthetic.
+The website keeps provider secrets in server modules. Its routes handle chat,
+recognition, transcription, narration, translation, Heritage Watch and reporting.
+Input limits and in-memory rate limits are application safeguards; process-local
+limits do not establish a deployment-wide abuse-control system.
 
-The input pipeline is now testable through the local simulator. See
-[crowd input contract](crowd-inputs.md). This is not authenticated producer
-ingestion, a real consent UI, geographic zone detection or a camera stream.
+Reporting selects the hosted MMS adapter when both public database settings are
+present. Otherwise development can use a loopback-only bridge to the local demo.
+Vercel never uses that local bridge. Receipt status requires the private receipt
+contract; visitor name entry itself is not authentication.
 
-## Documentation
+The public-report database path uses the intended project's anonymous session and
+report functions. Staff access is a different identity and permission boundary.
+A successful catalogue read or configured key alone is not proof that every
+submission, evidence or staff workflow has been accepted.
 
-The canonical shareable PRD is `docs/product/Sanskriti-Product-Vision-Status-and-PRD.pdf`.
-Its editable generator is `scripts/build-product-guide.py` (Python + reportlab;
-Arial on macOS or Liberation Sans on Linux). Render and visually review every
-regenerated PDF before committing it. `output/` is scratch artifact output;
-only deliberately curated documents belong in `docs/`.
+## Staff and incident services
+
+The main MMS reads site-scoped data through authenticated database access policies
+and workflow functions. Incident assessment routes verify the user and site role
+before loading the saved incident and private evidence. A manager-requested AI
+assessment is advisory and must not silently change assignment or incident status.
+
+`supabase/migrations/` records MMS database changes. Marketplace migrations and
+functions under `apk/ui/supabase/` are a separate domain and deployment history.
+Do not merge histories or assume that either directory bootstraps every prerequisite
+of an empty database. Review the target environment before applying migrations.
+
+## Demonstration isolation
+
+The original incident sandbox uses local JSON files with serialised writes and
+version checks. These stores require a single process and are unsuitable for a
+public multi-instance service. Sample staff selectors are not authentication.
+
+The local `/taj-pilot` route provides synthetic crowd scenarios and a browser
+journal. When deployed with `VERCEL` set, that route selects the MMS crowd
+interface. `/mms/crowd` is the integrated interface. Persistent demonstration data
+still represents simulations, not measured live monument conditions.
+
+Camera estimates, consented presence and entry/exit records are complementary
+signals, not populations to add together. Stale or uncovered zones are unknown.
+No current simulation establishes camera accuracy, authorised ticket validation
+or production alert performance. See [crowd inputs](crowd-inputs.md) and the
+[pilot delivery record](taj-pilot-delivery.md).
+
+## Production acceptance
+
+Verify site isolation, evidence access, credential boundaries, retention,
+restoration, device permissions and user journeys in the intended deployment.
+Keep private inference credentials out of release app bundles. Validate any real
+camera or ticket integration against agreed site requirements before presenting
+its output as operational. The [release checklist](engineering/release-checklist.md)
+records the required evidence.

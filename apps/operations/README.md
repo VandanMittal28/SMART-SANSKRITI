@@ -2,7 +2,7 @@
 
 A separate staff console for monument operations. The visitor website remains a separate Vercel deployment.
 
-## Production workspace
+## Database-backed workspace
 
 The MMS uses Supabase Auth and site-scoped Postgres tables. Its current workspace covers Taj Mahal, Qutub Minar, Red Fort and Konark Sun Temple, with zone lists specific to each site. Sign-in uses the administrator's email and password; `base` is an administrator username alias. Incident creation and status transitions are recorded with an audit history. Row Level Security and database functions enforce site membership and workflow transitions.
 
@@ -36,8 +36,7 @@ not display an unsaved result as successful. Missing AI storage does not disable
 the normal incident workflow.
 
 This is manager-triggered advice, not automatic intake processing or dispatch.
-It never changes incident status, priority, or assignment. It does not activate
-the currently unwired hosted visitor-report helper. Existing local demo dispatch
+It never changes incident status, priority, or assignment. It is separate from the visitor website’s hosted-report adapter. Existing local demo dispatch
 remains separate. The new migration must be applied and the operations app
 deployed before this is available on the hosted console.
 
@@ -50,7 +49,9 @@ npm ci
 npm run dev:operations
 ```
 
-Open http://127.0.0.1:3100. The server binds to loopback only. No credentials or database setup are needed for this **local sandbox**.
+Open http://127.0.0.1:3100 for the database-backed MMS. Configure the public database settings in `apps/operations/.env.local` and sign in with an authorised staff account. The server binds to loopback only.
+
+For a configuration-free **local crowd simulation**, open http://127.0.0.1:3100/taj-pilot instead. This route uses synthetic scenarios in ordinary local development; on Vercel it selects the integrated MMS crowd interface. See the [pilot guide](../../docs/taj-pilot-delivery.md).
 
 ## Local operations prototype
 
@@ -85,22 +86,25 @@ npm run build:operations
 
 For a local production-build preview only: `OPS_LOCAL_DEMO=true npm run start --workspace sanskriti-operations`.
 
-## Next delivery milestones
+## Delivery boundaries and next milestones
 
-1. Add genuine staff authentication, organisation/site membership and server-enforced permissions, with isolation tests for two organisations. Do not reuse visitor or marketplace admin flags.
-2. Replace the local store adapter with transactional database persistence. Add private evidence storage, audit access controls, migrations and retention policies.
-3. Add voluntary visitor-report ingestion, upload validation, supervisor reassignment/escalation and guard-specific authorised sessions.
-4. Add consented app presence with zone boundaries, freshness/expiry and deduplication; connect one camera gateway and calibrate overlap/count error against manual counts.
-5. Integrate authorised ticket entry/exit records. Only then reconcile site occupancy and generate a real daily report.
-6. Validate sustained crowd thresholds, camera alerts and safe-route recommendations at a pilot site before calling them operational.
+The current source includes staff authentication, site membership, database-backed
+incidents, audit history and manager-requested AI review. The visitor website now
+has a hosted-report adapter. Each needs its intended database configuration and
+release acceptance; older local demos remain separate implementations.
 
-Not implemented in the production MMS: visitor report intake/evidence, staff invites and duty tracking, live cameras or occupancy, ticketing, notifications, or production daily scheduling. The old prototype still demonstrates some of these flows locally. Do not treat its sample data, AI triage, or locations as live monument operations.
+Next work includes staff invitations and duty lifecycle, calibrated live camera
+inputs, authorised ticket entry/exit integration, notifications, retention and
+operational reporting. Synthetic crowd scenarios are not live occupancy. Verify
+cross-site isolation and the full visitor-report-to-resolution journey before
+accepting a site deployment. See the [roadmap](../../docs/product/roadmap.md).
 
 ## Android visitor report demonstration
 
-Run the local MMS server on port 3100, then open it in a browser. The first screen
-lets you select **Admin** or **Ground staff** and a sample staff profile. These
-selectors are demonstration access only. Admins can review reports, duty zones,
+The retained local report-demo components and `/api/demo/*` routes demonstrate
+**Admin** and **Ground staff** sample profiles. They are separate from the current
+root MMS screen, which uses genuine staff sign-in. Any sample profile selector is
+demonstration access only. The demo supports reports, duty zones,
 staff availability, evidence, NVIDIA AI triage and overdue alerts. Staff
 see their own duty area and assignments, and share GPS only while on duty and
 while the page is open.
@@ -120,7 +124,7 @@ local draft with the same receipt token for safe retry. The Android build is a
 local demo; the server remains bound to loopback. If port 3100 is already in use,
 stop that server before starting this version.
 
-Copy `.env.example` to `apps/operations/.env.local` and fill in
+Copy `apps/operations/.env.example` to `apps/operations/.env.local` from the repository root and fill in
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; without them the
 console cannot reach the database and fails with "MMS database configuration is
 missing." Set `NVIDIA_API_KEY` in the same file before starting the MMS

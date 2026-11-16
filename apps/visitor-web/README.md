@@ -1,116 +1,90 @@
 # Sanskriti visitor website
 
-A Next.js website built from the existing Sanskriti iPhone/Android interface,
-focused on **Explore, Report and Yatrik**. The mobile source remains unchanged.
+An installation-free heritage experience built with Next.js and React. Visitors
+can discover monuments, explore routes and stories, ask Yatrik, recognise a monument
+from a photograph and voluntarily report an issue to the site's MMS.
 
-## Run
+## Run locally
 
-Requires Node 22.18+.
+Requires Node 22.18+ and npm. From the repository root:
 
 ```sh
-cd apps/visitor-web
-npm ci
-cp .env.example .env.local
-# Configure the existing Sanskriti NVIDIA and public Supabase settings.
-npm run dev
+npm ci --prefix apps/visitor-web
+cp apps/visitor-web/.env.example apps/visitor-web/.env.local
+npm run dev:visitor
 ```
 
-Open http://127.0.0.1:3200. Name entry personalises this browser; it is not
-account authentication. The existing staff console remains separate.
+Open http://127.0.0.1:3200. The app has its own package and lockfile; root `npm ci`
+installs the operations workspace only. Catalogue content can be explored without
+AI credentials. Live services require configuration.
 
-## Features
+## Configuration and service modes
 
-- **Explore** (`/explore`): the shared iPhone screen, zone stories, journey
-  selection, map, progress, arrival flow, narration and opt-in Heritage Watch.
-  The original five built-in journeys are retained. Demo modes explicitly use
-  synthetic GPS. Live Map uses browser location; Live Camera additionally uses
-  camera and device orientation. Missing permissions have a map fallback.
-- **Report** (`/report`): real MMS site/area selection, optional photo and
-  location, durable submission, draft recovery, idempotent retries and private
-  receipt status. Reports are supported at Taj Mahal, Red Fort, Qutub Minar
-  and Konark, matching the existing database's configured sites.
-- **Yatrik**: the original floating character and chat screen, live heritage
-  answers, voice questions, spoken replies and curated offline answers.
-  Opening it from Explore passes the selected monument as context.
-- The existing monument library, photo recognition, audio stories and
-  time-travel panoramas remain accessible within the heritage experience.
-- English/Hindi selection is available in the header.
+Use [.env.example](.env.example) for supported variables and defaults. Private
+NVIDIA, Groq and Gemini keys belong on the server. Provider selection is implemented
+in `lib/server/nvidia.ts` and the adjacent adapters; adding a key does not guarantee
+quota, model availability or a successful response. Never prefix private keys
+with `NEXT_PUBLIC_`.
 
-## Existing services reused
+| Reporting configuration | Behavior |
+| --- | --- |
+| Both public database URL and anon key present | Hosted MMS via visitor-report functions |
+| No hosted credentials, local development | Loopback operations demo on port 3100 |
+| Vercel without hosted credentials | Reporting unavailable |
+| Non-Vercel production preview | Local demo only when `REPORTS_MODE=local-demo` is explicitly set |
 
-`NVIDIA_API_KEY` stays server-side and powers chat, vision, transcription,
-translation and neural narration. The original browser speech fallback remains.
-No OpenAI key or new provider is required.
+Hosted intake requires the intended MMS database, anonymous sign-in and the
+visitor-report migration in `supabase/migrations/`. The public credentials select
+the hosted path even if `REPORTS_MODE` suggests another mode. Check the catalogue,
+submission and receipt flow against the intended project before release.
 
-With `REPORTS_MODE=supabase`, reporting uses the app's existing public
-Supabase URL/anon key, anonymous authentication, the `visitor-reports` private
-bucket, `mms_submit_visitor_report` and `mms_visitor_report_status` RPCs, and
-existing MMS incident records. The existing migration is
-`supabase/migrations/20261015101000_mms_public_visitor_reports.sql`.
-No schema changes were applied in this website implementation.
+`/api/status` exposes AI and reporting state flags without returning keys.
+Unavailable services must remain visible to the visitor; do not treat fallback
+content or a locally saved report draft as a successful live request.
 
-Photos are converted to JPEG in the browser, resized to 1600px maximum,
-and validated before upload. Receipt lookup from the browser uses a POST
-body so private tokens do not appear in request URLs. Legacy GET receipt
-lookup is retained for compatibility. A successful retry returns the original
-receipt before creating another anonymous user or uploading another photo.
+## Structure
 
-Heritage Watch retains the mobile motion/corroboration pipeline. It is opt-in,
-labels model observations as needing human confirmation, and only sends a
-report when the selected site and waypoint can be matched to the real report
-catalogue. Otherwise it asks the visitor to use Report to confirm the area.
+```text
+app/                 Visitor routes, layouts and API handlers
+components/          Screens, shell, Yatrik and adapted mobile components
+lib/original/        Adapted mobile logic and offline content
+lib/content/         Monument content
+lib/server/          Provider adapters, input validation and report services
+styles/              Shared tokens and screen styles
+public/              Images, audio and interpretive historical scenes
+tests/               Unit, content and route contracts
+```
 
-Without hosted settings, the isolated local operations demo is still supported
-in development. Local forwarding remains forbidden on Vercel.
+The website adapts mobile features from `apk/ui`; these copies are not automatically
+synchronised. Review both implementations when changing shared payloads. The public
+website is independently deployable and does not serve the native clients' bundle.
 
-## Verification
+## Verify
+
+From this directory:
 
 ```sh
-npm run typecheck
 npm test
+npm run typecheck
 npm run build
-npm audit
 ```
 
-Do not build while the development server is running: both use `.next`.
-After editing ported component classes, regenerate the scoped utilities:
+Or use the root `test:visitor`, `typecheck:visitor` and `build:visitor` commands.
+Stop the development server before building because both use `.next/`.
 
-```sh
-npm run styles:mobile
-```
+The [27 October verification record](../../docs/visitor-web-verification.md)
+documents local browser, live-service and build checks at that time. Re-run the
+relevant acceptance checks for subsequent releases; it is not current public
+hosting or physical-device certification.
 
-See [website verification](../../docs/visitor-web-verification.md) for the
-checks performed, remaining boundaries, and deployment status.
+## Deployment and content
 
-## Deploy to Vercel
+Use `apps/visitor-web` as the application's build root and install its lockfile.
+Configure service variables in the target environment, then verify HTTPS routes,
+permissions, reports, AI failures and logs after deployment. Local operations
+stores are not a hosted reporting backend.
 
-Use a standalone Next.js project whose root is `apps/visitor-web`.
-Configure the environment variables listed in `.env.example` in Vercel.
-Set `NVIDIA_API_KEY` as a sensitive server variable. Never deploy `.env.local`.
-The two `NEXT_PUBLIC_SUPABASE_*` values are public project credentials; never
-substitute a service-role key. Use Node 22.x and Fluid Compute for the AI routes.
-
-After signing in to Vercel, link the intended team/project, deploy a staged
-production build, verify `/api/status` and the browser flows, then assign the
-production domain. This repository is not yet linked to a Vercel project.
-
-## Boundaries
-
-- Vercel deployment is pending user sign-in; localhost is not a public website.
-- Physical iPhone/Safari camera, microphone and GPS have not been tested here.
-  Browser hardware capabilities and permissions differ from the native shell.
-- API rate limits are per server process, not a shared multi-instance quota.
-  Anonymous account creation is also governed by Supabase's existing limits.
-- Staff response times and real-world monument staffing are not verified.
-- Original monument stories and recordings were reused, not fact-checked in
-  this implementation. Original map demo routes are intentionally synthetic.
-- Explore points are session progress, not authenticated account XP.
-- Assets retain their existing credits. Map attribution is now visible.
-
-### Groq for the website and packaged apps
-
-The packaged apps use this website’s hosted API for chat, translation and transcription. Set server-only `GROQ_API_KEY`, `GROQ_MODEL=openai/gpt-oss-20b`, and `GROQ_SPEECH_MODEL=whisper-large-v3-turbo` in the hosted project and redeploy to enable Groq for both. NVIDIA continues to handle vision and narration. Never include provider keys in public variables or mobile bundles.
-
-### Google vision for app and website
-
-`GEMINI_API_KEY` enables Google vision for monument recognition and Heritage Watch in both clients through the shared hosted API. `GEMINI_VISION_MODEL` defaults to `gemini-3.1-flash-lite`, which supports image understanding and has a free tier. Keep billing disabled on the Google project to remain on its free tier; Google quota and eligibility rules apply. Configuring this integration does not enable billing. Quota failures return an unavailable/busy response without retrying NVIDIA or another paid model. Groq continues to handle text and transcription, and NVIDIA handles narration. Keep all provider keys server-side.
+Monument photographs have source and licence metadata in `lib/monument-photos.ts`;
+keep visible credits. Generated Time Travel scenes are interpretations, and
+historical text/audio require editorial review. Device voices, WebGL and permission
+behavior vary by browser. See the [release checklist](../../docs/engineering/release-checklist.md).

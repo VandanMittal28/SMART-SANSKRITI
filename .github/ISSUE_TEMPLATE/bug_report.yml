@@ -1,0 +1,43 @@
+name: Bug report
+description: Report reproducible application behavior.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include credentials, private receipts or personal data. See SECURITY.md for sensitive findings."
+  - type: dropdown
+    id: application
+    attributes:
+      label: Application
+      options:
+        - Android
+        - iOS
+        - Visitor website
+        - Operations / MMS
+        - Crowd pilot
+        - Documentation / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit, device, OS, browser and local/demo/hosted mode.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted logs or screenshots
