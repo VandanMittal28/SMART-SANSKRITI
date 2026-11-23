@@ -315,7 +315,7 @@ export default function RecognitionPage() {
       setRecognitionError(
         /failed to fetch|network|resolve host|internet|timeout/i.test(message)
           ? 'Connect to the internet and try the same photo again.'
-          : 'The recognition service could not process this photo. Please try again.',
+          : message,
       )
     } finally {
       clearTimeout(slowWarningTimer)
@@ -439,7 +439,7 @@ export default function RecognitionPage() {
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#E8928B]/10 text-[#E8928B]">
               <WifiOff className="h-5 w-5" />
             </div>
-            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">Recognition is offline</p>
+            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">Recognition could not finish</p>
             <p className="mx-auto mt-2 max-w-[280px] text-sm leading-6 text-[#AEB6C8]">{recognitionError}</p>
             <button
               type="button"

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ToastProps {
   message: string
@@ -13,7 +14,9 @@ export function Toast({ message, onDone }: ToastProps) {
     return () => clearTimeout(t)
   }, [onDone])
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <>
       <style>{`
         @keyframes slideInRight {
@@ -21,12 +24,13 @@ export function Toast({ message, onDone }: ToastProps) {
           to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
-      <div style={{
-        position: 'fixed', bottom: 24, right: 24,
+      <div role="status" aria-live="polite" style={{
+        position: 'fixed', bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))', right: 16, left: 16,
+        maxWidth: 388, marginInline: 'auto', overflowWrap: 'anywhere',
         background: 'rgba(28,22,56,0.97)',
         border: '1px solid rgba(201,168,76,0.6)',
         borderRadius: 12, padding: '12px 20px',
-        color: '#8A6A05', fontWeight: 'bold',
+        color: '#E8C97A', fontWeight: 'bold',
         zIndex: 9999, display: 'flex',
         alignItems: 'center', gap: 10,
         animation: 'slideInRight 0.3s ease',
@@ -37,7 +41,8 @@ export function Toast({ message, onDone }: ToastProps) {
         <span style={{ fontSize: 20 }}>⚡</span>
         <span>{message}</span>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 

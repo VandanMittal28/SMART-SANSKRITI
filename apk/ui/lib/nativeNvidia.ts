@@ -32,8 +32,12 @@ async function postApi<T>(path: string, body: Record<string, unknown>): Promise<
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body), signal: AbortSignal.timeout(90_000),
   })
-  const result = await response.json().catch(() => ({})) as T & { error?: string; message?: string }
-  if (!response.ok) throw new Error(result.error || result.message || `Sanskriti service returned ${response.status}.`)
+  const result = await response.json().catch(() => null) as (T & { error?: string; message?: string }) | null
+  if (!response.ok) {
+    const detail = result?.error || result?.message || 'The recognition service is unavailable.'
+    throw new Error(`${detail} (HTTP ${response.status})`)
+  }
+  if (!result) throw new Error('The service returned an invalid response. Please try again.')
   return result
 }
 
