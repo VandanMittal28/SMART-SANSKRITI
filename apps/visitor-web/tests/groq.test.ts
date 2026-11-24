@@ -15,7 +15,7 @@ test('Groq routes text and transcription without changing the vision provider', 
     globalThis.fetch = async (url, init) => {
       assert.equal(url, 'https://api.groq.com/openai/v1/chat/completions');
       const body = JSON.parse(String(init?.body));
-      assert.equal(body.model, 'openai/gpt-oss-20b');
+      assert.equal(body.model, 'openai/gpt-oss-120b');
       assert.equal(body.reasoning_effort, 'low');
       assert.equal(body.reasoning_budget, undefined);
       assert.equal(body.chat_template_kwargs, undefined);

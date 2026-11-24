@@ -16,7 +16,7 @@ export async function requestGroq(body: Record<string, unknown>) {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY?.trim()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
       messages: body.messages, temperature: body.temperature,
       max_completion_tokens: Math.max(2048, Number(body.max_tokens) || 2048),
       reasoning_effort: 'low', stream: false,
