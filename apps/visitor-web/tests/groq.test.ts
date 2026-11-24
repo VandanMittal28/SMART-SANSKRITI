@@ -5,10 +5,11 @@ import { askHeritageChat, recognizeMonument, transcribeAudio, resetAiState } fro
 // Exercise provider boundaries: text and audio use Groq, images retain NVIDIA.
 test('Groq routes text and transcription without changing the vision provider', async () => {
   const originalFetch = globalThis.fetch;
-  const names = ['GROQ_API_KEY', 'GROQ_MODEL', 'GROQ_SPEECH_MODEL', 'NVIDIA_API_KEY'];
+  const names = ['GROQ_API_KEY', 'GROQ_MODEL', 'GROQ_SPEECH_MODEL', 'NVIDIA_API_KEY', 'GEMINI_API_KEY'];
   const saved = names.map(name => process.env[name]);
   process.env.GROQ_API_KEY = 'test-groq';
   process.env.NVIDIA_API_KEY = 'test-nvidia';
+  delete process.env.GEMINI_API_KEY;
   delete process.env.GROQ_MODEL;
   delete process.env.GROQ_SPEECH_MODEL;
   try {

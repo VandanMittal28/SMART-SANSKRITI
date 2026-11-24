@@ -4,10 +4,11 @@ import { recognizeMonument, assessHeritageScene, askHeritageChat, resetAiState }
 
 test('Gemini vision sends multiple images, preserves parsing, and never falls back on quota errors', async () => {
   const originalFetch = globalThis.fetch;
-  const names = ['GEMINI_API_KEY', 'GEMINI_VISION_MODEL', 'GROQ_API_KEY'];
+  const names = ['GEMINI_API_KEY', 'GEMINI_VISION_MODEL', 'GROQ_API_KEY', 'GROQ_MODEL'];
   const saved = names.map(name => process.env[name]);
   process.env.GEMINI_API_KEY = 'test-google-key';
   process.env.GROQ_API_KEY = 'test-groq';
+  delete process.env.GROQ_MODEL;
   delete process.env.GEMINI_VISION_MODEL;
   let calls = 0;
   try {
