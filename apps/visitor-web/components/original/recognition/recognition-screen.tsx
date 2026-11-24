@@ -188,13 +188,15 @@ export function RecognitionScreen() {
 
     const preprocessImage = (f: File): Promise<string> => {
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Image processing timeout')), 10000)
+        const objectUrl = URL.createObjectURL(f)
+        const timeout = setTimeout(() => { URL.revokeObjectURL(objectUrl); reject(new Error('Image processing timeout')) }, 10000)
         const canvas = document.createElement('canvas')
         const img = new Image()
         img.onload = () => {
           clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
           try {
-            const maxW = 640
+            const maxW = 960
             const scale = Math.min(1, maxW / img.width)
             canvas.width = img.width * scale
             canvas.height = img.height * scale
@@ -242,34 +244,30 @@ export function RecognitionScreen() {
             }
 
             ctx.putImageData(imageData, 0, 0)
-            resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1])
+            resolve(canvas.toDataURL('image/jpeg', 0.72).split(',')[1])
           } catch (e) { reject(e) }
         }
         img.onerror = () => {
           clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
           reject(new Error('Invalid image format'))
         }
-        img.src = URL.createObjectURL(f)
+        img.src = objectUrl
       })
     }
 
-    const imageHash = await hashFile(file)
-    const cacheKey = `recognition_hash_${imageHash}`
-    const cached = getCache(cacheKey, CACHE_DURATION.recognition)
-    if (cached) {
-      const cachedResult = persistRecognizedMonument({ ...cached })
-      setResult(cachedResult)
-      setLoading(false)
-      showToast('⚡ Instant result!')
-      return
-    }
-
-    // Set a timeout to notify user if backend is spinning up
-    const slowWarningTimer = setTimeout(() => {
-      showToast('⏳ Analyzing the monument image...')
-    }, 6000)
-
+    const slowWarningTimer = setTimeout(() => showToast('⏳ Analyzing the monument image...'), 6000)
     try {
+      const imageHash = await hashFile(file)
+      const cacheKey = `recognition_hash_${imageHash}`
+      const cached = getCache(cacheKey, CACHE_DURATION.recognition)
+      if (cached) {
+        const cachedResult = persistRecognizedMonument({ ...cached })
+        setResult(cachedResult)
+        showToast('⚡ Instant result!')
+        return
+      }
+
       const base64 = await preprocessImage(file)
       const res = await api.recognize(base64, file.name, {
         context_prompt: 'Identify the Indian monument and return monument_name, location (city/state), era_or_dynasty, architecture_style, confidence_score, and key_identifiers.',
@@ -313,11 +311,9 @@ export function RecognitionScreen() {
       const message = error instanceof Error ? error.message : 'Recognition request failed.'
       console.error('Monument recognition failed:', error)
       setResult(null)
-      setRecognitionError(
-        /failed to fetch|network|resolve host|internet|timeout/i.test(message)
-          ? 'Connect to the internet and try the same photo again.'
-          : 'The recognition service could not process this photo. Please try again.',
-      )
+      setRecognitionError(/network error|failed to fetch|resolve host|internet|timeout/i.test(message)
+        ? 'Connect to the internet and try the same photo again.'
+        : message)
     } finally {
       clearTimeout(slowWarningTimer)
       setLoading(false)
@@ -440,7 +436,7 @@ export function RecognitionScreen() {
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#E8928B]/10 text-[#E8928B]">
               <WifiOff className="h-5 w-5" />
             </div>
-            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">Recognition is offline</p>
+            <p className="mt-4 font-heritage text-xl font-bold text-[#F6F1E8]">Recognition unavailable</p>
             <p className="mx-auto mt-2 max-w-[280px] text-sm leading-6 text-[#AEB6C8]">{recognitionError}</p>
             <button
               type="button"

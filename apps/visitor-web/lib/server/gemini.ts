@@ -31,7 +31,7 @@ export async function requestGeminiVision(body: Record<string, unknown>) {
     body: JSON.stringify({ contents, generationConfig: {
       temperature: body.temperature ?? 0.1,
       maxOutputTokens: Math.max(2048, Number(body.max_tokens) || 2048),
-      responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'minimal' },
+      responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'MINIMAL' },
     } }),
     signal: AbortSignal.timeout(45_000),
   });

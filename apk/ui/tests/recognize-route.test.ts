@@ -14,6 +14,7 @@ function loadRoute(key = 'test-key', fail = false) {
     exports, Buffer, process: { env: { NVIDIA_API_KEY: key } },
     require(name: string) {
       if (name === 'next/server') return { NextResponse: Response }
+      if (name === '@/lib/gemini') return { GeminiError: class GeminiError extends Error { status: number; constructor(status: number) { super('Vision error'); this.status = status } } }
       if (name === '@/lib/nvidia') return { recognizeMonument: async (image: string) => {
         calls.push(image)
         if (fail) throw new Error('private upstream details')

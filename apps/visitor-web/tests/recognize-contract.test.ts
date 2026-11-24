@@ -39,6 +39,36 @@ async function withMockedNvidia(reply: (call: number, url: string) => Response, 
 
 const modelReply = (content: string) => Response.json({ choices: [{ message: { content } }] });
 
+test("uses configured Gemini vision and surfaces quota without switching providers", async () => {
+  const originalFetch = globalThis.fetch;
+  const oldKey = process.env.GEMINI_API_KEY;
+  const oldModel = process.env.GEMINI_VISION_MODEL;
+  process.env.GEMINI_API_KEY = "test-gemini-key";
+  delete process.env.GEMINI_VISION_MODEL;
+  let calls = 0;
+  try {
+    resetRateLimits();
+    globalThis.fetch = (async (url, init) => {
+      calls++;
+      assert.match(String(url), /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-3\.1-flash-lite:generateContent/);
+      const body = JSON.parse(String(init?.body));
+      assert.deepEqual(body.contents[0].parts[1], { inlineData: { mimeType: "image/jpeg", data: JPEG } });
+      return calls === 1
+        ? Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: '{"monument_name":"Taj Mahal","confidence_score":94}' }] } }] })
+        : Response.json({ error: { message: "private quota detail" } }, { status: 429 });
+    }) as typeof fetch;
+    assert.equal((await recognize(post({ image_b64: JPEG }))).status, 200);
+    const limited = await recognize(post({ image_b64: JPEG }));
+    assert.equal(limited.status, 429);
+    assert.doesNotMatch(await limited.text(), /private quota detail/);
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (oldKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = oldKey;
+    if (oldModel === undefined) delete process.env.GEMINI_VISION_MODEL; else process.env.GEMINI_VISION_MODEL = oldModel;
+  }
+});
+
 test("sends the original vision request and returns the parsed result", async () => {
   await withMockedNvidia(
     () => modelReply('<think>hidden</think>```json\n{"monument_name":"Taj Mahal","monument_id":"taj-mahal","location":"Agra, Uttar Pradesh","category":"Mausoleum","era_or_dynasty":"Mughal","architecture_style":"Mughal","religion":"Islam","confidence_score":94,"key_identifiers":["central dome","four minarets"],"brief_description":"A marble mausoleum.","reasoning":"Dome and minarets visible.","is_unknown":false}\n```'),

@@ -177,13 +177,15 @@ export default function RecognitionPage() {
 
     const preprocessImage = (f: File): Promise<string> => {
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Image processing timeout')), 10000)
+        const objectUrl = URL.createObjectURL(f)
+        const timeout = setTimeout(() => { URL.revokeObjectURL(objectUrl); reject(new Error('Image processing timeout')) }, 10000)
         const canvas = document.createElement('canvas')
         const img = new Image()
         img.onload = () => {
           clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
           try {
-            const maxW = 640
+            const maxW = 960
             const scale = Math.min(1, maxW / img.width)
             canvas.width = img.width * scale
             canvas.height = img.height * scale
@@ -231,34 +233,31 @@ export default function RecognitionPage() {
             }
 
             ctx.putImageData(imageData, 0, 0)
-            resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1])
+            resolve(canvas.toDataURL('image/jpeg', 0.72).split(',')[1])
           } catch (e) { reject(e) }
         }
         img.onerror = () => {
           clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
           reject(new Error('Invalid image format'))
         }
-        img.src = URL.createObjectURL(f)
+        img.src = objectUrl
       })
     }
 
-    const imageHash = await hashFile(file)
-    const cacheKey = `recognition_hash_${imageHash}`
+    const slowWarningTimer = setTimeout(() => showToast('⏳ Analyzing the monument image...'), 6000)
+    try {
+      const imageHash = await hashFile(file)
+      const cacheKey = `recognition_hash_${imageHash}`
     const cached = getCache(cacheKey, CACHE_DURATION.recognition)
     if (cached) {
       const cachedResult = persistRecognizedMonument({ ...cached })
       setResult(cachedResult)
-      setLoading(false)
       showToast('⚡ Instant result!')
       return
     }
 
-    // Set a timeout to notify user if backend is spinning up
-    const slowWarningTimer = setTimeout(() => {
-      showToast('⏳ Analyzing the monument image...')
-    }, 6000)
 
-    try {
       const base64 = await preprocessImage(file)
       const res = await api.recognize(base64, file.name, {
         context_prompt: 'Identify the Indian monument and return monument_name, location (city/state), era_or_dynasty, architecture_style, confidence_score, and key_identifiers.',

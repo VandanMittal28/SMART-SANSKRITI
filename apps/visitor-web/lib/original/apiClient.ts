@@ -20,7 +20,10 @@ async function postApp(path: string, body: Record<string, unknown>) {
   } catch {
     throw new Error('Network Error')
   }
-  if (!response.ok) throw new Error(`Request failed with status code ${response.status}`)
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null) as { error?: unknown } | null
+    throw new Error(typeof payload?.error === 'string' ? payload.error : `Request failed with status code ${response.status}`)
+  }
   const data = await response.json()
   return { data }
 }
